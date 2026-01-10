@@ -8,7 +8,7 @@ Single source of truth
 
 Sync rules (mandatory)
 - Keep `AGENTS.md`, `CLAUDE.md`, and `GEMINI.md` byte-identical.
-- Any change must be mirrored across all three and recorded in `IMPLEMENTATION_PLAN.md` Change Logs.
+- Any change must be mirrored across all three and recorded in `logs/plan_change_logs.md`.
 
 Active agent roster (use all)
 - `.claude/agents/backend-infrastructure-dev.md`
@@ -32,4 +32,5 @@ Workflow for any task
 - Always use `@/.claude/agents/project-orchestrator.md` as the coordinating agent.
 - Engage relevant `.claude/agents/` files and apply their guidance.
 - Implement changes and update progress in `IMPLEMENTATION_PLAN.md`.
+- If `IMPLEMENTATION_PLAN.md` changes, append an entry in `logs/plan_change_logs.md`.
 - Mirror updates across the three synced agent files.
