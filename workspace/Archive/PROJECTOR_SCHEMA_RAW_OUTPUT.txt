@@ -1,0 +1,136 @@
+
+================================================================================
+TABLE: dbo.projectors
+================================================================================
+
+COLUMNS:
+  projector_id                   int(10,0)             NOT NULL   IDENTITY 
+  proj_name                      nvarchar(200)         NOT NULL   
+  proj_ip                        nvarchar(100)         NOT NULL   
+  proj_user                      nvarchar(200)         NULL       
+  proj_pass                      nvarchar(200)         NULL       
+  computer_name                  nvarchar(200)         NULL       
+  computer_ip                    nvarchar(100)         NULL       
+  location                       nvarchar(200)         NULL       
+  notes                          nvarchar(max)         NULL       
+  active                         bit                   NOT NULL    DEFAULT ((1))
+
+INDEXES:
+  PRIMARY KEY     CLUSTERED            PK__projecto__6AAC29D815346DF0           ON (projector_id)
+
+================================================================================
+TABLE: dbo.projector_status
+================================================================================
+
+COLUMNS:
+  projector_id                   int(10,0)             NOT NULL   
+  reachable                      bit                   NOT NULL   
+  power_state                    nvarchar(50)          NULL       
+  name                           nvarchar(200)         NULL       
+  input_source                   nvarchar(100)         NULL       
+  input_number                   int(10,0)             NULL       
+  available_inputs               nvarchar(max)         NULL       
+  lamps                          nvarchar(max)         NULL       
+  errors                         nvarchar(max)         NULL       
+  filter_info                    nvarchar(max)         NULL       
+  error                          nvarchar(max)         NULL       
+  checked_at                     datetime2             NOT NULL    DEFAULT (sysutcdatetime())
+
+INDEXES:
+  PRIMARY KEY     CLUSTERED            PK__projecto__6AAC29D856BE39C1           ON (projector_id)
+
+FOREIGN KEYS:
+  FK_projector_status_projectors           (projector_id) -> dbo.projectors(projector_id)
+                                             ON DELETE CASCADE
+
+================================================================================
+TABLE: dbo.power_audit
+================================================================================
+
+COLUMNS:
+  audit_id                       int(10,0)             NOT NULL   IDENTITY 
+  projector_id                   int(10,0)             NULL       
+  projector_name                 nvarchar(200)         NULL       
+  action                         nvarchar(10)          NOT NULL   
+  initiated_by_user_id           uniqueidentifier      NULL       
+  initiated_type                 nvarchar(20)          NULL       
+  schedule_id                    int(10,0)             NULL       
+  success                        bit                   NOT NULL   
+  message                        nvarchar(max)         NULL       
+  created_at                     datetime2             NOT NULL    DEFAULT (sysutcdatetime())
+
+INDEXES:
+  PRIMARY KEY     CLUSTERED            PK__power_au__5AF33E339465D4BF           ON (audit_id)
+
+CHECK CONSTRAINTS:
+  CK__power_aud__actio__3CF40B7E           ([action]='off' OR [action]='on')
+  CK__power_aud__initi__3DE82FB7           ([initiated_type]='system' OR [initiated_type]='schedule' OR [initiated_type]='user')
+
+================================================================================
+TABLE: dbo.schedules
+================================================================================
+
+COLUMNS:
+  schedule_id                    int(10,0)             NOT NULL   IDENTITY 
+  projector_id                   int(10,0)             NULL       
+  action                         nvarchar(10)          NOT NULL   
+  run_at                         datetime2             NOT NULL   
+  status                         nvarchar(20)          NOT NULL    DEFAULT ('pending')
+  enabled                        bit                   NOT NULL    DEFAULT ((1))
+  result                         nvarchar(max)         NULL       
+  created_at                     datetime2             NOT NULL    DEFAULT (sysutcdatetime())
+  completed_at                   datetime2             NULL       
+  recurrence                     nvarchar(20)          NULL       
+  target_mode                    nvarchar(20)          NOT NULL    DEFAULT ('all')
+  name                           nvarchar(200)         NULL       
+
+INDEXES:
+  PRIMARY KEY     CLUSTERED            PK__schedule__C46A8A6F33CC92C3           ON (schedule_id)
+
+FOREIGN KEYS:
+  FK_schedules_projectors                  (projector_id) -> dbo.projectors(projector_id)
+                                             ON DELETE CASCADE
+
+CHECK CONSTRAINTS:
+  CK__schedules__actio__14E61A24           ([action]='off' OR [action]='on')
+  CK__schedules__statu__16CE6296           ([status]='skipped' OR [status]='failed' OR [status]='completed' OR [status]='pending')
+  CK__schedules__recur__19AACF41           ([recurrence]='yearly' OR [recurrence]='monthly' OR [recurrence]='weekly' OR [recurrence]='daily' OR [recurrence]='hourly')
+  CK__schedules__targe__1B9317B3           ([target_mode]='selection' OR [target_mode]='all')
+
+================================================================================
+TABLE: dbo.schedule_targets
+================================================================================
+
+COLUMNS:
+  schedule_id                    int(10,0)             NOT NULL   
+  projector_id                   int(10,0)             NOT NULL   
+
+INDEXES:
+  PRIMARY KEY     CLUSTERED            PK_schedule_targets                      ON (schedule_id, projector_id)
+
+FOREIGN KEYS:
+  FK_schedule_targets_projectors           (projector_id) -> dbo.projectors(projector_id)
+  FK_schedule_targets_schedules            (schedule_id) -> dbo.schedules(schedule_id)
+                                             ON DELETE CASCADE
+
+================================================================================
+TABLE: dbo.blackout_windows
+================================================================================
+
+COLUMNS:
+  blackout_id                    int(10,0)             NOT NULL   IDENTITY 
+  name                           nvarchar(200)         NOT NULL   
+  start_at                       datetime2             NOT NULL   
+  end_at                         datetime2             NOT NULL   
+  block_action                   nvarchar(10)          NOT NULL   
+  created_at                     datetime2             NOT NULL    DEFAULT (sysutcdatetime())
+
+INDEXES:
+  PRIMARY KEY     CLUSTERED            PK__blackout__617EF0552058F647           ON (blackout_id)
+
+CHECK CONSTRAINTS:
+  CK__blackout___block__32767D0B           ([block_action]='both' OR [block_action]='off' OR [block_action]='on')
+
+================================================================================
+Schema extraction complete
+================================================================================
