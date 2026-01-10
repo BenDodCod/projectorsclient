@@ -6566,6 +6566,7 @@ OUTCOME: Professional-grade application with 90% test coverage,
 
 ## Change Logs
 
+- 2026-01-10 15:59 +02:00 - Updated README to reflect current plan status, targets, and agent sync workflow.
 - 2026-01-10 15:49 +02:00 - Renamed AGENT.md to AGENTS.md and updated sync tooling to match.
 - 2026-01-10 15:43 +02:00 - Added sync script and pre-commit hook to enforce agent file parity.
 - 2026-01-10 15:40 +02:00 - Required project-orchestrator as coordinating agent in synced brief and protocol.
