@@ -13,8 +13,9 @@
 ## Agent Sync Protocol
 
 - Single source of truth: `IMPLEMENTATION_PLAN.md` for scope, decisions, and progress.
-- Keep `AGENT.md`, `CLAUDE.md`, and `GEMINI.md` byte-identical.
+- Keep `AGENTS.md`, `CLAUDE.md`, and `GEMINI.md` byte-identical.
 - When changes occur, update those three files and append a new entry in Change Logs below.
+- Enforced by `scripts/sync_agents.ps1` and `.githooks/pre-commit` (set `core.hooksPath`).
 - Always use `@/.claude/agents/project-orchestrator.md` as the coordinating agent for every task.
 - For each task, actively consult all specialized agents in `.claude/agents/` and follow their guidance.
 
@@ -6565,6 +6566,8 @@ OUTCOME: Professional-grade application with 90% test coverage,
 
 ## Change Logs
 
+- 2026-01-10 15:49 +02:00 - Renamed AGENT.md to AGENTS.md and updated sync tooling to match.
+- 2026-01-10 15:43 +02:00 - Added sync script and pre-commit hook to enforce agent file parity.
 - 2026-01-10 15:40 +02:00 - Required project-orchestrator as coordinating agent in synced brief and protocol.
 - 2026-01-10 15:36 +02:00 - Updated synced agent filenames (AGENT.md, CLAUDE.md, GEMINI.md).
 - 2026-01-10 15:30 +02:00 - Added synced agent instruction files and the agent sync protocol.

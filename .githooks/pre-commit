@@ -1,0 +1,8 @@
+#!/bin/sh
+set -e
+repo_root=$(git rev-parse --show-toplevel)
+if [ ! -f "$repo_root/scripts/sync_agents.ps1" ]; then
+  echo "Missing scripts/sync_agents.ps1" >&2
+  exit 1
+fi
+powershell.exe -NoProfile -ExecutionPolicy Bypass -File "$repo_root/scripts/sync_agents.ps1" -Verify
