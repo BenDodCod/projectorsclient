@@ -389,11 +389,16 @@ class MockPJLinkServer:
             elif self._error_injection == "auth_fail":
                 return "PJLINK ERRA\r"
 
-            # Parse command
-            if not command.startswith("%1"):
+            # Parse command - support both %1 (Class 1) and %2 (Class 2) prefixes
+            prefix = None
+            if command.startswith("%1"):
+                prefix = "%1"
+            elif command.startswith("%2"):
+                prefix = "%2"
+            else:
                 return f"%1ERR1={PJLinkError.ERR1.value}\r"
 
-            cmd_part = command[2:]  # Remove %1 prefix
+            cmd_part = command[2:]  # Remove %1 or %2 prefix
 
             # Split into command name and parameters
             if " " in cmd_part:
@@ -406,39 +411,39 @@ class MockPJLinkServer:
 
             # Check for custom response
             if cmd_name in self._custom_responses:
-                return f"%1{cmd_name}={self._custom_responses[cmd_name]}\r"
+                return f"{prefix}{cmd_name}={self._custom_responses[cmd_name]}\r"
 
             # Route to handler
             handler_name = f"_handle_{cmd_name.lower()}"
             if hasattr(self, handler_name):
                 handler = getattr(self, handler_name)
-                return handler(params)
+                return handler(params, prefix)
             else:
-                return f"%1{cmd_name}={PJLinkError.ERR1.value}\r"
+                return f"{prefix}{cmd_name}={PJLinkError.ERR1.value}\r"
 
     # Command handlers
 
-    def _handle_powr(self, params: Optional[str]) -> str:
+    def _handle_powr(self, params: Optional[str], prefix: str = "%1") -> str:
         """Handle POWR command (power control)."""
         if params is None or params == "?":
             # Query power state
-            return f"%1POWR={self.state.power.value}\r"
+            return f"{prefix}POWR={self.state.power.value}\r"
         else:
             # Set power state
             if params == "0":
                 self.state.power = PowerState.OFF
-                return "%1POWR=OK\r"
+                return f"{prefix}POWR=OK\r"
             elif params == "1":
                 self.state.power = PowerState.WARMING
-                return "%1POWR=OK\r"
+                return f"{prefix}POWR=OK\r"
             else:
-                return f"%1POWR={PJLinkError.ERR2.value}\r"
+                return f"{prefix}POWR={PJLinkError.ERR2.value}\r"
 
-    def _handle_inpt(self, params: Optional[str]) -> str:
+    def _handle_inpt(self, params: Optional[str], prefix: str = "%1") -> str:
         """Handle INPT command (input selection)."""
         if params is None or params == "?":
             # Query input
-            return f"%1INPT={self.state.input_source}\r"
+            return f"{prefix}INPT={self.state.input_source}\r"
         else:
             # Set input
             valid_inputs = [
@@ -449,15 +454,15 @@ class MockPJLinkServer:
             ]
             if params in valid_inputs:
                 self.state.input_source = params
-                return "%1INPT=OK\r"
+                return f"{prefix}INPT=OK\r"
             else:
-                return f"%1INPT={PJLinkError.ERR2.value}\r"
+                return f"{prefix}INPT={PJLinkError.ERR2.value}\r"
 
-    def _handle_avmt(self, params: Optional[str]) -> str:
+    def _handle_avmt(self, params: Optional[str], prefix: str = "%1") -> str:
         """Handle AVMT command (mute control)."""
         if params is None or params == "?":
             # Query mute state
-            return f"%1AVMT={self.state.mute}\r"
+            return f"{prefix}AVMT={self.state.mute}\r"
         else:
             # Set mute
             valid_mutes = [
@@ -467,11 +472,11 @@ class MockPJLinkServer:
             ]
             if params in valid_mutes:
                 self.state.mute = params
-                return "%1AVMT=OK\r"
+                return f"{prefix}AVMT=OK\r"
             else:
-                return f"%1AVMT={PJLinkError.ERR2.value}\r"
+                return f"{prefix}AVMT={PJLinkError.ERR2.value}\r"
 
-    def _handle_erst(self, params: Optional[str]) -> str:
+    def _handle_erst(self, params: Optional[str], prefix: str = "%1") -> str:
         """Handle ERST command (error status)."""
         # Format: FANNNNN LAMNNNN TEMNNNN COVNNNN FILNNNN OTHNNNN
         errors = self.state.errors
@@ -479,18 +484,18 @@ class MockPJLinkServer:
             f"{errors['fan']}{errors['lamp']}{errors['temp']}"
             f"{errors['cover']}{errors['filter']}{errors['other']}"
         )
-        return f"%1ERST={status}\r"
+        return f"{prefix}ERST={status}\r"
 
-    def _handle_lamp(self, params: Optional[str]) -> str:
+    def _handle_lamp(self, params: Optional[str], prefix: str = "%1") -> str:
         """Handle LAMP command (lamp hours)."""
         # Format: HOURS1 STATUS1 HOURS2 STATUS2 ...
         lamp_info = " ".join(
             f"{hours} {status}"
             for hours, status in zip(self.state.lamp_hours, self.state.lamp_status)
         )
-        return f"%1LAMP={lamp_info}\r"
+        return f"{prefix}LAMP={lamp_info}\r"
 
-    def _handle_inst(self, params: Optional[str]) -> str:
+    def _handle_inst(self, params: Optional[str], prefix: str = "%1") -> str:
         """Handle INST command (input list)."""
         # Return list of available inputs
         inputs = " ".join([
@@ -498,49 +503,49 @@ class MockPJLinkServer:
             InputSource.DIGITAL_1, InputSource.DIGITAL_2,
             InputSource.VIDEO_1,
         ])
-        return f"%1INST={inputs}\r"
+        return f"{prefix}INST={inputs}\r"
 
-    def _handle_name(self, params: Optional[str]) -> str:
+    def _handle_name(self, params: Optional[str], prefix: str = "%1") -> str:
         """Handle NAME command (projector name)."""
-        return f"%1NAME={self.state.name}\r"
+        return f"{prefix}NAME={self.state.name}\r"
 
-    def _handle_inf1(self, params: Optional[str]) -> str:
+    def _handle_inf1(self, params: Optional[str], prefix: str = "%1") -> str:
         """Handle INF1 command (manufacturer name)."""
-        return f"%1INF1={self.state.manufacturer}\r"
+        return f"{prefix}INF1={self.state.manufacturer}\r"
 
-    def _handle_inf2(self, params: Optional[str]) -> str:
+    def _handle_inf2(self, params: Optional[str], prefix: str = "%1") -> str:
         """Handle INF2 command (model name)."""
-        return f"%1INF2={self.state.model}\r"
+        return f"{prefix}INF2={self.state.model}\r"
 
-    def _handle_info(self, params: Optional[str]) -> str:
+    def _handle_info(self, params: Optional[str], prefix: str = "%1") -> str:
         """Handle INFO command (other information)."""
-        return f"%1INFO={self.state.other_info}\r"
+        return f"{prefix}INFO={self.state.other_info}\r"
 
-    def _handle_clss(self, params: Optional[str]) -> str:
+    def _handle_clss(self, params: Optional[str], prefix: str = "%1") -> str:
         """Handle CLSS command (class information)."""
-        return f"%1CLSS={self.state.pjlink_class}\r"
+        return f"{prefix}CLSS={self.state.pjlink_class}\r"
 
-    def _handle_filt(self, params: Optional[str]) -> str:
+    def _handle_filt(self, params: Optional[str], prefix: str = "%1") -> str:
         """Handle FILT command (filter usage time) - Class 2."""
         if self.state.pjlink_class < 2:
-            return f"%1FILT={PJLinkError.ERR1.value}\r"
-        return f"%1FILT={self.state.filter_hours}\r"
+            return f"{prefix}FILT={PJLinkError.ERR1.value}\r"
+        return f"{prefix}FILT={self.state.filter_hours}\r"
 
-    def _handle_frez(self, params: Optional[str]) -> str:
+    def _handle_frez(self, params: Optional[str], prefix: str = "%1") -> str:
         """Handle FREZ command (freeze control) - Class 2."""
         if self.state.pjlink_class < 2:
-            return f"%1FREZ={PJLinkError.ERR1.value}\r"
+            return f"{prefix}FREZ={PJLinkError.ERR1.value}\r"
 
         if params is None or params == "?":
             # Query freeze state
-            return f"%1FREZ={'1' if self.state.freeze else '0'}\r"
+            return f"{prefix}FREZ={'1' if self.state.freeze else '0'}\r"
         else:
             # Set freeze
             if params == "0":
                 self.state.freeze = False
-                return "%1FREZ=OK\r"
+                return f"{prefix}FREZ=OK\r"
             elif params == "1":
                 self.state.freeze = True
-                return "%1FREZ=OK\r"
+                return f"{prefix}FREZ=OK\r"
             else:
-                return f"%1FREZ={PJLinkError.ERR2.value}\r"
+                return f"{prefix}FREZ={PJLinkError.ERR2.value}\r"

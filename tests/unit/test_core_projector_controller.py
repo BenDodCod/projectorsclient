@@ -524,15 +524,44 @@ class TestProjectorControllerClass2:
 
         controller.disconnect()
 
-    @pytest.mark.skip(reason="Mock server doesn't support Class 2 prefix (%2)")
     def test_freeze_on_class_2_success(self, mock_pjlink_server_class2):
-        """Test freeze on with Class 2 projector (requires mock server enhancement)."""
-        pass
+        """Test freeze on with Class 2 projector."""
+        server = mock_pjlink_server_class2
+        controller = ProjectorController(server.host, server.port)
+        controller.connect()
 
-    @pytest.mark.skip(reason="Mock server doesn't support Class 2 prefix (%2)")
+        # Enable freeze
+        result = controller.freeze_on()
+        assert result.success is True
+
+        # Verify freeze is on
+        freeze_state = controller.get_freeze_state()
+        assert freeze_state is True
+
+        controller.disconnect()
+
     def test_freeze_off_class_2_success(self, mock_pjlink_server_class2):
-        """Test freeze off with Class 2 projector (requires mock server enhancement)."""
-        pass
+        """Test freeze off with Class 2 projector."""
+        server = mock_pjlink_server_class2
+        controller = ProjectorController(server.host, server.port)
+        controller.connect()
+
+        # Enable freeze first
+        result = controller.freeze_on()
+        assert result.success is True
+
+        # Verify freeze is on
+        assert controller.get_freeze_state() is True
+
+        # Disable freeze
+        result = controller.freeze_off()
+        assert result.success is True
+
+        # Verify freeze is off
+        freeze_state = controller.get_freeze_state()
+        assert freeze_state is False
+
+        controller.disconnect()
 
 
 class TestProjectorControllerErrorHandling:
