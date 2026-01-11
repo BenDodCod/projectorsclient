@@ -1,0 +1,313 @@
+# Week 3-4 Architecture Enhancement Diagram
+# Enhanced Projector Control Application
+
+================================================================================
+                        WEEK 3-4 ARCHITECTURAL ENHANCEMENTS
+================================================================================
+
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                          APPLICATION LAYER (Future)                          │
+│                              PyQt6 UI Components                             │
+│                            (Week 5-6 Implementation)                         │
+└─────────────────────────────────────────────────────────────────────────────┘
+                                       │
+                                       │ API Calls
+                                       ▼
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                         BUSINESS LOGIC LAYER                                 │
+│                                                                              │
+│  ┌──────────────────────────────────────────────────────────────────────┐  │
+│  │                    T-001: DATABASE ENHANCEMENTS                       │  │
+│  │                                                                       │  │
+│  │  ┌────────────────┐  ┌────────────────┐  ┌────────────────┐         │  │
+│  │  │ Backup Manager │  │ Migration Mgr  │  │ Integrity Check│         │  │
+│  │  │ (NEW)          │  │ (NEW)          │  │ (NEW)          │         │  │
+│  │  │                │  │                │  │                │         │  │
+│  │  │ - AES-256-GCM  │  │ - Version track│  │ - Schema valid │         │  │
+│  │  │ - PBKDF2 KDF   │  │ - Checksums    │  │ - FK check     │         │  │
+│  │  │ - Export/Import│  │ - Transactions │  │ - Encryption   │         │  │
+│  │  └────────────────┘  └────────────────┘  └────────────────┘         │  │
+│  │                                                                       │  │
+│  │  ┌────────────────────────────────────────────────────────────┐     │  │
+│  │  │              Settings Manager (ENHANCED)                    │     │  │
+│  │  │  - export_settings() → BackupManager                        │     │  │
+│  │  │  - import_settings() ← BackupManager                        │     │  │
+│  │  └────────────────────────────────────────────────────────────┘     │  │
+│  └──────────────────────────────────────────────────────────────────────┘  │
+│                                                                              │
+│  ┌──────────────────────────────────────────────────────────────────────┐  │
+│  │                  T-002: PJLINK PROTOCOL ENHANCEMENTS                  │  │
+│  │                                                                       │  │
+│  │  ┌────────────────┐  ┌────────────────┐  ┌────────────────┐         │  │
+│  │  │Connection Pool │  │Circuit Breaker │  │ Retry Logic    │         │  │
+│  │  │ (NEW)          │  │ (NEW)          │  │ (NEW)          │         │  │
+│  │  │                │  │                │  │                │         │  │
+│  │  │ - Max 10 conn  │  │ - Per-projector│  │ - Exponential  │         │  │
+│  │  │ - Thread-safe  │  │ - 3 states     │  │ - Backoff      │         │  │
+│  │  │ - Timeout      │  │ - Auto-reset   │  │ - Transient    │         │  │
+│  │  └────────────────┘  └────────────────┘  └────────────────┘         │  │
+│  │                                                                       │  │
+│  │  ┌────────────────────────────────────────────────────────────┐     │  │
+│  │  │           Projector Controller (ENHANCED)                   │     │  │
+│  │  │  - AuthenticationContext (Class 1/2 detection)              │     │  │
+│  │  │  - pool.acquire() → ConnectionPool                          │     │  │
+│  │  │  - circuit_breaker.call() → CircuitBreaker                  │     │  │
+│  │  │  - retry_handler.execute() → RetryableOperation             │     │  │
+│  │  └────────────────────────────────────────────────────────────┘     │  │
+│  └──────────────────────────────────────────────────────────────────────┘  │
+│                                                                              │
+└─────────────────────────────────────────────────────────────────────────────┘
+                                       │
+                                       │ Database Operations / Network I/O
+                                       ▼
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                          DATA ACCESS LAYER                                   │
+│                                                                              │
+│  ┌──────────────────────────────────────────────────────────────────────┐  │
+│  │                       Database Manager (ENHANCED)                     │  │
+│  │                                                                       │  │
+│  │  ┌────────────────┐  ┌────────────────┐  ┌────────────────┐         │  │
+│  │  │ Indexes        │  │ Migrations     │  │ Integrity      │         │  │
+│  │  │ (ENHANCED)     │  │ (NEW)          │  │ (NEW)          │         │  │
+│  │  │                │  │                │  │                │         │  │
+│  │  │ - settings_key │  │ - auto_migrate │  │ - verify_on_   │         │  │
+│  │  │ - audit_ts     │  │ - rollback     │  │   startup      │         │  │
+│  │  │ - credentials  │  │ - checksums    │  │ - detect       │         │  │
+│  │  └────────────────┘  └────────────────┘  └────────────────┘         │  │
+│  │                                                                       │  │
+│  │  ┌────────────────────────────────────────────────────────────┐     │  │
+│  │  │                    SQLite Database                          │     │  │
+│  │  │  - Version: 2 (migrated from v1)                            │     │  │
+│  │  │  - Performance: Indexed queries <5ms                        │     │  │
+│  │  │  - Integrity: Validated on startup                          │     │  │
+│  │  │  - Backups: Encrypted with AES-256-GCM                      │     │  │
+│  │  └────────────────────────────────────────────────────────────┘     │  │
+│  └──────────────────────────────────────────────────────────────────────┘  │
+│                                                                              │
+│  ┌──────────────────────────────────────────────────────────────────────┐  │
+│  │                      PJLink Protocol Layer                            │  │
+│  │                                                                       │  │
+│  │  ┌────────────────────────────────────────────────────────────┐     │  │
+│  │  │               Network Communication (ENHANCED)              │     │  │
+│  │  │  - Class 1/2 Auto-detection                                 │     │  │
+│  │  │  - Challenge-response authentication                        │     │  │
+│  │  │  - Command encoding/decoding                                │     │  │
+│  │  │  - Resilient error handling                                 │     │  │
+│  │  └────────────────────────────────────────────────────────────┘     │  │
+│  └──────────────────────────────────────────────────────────────────────┘  │
+│                                                                              │
+└─────────────────────────────────────────────────────────────────────────────┘
+                                       │
+                                       │ TCP Socket (Port 4352)
+                                       ▼
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                         EXTERNAL SYSTEMS                                     │
+│                                                                              │
+│  ┌────────────────┐  ┌────────────────┐  ┌────────────────┐                │
+│  │ Projector 1    │  │ Projector 2    │  │ Projector N    │                │
+│  │ (PJLink)       │  │ (PJLink)       │  │ (PJLink)       │                │
+│  │                │  │                │  │                │                │
+│  │ Class 1/2      │  │ Class 1/2      │  │ Class 1/2      │                │
+│  │ 192.168.1.100  │  │ 192.168.1.101  │  │ 192.168.1.N    │                │
+│  └────────────────┘  └────────────────┘  └────────────────┘                │
+│                                                                              │
+└─────────────────────────────────────────────────────────────────────────────┘
+
+================================================================================
+                           RESILIENCE PATTERNS (NEW)
+================================================================================
+
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                        CIRCUIT BREAKER PATTERN                               │
+│                                                                              │
+│   ┌─────────┐  3 failures   ┌─────────┐  timeout   ┌─────────┐            │
+│   │ CLOSED  │──────────────▶│  OPEN   │────────────▶│HALF-OPEN│            │
+│   │(normal) │               │(reject) │             │ (probe) │            │
+│   └─────────┘               └─────────┘             └─────────┘            │
+│       ▲                                                   │                 │
+│       │                                                   │                 │
+│       └───────────────────────────────────────────────────┘                 │
+│                    success (2+ in half-open)                                │
+│                                                                              │
+│  Prevents: Cascading failures to offline projectors                         │
+│  Benefits: Fail fast, reduced network overhead, better UX                   │
+└─────────────────────────────────────────────────────────────────────────────┘
+
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                          RETRY LOGIC PATTERN                                 │
+│                                                                              │
+│   Attempt 1 ──[fail]──▶ Wait 100ms  ──▶ Attempt 2 ──[fail]──▶ Wait 200ms   │
+│                                                                              │
+│   ──▶ Attempt 3 ──[fail]──▶ Wait 400ms ──▶ Attempt 4 ──[success]──▶ Done   │
+│                                                                              │
+│  Retryable Errors: NETWORK_ERROR, TIMEOUT, UNAVAILABLE_TIME                 │
+│  Non-Retryable: AUTHENTICATION_FAILED, COMMAND_NOT_AVAILABLE                │
+│  Max Retries: 3                                                              │
+│  Backoff: Exponential (2x multiplier, max 5 seconds)                        │
+└─────────────────────────────────────────────────────────────────────────────┘
+
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                       CONNECTION POOL PATTERN                                │
+│                                                                              │
+│   Thread 1 ──┐                                                              │
+│   Thread 2 ──┤                                                              │
+│   Thread 3 ──┼──▶ [Queue: Max 10 slots] ──▶ Projector Communication        │
+│   Thread 4 ──┤         ▲                                                    │
+│   Thread 5 ──┘         │                                                    │
+│                        │                                                    │
+│                   Release slot                                              │
+│                                                                              │
+│  Purpose: Limit concurrent connections (prevent overwhelming network)       │
+│  Per-Projector Limit: 1 (prevent duplicate commands)                        │
+│  System-Wide Limit: 10 (configurable)                                       │
+│  Timeout: 10 seconds (prevent indefinite blocking)                          │
+└─────────────────────────────────────────────────────────────────────────────┘
+
+================================================================================
+                         DATABASE MIGRATION FLOW
+================================================================================
+
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                      Existing Database (v1)                                  │
+│                                                                              │
+│   app_settings, projector_credentials, audit_log                            │
+│   (No indexes, no version tracking)                                         │
+└─────────────────────────────────────────────────────────────────────────────┘
+                                       │
+                                       │ Auto-detect version
+                                       ▼
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                        Migration Manager                                     │
+│                                                                              │
+│  1. Check schema_migrations table (missing = v1)                            │
+│  2. Load 002_add_indexes.sql                                                │
+│  3. Verify checksum (SHA-256)                                               │
+│  4. BEGIN TRANSACTION                                                        │
+│  5. Execute migration SQL                                                    │
+│  6. Insert version record                                                    │
+│  7. COMMIT                                                                   │
+└─────────────────────────────────────────────────────────────────────────────┘
+                                       │
+                                       │ On success
+                                       ▼
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                      Upgraded Database (v2)                                  │
+│                                                                              │
+│   app_settings (+ indexes), projector_credentials (+ indexes)               │
+│   audit_log (+ indexes), schema_migrations (NEW)                            │
+│                                                                              │
+│   Performance: Queries 50%+ faster                                          │
+│   Integrity: Validated on startup                                           │
+│   Backups: Portable with AES-256-GCM encryption                             │
+└─────────────────────────────────────────────────────────────────────────────┘
+
+================================================================================
+                       BACKUP/RESTORE WORKFLOW
+================================================================================
+
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                           Export Workflow                                    │
+│                                                                              │
+│  SQLite DB ──▶ Extract settings/credentials ──▶ Encrypt with AES-256-GCM   │
+│                         │                                │                  │
+│                         │                                ▼                  │
+│                         │                         backup.json               │
+│                         │                        (encrypted)                │
+│                         │                                                   │
+│                         │  Password: User-provided (12+ chars)              │
+│                         │  Salt: 32-byte random                             │
+│                         │  KDF: PBKDF2 (100,000 iterations)                 │
+│                         │  Cipher: AES-256-GCM (authenticated encryption)   │
+│                         │                                                   │
+└─────────────────────────────────────────────────────────────────────────────┘
+
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                           Import Workflow                                    │
+│                                                                              │
+│  backup.json ──▶ Verify password ──▶ Decrypt ──▶ Re-encrypt credentials ──▶│
+│  (encrypted)         │                   │          (DPAPI for new machine) │
+│                      │                   │                                  │
+│                      ▼                   ▼                                  │
+│               AES-256-GCM          Settings JSON                            │
+│               authenticated         + Credentials                           │
+│               decryption                                                    │
+│                                                                              │
+│                                          ▼                                  │
+│                                     New SQLite DB                           │
+│                                   (Machine 2 / Fresh Install)               │
+│                                                                              │
+└─────────────────────────────────────────────────────────────────────────────┘
+
+================================================================================
+                          T-003: TESTING EXPANSION
+================================================================================
+
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                      Integration Test Categories                             │
+│                                                                              │
+│  ┌────────────────────────────────────────────────────────────────┐         │
+│  │  Category 1: Multi-Component Workflows (15 tests)              │         │
+│  │  - Settings + Security + Database integration                  │         │
+│  │  - Controller + Pool + Circuit Breaker resilience              │         │
+│  │  - Backup/restore portability                                  │         │
+│  │  - Authentication + Rate Limiter + Audit                       │         │
+│  │  - Migration + Integrity validation                            │         │
+│  └────────────────────────────────────────────────────────────────┘         │
+│                                                                              │
+│  ┌────────────────────────────────────────────────────────────────┐         │
+│  │  Category 2: Performance Benchmarks (10 tests)                 │         │
+│  │  - Database query time: <5ms (with indexes)                    │         │
+│  │  - PJLink command latency: <5 seconds                          │         │
+│  │  - Backup 100 settings: <1 second                              │         │
+│  │  - 10 concurrent projectors: <10 seconds total                 │         │
+│  │  - Startup time: <2 seconds                                    │         │
+│  └────────────────────────────────────────────────────────────────┘         │
+│                                                                              │
+│  ┌────────────────────────────────────────────────────────────────┐         │
+│  │  Category 3: Failure Scenarios (15 tests)                      │         │
+│  │  - Network timeout recovery                                    │         │
+│  │  - Database corruption detection                               │         │
+│  │  - Circuit breaker state transitions                           │         │
+│  │  - Connection pool exhaustion                                  │         │
+│  │  - Migration rollback on failure                               │         │
+│  └────────────────────────────────────────────────────────────────┘         │
+│                                                                              │
+│  ┌────────────────────────────────────────────────────────────────┐         │
+│  │  Category 4: Security Workflows (10 tests)                     │         │
+│  │  - Credential encryption end-to-end                            │         │
+│  │  - Backup encryption/decryption                                │         │
+│  │  - SQL injection prevention                                    │         │
+│  │  - Admin password lockout                                      │         │
+│  │  - Audit logging for sensitive operations                      │         │
+│  └────────────────────────────────────────────────────────────────┘         │
+│                                                                              │
+│  Total New Tests: +50 integration tests (40 existing → 90 total)            │
+│  Total Tests After Week 3-4: 750+ (current: 578)                            │
+│  Coverage Target: Maintain 85%+ (current: 85.52%)                           │
+│                                                                              │
+└─────────────────────────────────────────────────────────────────────────────┘
+
+================================================================================
+                              KEY METRICS SUMMARY
+================================================================================
+
+BEFORE WEEK 3-4:                          AFTER WEEK 3-4:
+┌────────────────────────┐                ┌────────────────────────┐
+│ Tests: 578             │                │ Tests: 750+            │
+│ Coverage: 85.52%       │                │ Coverage: 85%+         │
+│ Database: No indexes   │   ──────▶      │ Database: Indexed v2   │
+│ Network: No pool       │                │ Network: Pooled        │
+│ Resilience: Basic      │                │ Resilience: Advanced   │
+│ Backups: None          │                │ Backups: Encrypted     │
+│ Migrations: None       │                │ Migrations: Versioned  │
+└────────────────────────┘                └────────────────────────┘
+
+Performance Improvements:
+- Query time: ~20ms → <5ms (75% reduction)
+- Concurrent ops: Limited → 10+ simultaneous
+- Failure recovery: Manual → Automatic
+- Configuration portability: Not supported → Full backup/restore
+
+================================================================================
+                                END OF DIAGRAM
+================================================================================

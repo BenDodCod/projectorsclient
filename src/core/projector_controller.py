@@ -53,6 +53,81 @@ class ConnectionState(Enum):
     ERROR = 4
 
 
+class AuthenticationState(Enum):
+    """Authentication states for the controller."""
+    NOT_REQUIRED = 0
+    PENDING = 1
+    AUTHENTICATED = 2
+    FAILED = 3
+    LOCKED_OUT = 4
+
+
+@dataclass
+class AuthenticationInfo:
+    """Authentication state and diagnostics.
+
+    Tracks authentication attempts, failures, and lockout status
+    without storing plaintext passwords.
+
+    Attributes:
+        state: Current authentication state.
+        failure_count: Number of consecutive failed auth attempts.
+        last_failure_time: Timestamp of last failure (0 if none).
+        lockout_until: Timestamp when lockout expires (0 if not locked).
+        total_attempts: Total authentication attempts this session.
+        requires_auth: Whether the projector requires authentication.
+    """
+    state: AuthenticationState = AuthenticationState.PENDING
+    failure_count: int = 0
+    last_failure_time: float = 0.0
+    lockout_until: float = 0.0
+    total_attempts: int = 0
+    requires_auth: bool = False
+
+    def is_locked_out(self) -> bool:
+        """Check if currently in lockout period."""
+        if self.lockout_until <= 0:
+            return False
+        return time.time() < self.lockout_until
+
+    def record_failure(self, lockout_duration: float = 60.0, max_failures: int = 3) -> None:
+        """Record an authentication failure.
+
+        Args:
+            lockout_duration: Seconds to lock out after max failures.
+            max_failures: Number of failures before lockout.
+        """
+        self.failure_count += 1
+        self.total_attempts += 1
+        self.last_failure_time = time.time()
+        self.state = AuthenticationState.FAILED
+
+        if self.failure_count >= max_failures:
+            self.lockout_until = time.time() + lockout_duration
+            self.state = AuthenticationState.LOCKED_OUT
+
+    def record_success(self) -> None:
+        """Record a successful authentication."""
+        self.state = AuthenticationState.AUTHENTICATED
+        self.failure_count = 0
+        self.total_attempts += 1
+
+    def reset(self) -> None:
+        """Reset authentication state (e.g., on disconnect)."""
+        self.state = AuthenticationState.PENDING
+        self.failure_count = 0
+        self.last_failure_time = 0.0
+        # Note: lockout_until is preserved across reconnects
+        self.total_attempts = 0
+
+    def clear_lockout(self) -> None:
+        """Clear lockout state (for recovery)."""
+        self.lockout_until = 0.0
+        self.failure_count = 0
+        if self.state == AuthenticationState.LOCKED_OUT:
+            self.state = AuthenticationState.PENDING
+
+
 @dataclass
 class CommandResult:
     """Result of a PJLink command execution.
@@ -135,6 +210,13 @@ class ProjectorController:
     Thread-safe controller for PJLink Class 1 and 2 projectors.
     Supports authentication, error handling, and command tracking.
 
+    Authentication Features:
+    - Automatic Class 1/Class 2 detection
+    - MD5 challenge-response authentication
+    - Retry logic with configurable max attempts (default 3)
+    - Lockout after max failures (default 60 seconds)
+    - Secure password handling (passwords never logged)
+
     Attributes:
         host: Projector IP address or hostname.
         port: Projector port (default 4352).
@@ -154,6 +236,8 @@ class ProjectorController:
     DEFAULT_TIMEOUT = 5.0
     MAX_RETRIES = 3
     RETRY_DELAY = 0.5  # seconds
+    MAX_AUTH_FAILURES = 3
+    AUTH_LOCKOUT_DURATION = 60.0  # seconds
 
     def __init__(
         self,
@@ -162,6 +246,8 @@ class ProjectorController:
         password: Optional[str] = None,
         timeout: float = DEFAULT_TIMEOUT,
         max_retries: int = MAX_RETRIES,
+        max_auth_failures: int = MAX_AUTH_FAILURES,
+        auth_lockout_duration: float = AUTH_LOCKOUT_DURATION,
     ):
         """Initialize the projector controller.
 
@@ -171,6 +257,8 @@ class ProjectorController:
             password: Optional PJLink password for authentication.
             timeout: Socket timeout in seconds (default 5.0).
             max_retries: Maximum number of retries for failed commands.
+            max_auth_failures: Maximum auth failures before lockout (default 3).
+            auth_lockout_duration: Lockout duration in seconds (default 60).
 
         Raises:
             ValueError: If host is empty or port is invalid.
@@ -182,9 +270,11 @@ class ProjectorController:
 
         self.host = host
         self.port = port
-        self.password = password
+        self._password = password  # Private - never log this
         self.timeout = timeout
         self.max_retries = max_retries
+        self._max_auth_failures = max_auth_failures
+        self._auth_lockout_duration = auth_lockout_duration
 
         self._socket: Optional[socket.socket] = None
         self._connected = False
@@ -192,6 +282,9 @@ class ProjectorController:
         self._auth_hash: Optional[str] = None
         self._pjlink_class = 1
         self._lock = threading.Lock()
+
+        # Authentication state tracking
+        self._auth_info = AuthenticationInfo()
 
         # Command tracking
         self._command_history: List[CommandRecord] = []
@@ -202,6 +295,16 @@ class ProjectorController:
 
         # Last error for diagnostics
         self._last_error: str = ""
+
+    @property
+    def password(self) -> Optional[str]:
+        """Get the password (read-only access)."""
+        return self._password
+
+    @property
+    def auth_info(self) -> AuthenticationInfo:
+        """Get authentication state information."""
+        return self._auth_info
 
     @property
     def is_connected(self) -> bool:
@@ -233,6 +336,7 @@ class ProjectorController:
         """Connect to the projector.
 
         Establishes TCP connection and handles authentication if required.
+        Respects lockout state - will not attempt connection if locked out.
 
         Returns:
             True if connection successful, False otherwise.
@@ -241,6 +345,16 @@ class ProjectorController:
             if self._connected:
                 logger.debug("Already connected to %s:%d", self.host, self.port)
                 return True
+
+            # Check lockout state before attempting connection
+            if self._auth_info.is_locked_out():
+                remaining = self._auth_info.lockout_until - time.time()
+                self._last_error = f"Authentication locked out for {remaining:.0f} more seconds"
+                logger.warning(
+                    "Connection blocked: auth lockout active for %s (%.0f seconds remaining)",
+                    self.host, remaining
+                )
+                return False
 
             try:
                 logger.info("Connecting to projector at %s:%d", self.host, self.port)
@@ -268,19 +382,31 @@ class ProjectorController:
                     return False
 
                 # Handle authentication
+                self._auth_info.requires_auth = auth.requires_auth
+
                 if auth.requires_auth:
-                    if not self.password:
+                    if not self._password:
                         self._last_error = "Authentication required but no password provided"
+                        self._auth_info.state = AuthenticationState.FAILED
+                        logger.warning(
+                            "Authentication required for %s but no password provided",
+                            self.host
+                        )
                         self._cleanup_socket()
                         return False
 
-                    # Calculate auth hash
-                    self._auth_hash = calculate_auth_hash(auth.random_key, self.password)
+                    # Calculate auth hash (password never logged)
+                    self._auth_hash = calculate_auth_hash(auth.random_key, self._password)
                     self._authenticated = True
-                    logger.debug("Authentication prepared for %s", self.host)
+                    self._auth_info.state = AuthenticationState.AUTHENTICATED
+                    logger.debug(
+                        "Authentication prepared for %s (password length: %d)",
+                        self.host, len(self._password)
+                    )
                 else:
                     self._auth_hash = None
                     self._authenticated = True  # No auth needed = authenticated
+                    self._auth_info.state = AuthenticationState.NOT_REQUIRED
                     logger.debug("No authentication required for %s", self.host)
 
                 self._connected = True
@@ -293,14 +419,20 @@ class ProjectorController:
 
             except socket.timeout:
                 self._last_error = "Connection timeout"
+                logger.warning("Connection timeout to %s:%d", self.host, self.port)
                 self._cleanup_socket()
                 return False
             except socket.error as e:
                 self._last_error = f"Connection error: {e}"
+                logger.warning("Connection error to %s:%d: %s", self.host, self.port, e)
                 self._cleanup_socket()
                 return False
             except Exception as e:
                 self._last_error = f"Unexpected error: {e}"
+                logger.error(
+                    "Unexpected error connecting to %s:%d: %s",
+                    self.host, self.port, type(e).__name__
+                )
                 self._cleanup_socket()
                 return False
 
@@ -321,6 +453,25 @@ class ProjectorController:
         self._connected = False
         self._authenticated = False
         self._auth_hash = None
+        # Note: Auth info lockout state is preserved across disconnects
+
+    def clear_auth_lockout(self) -> None:
+        """Clear authentication lockout state.
+
+        Use this to recover from a lockout situation after verifying
+        the correct password externally.
+        """
+        with self._lock:
+            self._auth_info.clear_lockout()
+            logger.info("Authentication lockout cleared for %s", self.host)
+
+    def get_auth_failure_count(self) -> int:
+        """Get the current authentication failure count."""
+        return self._auth_info.failure_count
+
+    def is_auth_locked_out(self) -> bool:
+        """Check if authentication is currently locked out."""
+        return self._auth_info.is_locked_out()
 
     def _query_pjlink_class(self) -> None:
         """Query and cache the projector's PJLink class."""
@@ -348,6 +499,14 @@ class ProjectorController:
         if not self._socket or not self._connected:
             return CommandResult.failure("Not connected")
 
+        # Check lockout state
+        if self._auth_info.is_locked_out():
+            remaining = self._auth_info.lockout_until - time.time()
+            return CommandResult.failure(
+                f"Authentication locked out for {remaining:.0f} more seconds",
+                PJLinkError.ERRA
+            )
+
         start_time = time.time()
         record = CommandRecord(command=command.command, timestamp=start_time)
 
@@ -371,11 +530,40 @@ class ProjectorController:
                 if response.error_code == PJLinkError.ERRA:
                     self._last_error = "Authentication failed"
                     self._authenticated = False
-                    result = CommandResult.failure(
-                        "Authentication failed",
-                        PJLinkError.ERRA
+
+                    # Track authentication failure
+                    self._auth_info.record_failure(
+                        lockout_duration=self._auth_lockout_duration,
+                        max_failures=self._max_auth_failures
                     )
+
+                    # Log failure without exposing password
+                    logger.warning(
+                        "Authentication failed for %s (attempt %d/%d)",
+                        self.host,
+                        self._auth_info.failure_count,
+                        self._max_auth_failures
+                    )
+
+                    if self._auth_info.is_locked_out():
+                        logger.error(
+                            "Authentication locked out for %s after %d failures",
+                            self.host,
+                            self._max_auth_failures
+                        )
+                        result = CommandResult.failure(
+                            f"Authentication locked out after {self._max_auth_failures} failures",
+                            PJLinkError.ERRA
+                        )
+                    else:
+                        result = CommandResult.failure(
+                            "Authentication failed",
+                            PJLinkError.ERRA
+                        )
                 else:
+                    # Successful command - record auth success if auth was required
+                    if self._auth_info.requires_auth:
+                        self._auth_info.record_success()
                     result = CommandResult.from_response(response)
 
                 # Record command

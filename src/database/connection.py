@@ -238,24 +238,53 @@ class DatabaseManager:
             """)
 
             # Create indexes for common queries
+            # projector_config indexes
             cursor.execute("""
                 CREATE INDEX IF NOT EXISTS idx_projector_active
                 ON projector_config(active)
             """)
 
             cursor.execute("""
-                CREATE INDEX IF NOT EXISTS idx_settings_key
-                ON app_settings(key)
+                CREATE INDEX IF NOT EXISTS idx_projector_name
+                ON projector_config(proj_name)
             """)
 
             cursor.execute("""
-                CREATE INDEX IF NOT EXISTS idx_history_projector
-                ON operation_history(projector_id, timestamp)
+                CREATE INDEX IF NOT EXISTS idx_projector_ip
+                ON projector_config(proj_ip)
+            """)
+
+            # app_settings indexes (key is PRIMARY KEY, already indexed)
+            cursor.execute("""
+                CREATE INDEX IF NOT EXISTS idx_settings_sensitive
+                ON app_settings(is_sensitive)
+            """)
+
+            # ui_buttons indexes
+            cursor.execute("""
+                CREATE INDEX IF NOT EXISTS idx_buttons_visible
+                ON ui_buttons(visible)
+            """)
+
+            cursor.execute("""
+                CREATE INDEX IF NOT EXISTS idx_buttons_position
+                ON ui_buttons(position)
+            """)
+
+            # operation_history indexes
+            cursor.execute("""
+                CREATE INDEX IF NOT EXISTS idx_history_projector_timestamp
+                ON operation_history(projector_id, timestamp DESC)
             """)
 
             cursor.execute("""
                 CREATE INDEX IF NOT EXISTS idx_history_timestamp
-                ON operation_history(timestamp)
+                ON operation_history(timestamp DESC)
+            """)
+
+            cursor.execute("""
+                CREATE INDEX IF NOT EXISTS idx_history_status
+                ON operation_history(status)
             """)
 
             conn.commit()
@@ -652,6 +681,92 @@ class DatabaseManager:
         result = self.fetchval("PRAGMA integrity_check")
         is_ok = result == "ok"
         return (is_ok, result if not is_ok else "Database integrity OK")
+
+    def index_exists(self, index_name: str) -> bool:
+        """Check if an index exists.
+
+        Args:
+            index_name: Index name to check.
+
+        Returns:
+            True if the index exists.
+        """
+        if not self._is_valid_identifier(index_name):
+            return False
+
+        row = self.fetchone(
+            "SELECT name FROM sqlite_master WHERE type='index' AND name=?",
+            (index_name,)
+        )
+        return row is not None
+
+    def get_indexes(self, table: Optional[str] = None) -> List[Dict[str, Any]]:
+        """Get information about database indexes.
+
+        Args:
+            table: Optional table name to filter indexes.
+
+        Returns:
+            List of index information dictionaries with keys:
+            - name: Index name
+            - table: Table name (tbl_name)
+        """
+        if table:
+            if not self._is_valid_identifier(table):
+                return []
+            # Use PRAGMA index_list for specific table
+            rows = self.fetchall(f"PRAGMA index_list({table})")
+            # Add table name to each result
+            result = []
+            for row in rows:
+                row_dict = dict(row)
+                row_dict['table'] = table
+                result.append(row_dict)
+            return result
+        else:
+            # Get all indexes from all tables
+            rows = self.fetchall(
+                "SELECT name, tbl_name as 'table' FROM sqlite_master "
+                "WHERE type='index' ORDER BY name"
+            )
+
+        return [dict(row) for row in rows]
+
+    def get_index_info(self, index_name: str) -> List[Dict[str, Any]]:
+        """Get detailed information about an index.
+
+        Args:
+            index_name: Index name.
+
+        Returns:
+            List of column info dictionaries with keys:
+            - seqno: Column sequence number in index
+            - cid: Column ID in table
+            - name: Column name
+        """
+        if not self._is_valid_identifier(index_name):
+            return []
+
+        rows = self.fetchall(f"PRAGMA index_info({index_name})")
+        return [dict(row) for row in rows]
+
+    def analyze(self, table: Optional[str] = None) -> None:
+        """Update query optimizer statistics.
+
+        Analyzes table(s) to gather statistics for the query planner.
+        Should be run periodically for optimal query performance.
+
+        Args:
+            table: Optional table name. If None, analyzes entire database.
+        """
+        if table:
+            if not self._is_valid_identifier(table):
+                raise ValueError(f"Invalid table name: {table}")
+            self.execute(f"ANALYZE {table}", commit=True)
+            logger.info("Analyzed table %s", table)
+        else:
+            self.execute("ANALYZE", commit=True)
+            logger.info("Analyzed entire database")
 
     def __enter__(self) -> "DatabaseManager":
         """Context manager entry."""

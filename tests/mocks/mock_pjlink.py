@@ -75,6 +75,15 @@ class MuteState:
 
 
 @dataclass
+class AuthenticationState:
+    """Authentication state for a client connection."""
+    failed_attempts: int = 0
+    is_locked: bool = False
+    last_attempt_time: float = 0.0
+    lockout_until: float = 0.0
+
+
+@dataclass
 class ProjectorState:
     """Internal state of the mock projector."""
     power: PowerState = PowerState.OFF
@@ -92,6 +101,10 @@ class ProjectorState:
         "fan": 0, "lamp": 0, "temp": 0, "cover": 0, "filter": 0, "other": 0
     })
     freeze: bool = False
+    # Authentication tracking
+    auth_failure_count: int = 0
+    auth_locked: bool = False
+    auth_lockout_duration: float = 60.0  # seconds
 
     def clone(self) -> "ProjectorState":
         """Create a deep copy of the state."""
@@ -109,6 +122,9 @@ class ProjectorState:
             filter_hours=self.filter_hours,
             errors=self.errors.copy(),
             freeze=self.freeze,
+            auth_failure_count=self.auth_failure_count,
+            auth_locked=self.auth_locked,
+            auth_lockout_duration=self.auth_lockout_duration,
         )
 
 
@@ -157,6 +173,13 @@ class MockPJLinkServer:
         self._error_injection: Optional[str] = None
         self._response_delay = 0.0
         self._lock = threading.Lock()
+        # Authentication tracking per client (by address)
+        self._auth_states: Dict[str, AuthenticationState] = {}
+        self._max_auth_failures: int = 3
+        self._auth_lockout_duration: float = 60.0  # seconds
+        # Authentication events for testing
+        self._auth_success_count: int = 0
+        self._auth_failure_events: List[dict] = []
 
     def start(self) -> None:
         """Start the mock server on a background thread."""
@@ -227,9 +250,59 @@ class MockPJLinkServer:
                 - "disconnect": Close connection immediately
                 - "malformed": Send malformed response
                 - "auth_fail": Force authentication failure
+                - "auth_lockout": Simulate locked out state
         """
         with self._lock:
             self._error_injection = error_type
+            if error_type == "auth_lockout":
+                self.state.auth_locked = True
+
+    def set_max_auth_failures(self, max_failures: int) -> None:
+        """
+        Set maximum authentication failures before lockout.
+
+        Args:
+            max_failures: Maximum number of failed attempts (default 3)
+        """
+        with self._lock:
+            self._max_auth_failures = max_failures
+
+    def set_auth_lockout_duration(self, duration: float) -> None:
+        """
+        Set authentication lockout duration in seconds.
+
+        Args:
+            duration: Lockout duration in seconds (default 60)
+        """
+        with self._lock:
+            self._auth_lockout_duration = duration
+
+    def get_auth_failure_count(self) -> int:
+        """Get the total number of authentication failures."""
+        with self._lock:
+            return self.state.auth_failure_count
+
+    def get_auth_success_count(self) -> int:
+        """Get the total number of successful authentications."""
+        with self._lock:
+            return self._auth_success_count
+
+    def get_auth_failure_events(self) -> List[dict]:
+        """Get list of authentication failure events for testing."""
+        with self._lock:
+            return self._auth_failure_events.copy()
+
+    def is_auth_locked(self) -> bool:
+        """Check if authentication is locked."""
+        with self._lock:
+            return self.state.auth_locked
+
+    def unlock_auth(self) -> None:
+        """Unlock authentication (for testing recovery)."""
+        with self._lock:
+            self.state.auth_locked = False
+            self.state.auth_failure_count = 0
+            self._auth_states.clear()
 
     def clear_error(self) -> None:
         """Clear injected error."""
@@ -264,6 +337,9 @@ class MockPJLinkServer:
             self._custom_responses.clear()
             self._error_injection = None
             self._response_delay = 0.0
+            self._auth_states.clear()
+            self._auth_success_count = 0
+            self._auth_failure_events.clear()
 
     def _server_loop(self) -> None:
         """Main server loop running on background thread."""
@@ -293,10 +369,20 @@ class MockPJLinkServer:
             client_socket: Client socket
             address: Client address
         """
+        client_id = f"{address[0]}:{address[1]}"
+        authenticated = False
+
         try:
             # Check for disconnect injection
             with self._lock:
                 if self._error_injection == "disconnect":
+                    client_socket.close()
+                    return
+
+                # Check if authentication is locked out
+                if self.state.auth_locked:
+                    # Send lockout response
+                    client_socket.sendall(b"PJLINK ERRA\r")
                     client_socket.close()
                     return
 
@@ -309,6 +395,7 @@ class MockPJLinkServer:
                 # PJLINK 0 without authentication
                 auth_string = "PJLINK 0\r"
                 random_key = None
+                authenticated = True  # No auth needed
 
             client_socket.sendall(auth_string.encode("utf-8"))
 
@@ -331,6 +418,13 @@ class MockPJLinkServer:
                     line, buffer = buffer.split(b"\r", 1)
                     command_str = line.decode("utf-8", errors="ignore")
 
+                    # Check for lockout before processing
+                    with self._lock:
+                        if self.state.auth_locked:
+                            response = "PJLINK ERRA\r"
+                            client_socket.sendall(response.encode("utf-8"))
+                            continue
+
                     # Handle authentication if password set
                     if self.password and random_key:
                         # First command must be authentication hash + command
@@ -339,10 +433,25 @@ class MockPJLinkServer:
                         ).hexdigest()
 
                         if command_str.startswith(expected_hash):
-                            # Remove hash from command
+                            # Authentication successful
                             command_str = command_str[len(expected_hash):]
+                            authenticated = True
+                            with self._lock:
+                                self._auth_success_count += 1
                         else:
                             # Authentication failed
+                            with self._lock:
+                                self.state.auth_failure_count += 1
+                                self._auth_failure_events.append({
+                                    "client_id": client_id,
+                                    "timestamp": time.time(),
+                                    "attempt": self.state.auth_failure_count,
+                                })
+
+                                # Check for lockout condition
+                                if self.state.auth_failure_count >= self._max_auth_failures:
+                                    self.state.auth_locked = True
+
                             response = "PJLINK ERRA\r"
                             client_socket.sendall(response.encode("utf-8"))
                             continue
