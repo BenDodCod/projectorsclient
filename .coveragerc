@@ -1,0 +1,110 @@
+# Enhanced Projector Control Application - Coverage Configuration
+# Note: Primary configuration is in pyproject.toml [tool.coverage.*]
+# This file provides backward compatibility for tools that read .coveragerc
+
+[run]
+# Source directories to measure
+source = src
+
+# Enable branch coverage
+branch = True
+
+# Paths to omit from coverage
+omit =
+    */tests/*
+    */.venv/*
+    */venv/*
+    */__pycache__/*
+    */workspace/*
+    */site-packages/*
+
+# Data file location
+data_file = .coverage
+
+# Enable parallel mode for pytest-xdist
+parallel = False
+
+# Context for differentiating test types
+# dynamic_context = test_function
+
+[report]
+# Lines to exclude from coverage reports
+exclude_lines =
+    # Standard exclusions
+    pragma: no cover
+
+    # Debug-only code
+    def __repr__
+    def __str__
+
+    # Defensive assertions
+    raise NotImplementedError
+    raise AssertionError
+
+    # Main entry point guard
+    if __name__ == .__main__.:
+
+    # Type checking blocks
+    if TYPE_CHECKING:
+
+    # Abstract methods
+    @abstractmethod
+    @abc.abstractmethod
+
+    # Overloaded functions
+    @overload
+    @typing.overload
+
+    # Platform-specific code
+    if sys.platform
+
+    # Optional features
+    except ImportError:
+
+# Minimum coverage percentage (global gate)
+fail_under = 85
+
+# Show missing lines in report
+show_missing = True
+
+# Decimal precision for coverage percentages
+precision = 2
+
+# Skip files with no executable code
+skip_empty = True
+
+# Sort report by coverage percentage
+sort = Cover
+
+[html]
+# Output directory for HTML reports
+directory = htmlcov
+
+# Title for HTML report
+title = Projector Control Coverage Report
+
+# Skip files with 100% coverage in HTML
+skip_covered = False
+
+# Show contexts in HTML report
+show_contexts = True
+
+[xml]
+# Output file for XML report (CI integration)
+output = coverage.xml
+
+[json]
+# Output file for JSON report
+output = coverage.json
+
+# Pretty print JSON
+pretty_print = True
+
+# Show contexts in JSON
+show_contexts = True
+
+[paths]
+# Path mappings for combining coverage from different environments
+source =
+    src/
+    */src/

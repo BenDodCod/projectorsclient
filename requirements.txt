@@ -1,0 +1,37 @@
+# Enhanced Projector Control Application - Production Dependencies
+# Python 3.11+ required
+# All versions pinned for reproducible builds
+
+# GUI Framework - PyQt6 for modern, professional interface with RTL support
+PyQt6==6.6.1
+
+# PJLink Protocol - Projector communication
+# Note: pypjlink2 is the maintained fork of pypjlink
+pypjlink2==1.2.1
+
+# Security - Password hashing with bcrypt
+bcrypt==4.1.2
+
+# Database - SQL Server connectivity via ODBC
+pyodbc==5.0.1
+
+# Cryptography - Secure credential encryption (AES-GCM for backups)
+cryptography==41.0.7
+
+# Credential Storage - Windows Credential Manager integration
+keyring==24.3.0
+
+# Single Instance - Prevent multiple app instances
+tendo==0.3.0
+
+# Windows Integration - System tray, registry, Windows-specific features
+pywin32==306
+
+# JSON Schema Validation - Configuration validation
+jsonschema==4.20.0
+
+# Retry Logic - Network operation resilience
+tenacity==8.2.3
+
+# Logging - Structured JSON logging
+python-json-logger==2.0.7

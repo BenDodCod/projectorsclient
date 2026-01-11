@@ -1,0 +1,235 @@
+# Enhanced Projector Control Application - CI Pipeline
+# Runs on every push and pull request to main branch
+
+name: CI Pipeline
+
+on:
+  push:
+    branches: [main, develop]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+env:
+  PYTHON_VERSION: "3.11"
+  COVERAGE_THRESHOLD: 85
+
+jobs:
+  # ===========================================================================
+  # Stage 1: Code Quality
+  # ===========================================================================
+  code-quality:
+    name: Code Quality
+    runs-on: windows-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+          cache: pip
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install black flake8 pylint mypy isort
+          pip install -r requirements.txt
+          pip install PyQt6-stubs types-jsonschema
+
+      - name: Check formatting with Black
+        run: black --check --diff src/ tests/
+
+      - name: Check import sorting with isort
+        run: isort --check-only --diff src/ tests/
+
+      - name: Lint with flake8
+        run: flake8 src/ tests/ --count --show-source --statistics
+
+      - name: Lint with Pylint
+        run: pylint src/ --exit-zero --output-format=colorized
+        continue-on-error: true
+
+      - name: Type check with MyPy
+        run: mypy src/ --ignore-missing-imports
+        continue-on-error: true
+
+  # ===========================================================================
+  # Stage 2: Unit Tests
+  # ===========================================================================
+  unit-tests:
+    name: Unit Tests
+    runs-on: windows-latest
+    needs: code-quality
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+          cache: pip
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements-dev.txt
+
+      - name: Run unit tests with coverage
+        run: |
+          pytest tests/unit/ -v --cov=src --cov-report=xml --cov-report=html --cov-fail-under=${{ env.COVERAGE_THRESHOLD }}
+
+      - name: Upload coverage report
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: coverage-report
+          path: |
+            coverage.xml
+            htmlcov/
+
+      - name: Upload coverage to Codecov
+        uses: codecov/codecov-action@v3
+        if: always()
+        with:
+          files: coverage.xml
+          fail_ci_if_error: false
+
+  # ===========================================================================
+  # Stage 3: Security Scanning
+  # ===========================================================================
+  security-scan:
+    name: Security Scan
+    runs-on: windows-latest
+    needs: code-quality
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+          cache: pip
+
+      - name: Install security tools
+        run: |
+          python -m pip install --upgrade pip
+          pip install bandit safety pip-audit
+
+      - name: Run Bandit security scan
+        run: |
+          bandit -r src/ -f json -o bandit-results.json || true
+          bandit -r src/ -f txt --exit-zero
+
+      - name: Check dependencies with Safety
+        run: safety check -r requirements.txt --full-report || true
+        continue-on-error: true
+
+      - name: Audit dependencies with pip-audit
+        run: pip-audit -r requirements.txt || true
+        continue-on-error: true
+
+      - name: Upload security reports
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: security-reports
+          path: |
+            bandit-results.json
+
+  # ===========================================================================
+  # Stage 4: Build Verification
+  # ===========================================================================
+  build:
+    name: Build Verification
+    runs-on: windows-latest
+    needs: [unit-tests, security-scan]
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+          cache: pip
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+          pip install pyinstaller
+
+      - name: Verify package structure
+        run: |
+          python -c "import src; print(f'Package version: {src.__version__}')"
+
+      - name: Create build spec (if not exists)
+        run: |
+          if (!(Test-Path "build.spec")) {
+            Write-Host "build.spec not found, skipping PyInstaller build"
+          } else {
+            Write-Host "build.spec found"
+          }
+        shell: pwsh
+
+      # Note: Full PyInstaller build commented out until main.py exists
+      # - name: Build executable
+      #   run: pyinstaller build.spec --noconfirm
+
+      - name: Verify build artifacts
+        run: |
+          Write-Host "Build verification complete"
+          Write-Host "Full PyInstaller build will be enabled when main.py is implemented"
+        shell: pwsh
+
+  # ===========================================================================
+  # Integration Tests (Nightly/On-Demand)
+  # ===========================================================================
+  integration-tests:
+    name: Integration Tests
+    runs-on: windows-latest
+    needs: unit-tests
+    if: github.event_name == 'workflow_dispatch' || github.event_name == 'schedule'
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+          cache: pip
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements-dev.txt
+
+      - name: Run integration tests
+        run: |
+          pytest -m integration tests/integration/ -v --tb=short
+
+  # ===========================================================================
+  # Summary Job
+  # ===========================================================================
+  ci-complete:
+    name: CI Complete
+    runs-on: windows-latest
+    needs: [code-quality, unit-tests, security-scan, build]
+    if: always()
+    steps:
+      - name: Check job results
+        run: |
+          if ("${{ needs.code-quality.result }}" -eq "failure" -or
+              "${{ needs.unit-tests.result }}" -eq "failure" -or
+              "${{ needs.security-scan.result }}" -eq "failure" -or
+              "${{ needs.build.result }}" -eq "failure") {
+            Write-Host "One or more CI stages failed"
+            exit 1
+          }
+          Write-Host "All CI stages passed successfully"
+        shell: pwsh

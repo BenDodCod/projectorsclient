@@ -1,0 +1,109 @@
+# Enhanced Projector Control Application - Development Dependencies
+# Install with: pip install -r requirements-dev.txt
+# Requires: requirements.txt to be installed first
+
+# Include production dependencies
+-r requirements.txt
+
+# =============================================================================
+# Testing Framework
+# =============================================================================
+
+# pytest - Core testing framework
+pytest==7.4.3
+
+# pytest-qt - PyQt6 testing utilities
+pytest-qt==4.3.1
+
+# pytest-cov - Coverage reporting
+pytest-cov==4.1.0
+
+# pytest-mock - Mocking utilities
+pytest-mock==3.12.0
+
+# pytest-xdist - Parallel test execution
+pytest-xdist==3.5.0
+
+# pytest-timeout - Test timeout enforcement
+pytest-timeout==2.2.0
+
+# pytest-asyncio - Async test support
+pytest-asyncio==0.23.2
+
+# =============================================================================
+# Code Quality
+# =============================================================================
+
+# black - Code formatting (PEP 8 compliant)
+black==23.12.1
+
+# flake8 - Style guide enforcement
+flake8==6.1.0
+
+# pylint - Code quality analysis
+pylint==3.0.3
+
+# mypy - Static type checking
+mypy==1.7.1
+
+# isort - Import sorting
+isort==5.13.2
+
+# =============================================================================
+# Security Scanning
+# =============================================================================
+
+# bandit - Security vulnerability scanner
+bandit==1.7.5
+
+# safety - Dependency vulnerability checking
+safety==2.3.5
+
+# pip-audit - CVE auditing for dependencies
+pip-audit==2.6.1
+
+# =============================================================================
+# Build and Packaging
+# =============================================================================
+
+# PyInstaller - .exe generation
+pyinstaller==6.3.0
+
+# build - PEP 517 build frontend
+build==1.0.3
+
+# wheel - Wheel package format
+wheel==0.42.0
+
+# =============================================================================
+# Documentation
+# =============================================================================
+
+# Sphinx - Documentation generation
+sphinx==7.2.6
+
+# sphinx-rtd-theme - Read the Docs theme
+sphinx-rtd-theme==2.0.0
+
+# =============================================================================
+# Development Utilities
+# =============================================================================
+
+# pre-commit - Git hook management
+pre-commit==3.6.0
+
+# ipython - Enhanced interactive shell
+ipython==8.19.0
+
+# rich - Rich terminal output
+rich==13.7.0
+
+# =============================================================================
+# Type Stubs
+# =============================================================================
+
+# PyQt6 type stubs
+PyQt6-stubs==6.6.0.0
+
+# Types for common libraries
+types-jsonschema==4.20.0.0

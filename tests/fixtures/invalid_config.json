@@ -1,0 +1,27 @@
+{
+  "version": "1.0.0",
+  "operation_mode": "invalid_mode",
+  "database": {
+    "type": "unsupported_db",
+    "path": "",
+    "backup_enabled": "not_a_boolean"
+  },
+  "ui": {
+    "language": 123,
+    "theme": null,
+    "window_width": -1024,
+    "window_height": "not_a_number",
+    "window_position_x": 999999,
+    "window_position_y": -999999
+  },
+  "network": {
+    "timeout": -5,
+    "retry_count": "three",
+    "connection_pool_size": 0
+  },
+  "logging": {
+    "level": "INVALID_LEVEL",
+    "max_file_size_mb": "large"
+  },
+  "missing_required_fields": true
+}

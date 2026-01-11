@@ -1,0 +1,260 @@
+# Enhanced Projector Control Application
+# PEP 518/517 compliant build configuration
+
+[build-system]
+requires = ["setuptools>=68.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "projector-control"
+version = "0.1.0"
+description = "Professional PyQt6 application for controlling network projectors via PJLink"
+readme = "README.md"
+license = {text = "Proprietary"}
+requires-python = ">=3.11"
+authors = [
+    {name = "Projector Control Team"}
+]
+keywords = ["projector", "pjlink", "pyqt6", "control", "av"]
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Environment :: Win32 (MS Windows)",
+    "Intended Audience :: End Users/Desktop",
+    "Intended Audience :: System Administrators",
+    "License :: Other/Proprietary License",
+    "Operating System :: Microsoft :: Windows :: Windows 10",
+    "Operating System :: Microsoft :: Windows :: Windows 11",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Topic :: Multimedia :: Video",
+    "Topic :: System :: Hardware",
+    "Typing :: Typed",
+]
+
+dependencies = [
+    "PyQt6==6.6.1",
+    "pypjlink2==1.2.1",
+    "bcrypt==4.1.2",
+    "pyodbc==5.0.1",
+    "cryptography==41.0.7",
+    "keyring==24.3.0",
+    "tendo==0.3.0",
+    "pywin32==306",
+    "jsonschema==4.20.0",
+    "tenacity==8.2.3",
+    "python-json-logger==2.0.7",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest==7.4.3",
+    "pytest-qt==4.3.1",
+    "pytest-cov==4.1.0",
+    "pytest-mock==3.12.0",
+    "pytest-xdist==3.5.0",
+    "pytest-timeout==2.2.0",
+    "pytest-asyncio==0.23.2",
+    "black==23.12.1",
+    "flake8==6.1.0",
+    "pylint==3.0.3",
+    "mypy==1.7.1",
+    "isort==5.13.2",
+    "bandit==1.7.5",
+    "safety==2.3.5",
+    "pip-audit==2.6.1",
+    "pyinstaller==6.3.0",
+    "pre-commit==3.6.0",
+]
+
+docs = [
+    "sphinx==7.2.6",
+    "sphinx-rtd-theme==2.0.0",
+]
+
+[project.urls]
+Repository = "https://github.com/BenDodCod/projectorsclient.git"
+
+[project.scripts]
+projector-control = "src.main:main"
+
+[project.gui-scripts]
+projector-control-gui = "src.main:main"
+
+# =============================================================================
+# Tool Configurations
+# =============================================================================
+
+[tool.setuptools]
+package-dir = {"" = "."}
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["src*"]
+
+[tool.setuptools.package-data]
+"*" = ["*.qss", "*.ts", "*.qm", "*.ico", "*.png", "*.svg", "*.sql", "*.json"]
+
+# -----------------------------------------------------------------------------
+# Black - Code Formatter
+# -----------------------------------------------------------------------------
+[tool.black]
+line-length = 100
+target-version = ["py311", "py312"]
+include = '\.pyi?$'
+extend-exclude = '''
+/(
+    \.git
+    | \.venv
+    | venv
+    | build
+    | dist
+    | \.eggs
+    | workspace/Archive
+)/
+'''
+
+# -----------------------------------------------------------------------------
+# isort - Import Sorter
+# -----------------------------------------------------------------------------
+[tool.isort]
+profile = "black"
+line_length = 100
+skip_gitignore = true
+skip = [".git", ".venv", "venv", "build", "dist", "workspace/Archive"]
+known_first_party = ["src"]
+known_third_party = ["PyQt6", "pypjlink2", "bcrypt", "pyodbc", "cryptography", "keyring", "tendo"]
+sections = ["FUTURE", "STDLIB", "THIRDPARTY", "FIRSTPARTY", "LOCALFOLDER"]
+
+# -----------------------------------------------------------------------------
+# MyPy - Static Type Checker
+# -----------------------------------------------------------------------------
+[tool.mypy]
+python_version = "3.11"
+warn_return_any = true
+warn_unused_configs = true
+warn_redundant_casts = true
+warn_unused_ignores = true
+strict_equality = true
+strict_concatenate = true
+check_untyped_defs = true
+disallow_untyped_defs = true
+disallow_incomplete_defs = true
+no_implicit_optional = true
+show_error_codes = true
+show_column_numbers = true
+pretty = true
+
+# Ignore missing imports for packages without stubs
+[[tool.mypy.overrides]]
+module = [
+    "pypjlink2.*",
+    "tendo.*",
+    "win32api",
+    "win32con",
+    "win32security",
+    "pywintypes",
+]
+ignore_missing_imports = true
+
+# -----------------------------------------------------------------------------
+# Pylint - Code Quality
+# -----------------------------------------------------------------------------
+[tool.pylint.main]
+jobs = 0  # Use all CPUs
+load-plugins = [
+    "pylint.extensions.docparams",
+    "pylint.extensions.docstyle",
+]
+ignore = [".git", ".venv", "venv", "build", "dist", "workspace"]
+ignore-patterns = ["test_.*\\.py"]
+
+[tool.pylint.messages_control]
+disable = [
+    "C0114",  # missing-module-docstring (handled by __init__.py)
+    "C0115",  # missing-class-docstring (too verbose for data classes)
+    "R0903",  # too-few-public-methods (valid for data classes)
+    "W0511",  # fixme (allow TODO comments)
+]
+max-line-length = 100
+
+[tool.pylint.design]
+max-args = 8
+max-attributes = 12
+max-locals = 20
+
+[tool.pylint.format]
+max-line-length = 100
+
+# -----------------------------------------------------------------------------
+# Bandit - Security Scanner
+# -----------------------------------------------------------------------------
+[tool.bandit]
+exclude_dirs = ["tests", ".venv", "venv", "build", "dist", "workspace"]
+skips = ["B101"]  # assert_used - valid in tests
+
+# -----------------------------------------------------------------------------
+# pytest - Test Framework
+# -----------------------------------------------------------------------------
+[tool.pytest.ini_options]
+minversion = "7.0"
+testpaths = ["tests"]
+python_files = ["test_*.py", "*_test.py"]
+python_classes = ["Test*"]
+python_functions = ["test_*"]
+addopts = [
+    "-v",
+    "--strict-markers",
+    "--strict-config",
+    "-ra",
+]
+markers = [
+    "unit: Unit tests (fast, isolated)",
+    "integration: Integration tests (with real databases, mocked projectors)",
+    "e2e: End-to-end tests (full workflow)",
+    "slow: Slow tests (>1s)",
+    "requires_projector: Tests requiring physical projector hardware",
+    "requires_sqlserver: Tests requiring SQL Server connection",
+]
+filterwarnings = [
+    "error",
+    "ignore::DeprecationWarning",
+    "ignore::PendingDeprecationWarning",
+]
+asyncio_mode = "auto"
+
+# -----------------------------------------------------------------------------
+# Coverage - Code Coverage
+# -----------------------------------------------------------------------------
+[tool.coverage.run]
+source = ["src"]
+branch = true
+omit = [
+    "*/tests/*",
+    "*/.venv/*",
+    "*/venv/*",
+    "*/__pycache__/*",
+    "*/workspace/*",
+]
+
+[tool.coverage.report]
+exclude_lines = [
+    "pragma: no cover",
+    "def __repr__",
+    "def __str__",
+    "raise NotImplementedError",
+    "raise AssertionError",
+    "if __name__ == .__main__.:",
+    "if TYPE_CHECKING:",
+    "@abstractmethod",
+    "@overload",
+]
+fail_under = 85
+show_missing = true
+precision = 2
+
+[tool.coverage.html]
+directory = "htmlcov"
+
+[tool.coverage.xml]
+output = "coverage.xml"

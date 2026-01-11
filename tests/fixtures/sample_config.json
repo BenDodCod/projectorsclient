@@ -1,0 +1,45 @@
+{
+  "version": "1.0.0",
+  "operation_mode": "standalone",
+  "database": {
+    "type": "sqlite",
+    "path": "projector.db",
+    "backup_enabled": true,
+    "backup_interval_days": 7
+  },
+  "ui": {
+    "language": "en",
+    "theme": "light",
+    "window_width": 1024,
+    "window_height": 768,
+    "window_position_x": 100,
+    "window_position_y": 100,
+    "minimize_to_tray": false,
+    "show_confirmation_dialogs": true
+  },
+  "network": {
+    "timeout": 5,
+    "retry_count": 3,
+    "connection_pool_size": 10,
+    "keep_alive": true
+  },
+  "logging": {
+    "enabled": true,
+    "level": "INFO",
+    "max_file_size_mb": 10,
+    "max_backup_count": 5,
+    "log_to_file": true,
+    "log_to_console": false
+  },
+  "updates": {
+    "auto_check": true,
+    "check_interval_days": 7,
+    "include_beta": false
+  },
+  "features": {
+    "enable_scheduling": true,
+    "enable_groups": true,
+    "enable_history": true,
+    "enable_diagnostics": true
+  }
+}
