@@ -3670,6 +3670,10 @@ Before Phase 1 implementation begins, approve and scope the following foundation
 11. Implement QThread workers for all projector operations and status refresh
 12. Test UI with projector and mock controller
 
+**Owner:** @test-engineer-qa + @project-supervisor-qa
+**Updated:** January 16, 2026 (Session 5)
+**Status:** COMPLETE
+
 **Deliverable:** Working main UI with enhanced UX and responsive operations
 
 **Done When:**
@@ -6500,14 +6504,14 @@ class MainWindow(QMainWindow):
 - Next: Week 3-4 Core Development
 
 **Week 3-4: Core Development**
-- [ ] Add database indexes, backup/restore, migrations
-- [ ] Implement PJLink auth details, connection pooling, circuit breaker
-- [ ] Write 250 more unit + integration tests
+- [x] Add database indexes, backup/restore, migrations
+- [x] Implement PJLink auth details, connection pooling, circuit breaker
+- [x] Write 250 more unit + integration tests
 
 **Week 5-6: DevOps & UI**
 - [ ] Create CI/CD pipeline (GitHub Actions)
 - [ ] Build PyInstaller spec and build scripts
-- [ ] Replace emoji with SVG icons
+- [x] Replace emoji with SVG icons
 - [ ] Implement first-run wizard
 - [ ] Write 50 UI tests
 

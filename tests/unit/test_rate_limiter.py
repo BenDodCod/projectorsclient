@@ -491,3 +491,233 @@ class TestLockoutEdgeCases:
 
         state = lockout.get_state(special_user)
         assert state.failed_attempts == 1
+
+    def test_init_database_without_db_path(self):
+        """Test _init_database early return when db_path is None (line 115)."""
+        config = LockoutConfig(persist_to_database=True)
+        lockout = AccountLockout(config=config, db_path=None)
+
+        # Should not crash, just skip database initialization
+        assert lockout._db_path is None
+
+    def test_init_database_error(self, tmp_path):
+        """Test _init_database handles sqlite error (lines 142-143)."""
+        db_path = str(tmp_path / "lockout.db")
+        config = LockoutConfig(persist_to_database=True)
+
+        # Mock sqlite3.connect to raise an error
+        with mock.patch('sqlite3.connect', side_effect=sqlite3.Error("Database error")):
+            # Should not crash, just log error
+            lockout = AccountLockout(config=config, db_path=db_path)
+            assert lockout is not None
+
+    def test_load_from_database_without_db_path(self):
+        """Test _load_from_database early return when db_path is None (line 148)."""
+        config = LockoutConfig(persist_to_database=True)
+        lockout = AccountLockout(config=config, db_path=None)
+
+        # Should not crash
+        assert lockout._attempts == {}
+
+    def test_load_from_database_error(self, tmp_path):
+        """Test _load_from_database handles sqlite error (lines 183-184)."""
+        db_path = str(tmp_path / "lockout.db")
+        config = LockoutConfig(persist_to_database=True)
+
+        # Create lockout first to init database
+        lockout = AccountLockout(config=config, db_path=db_path)
+
+        # Now mock the connection to fail on load
+        with mock.patch('sqlite3.connect', side_effect=sqlite3.Error("Load error")):
+            # Create new instance - load will fail but shouldn't crash
+            lockout2 = AccountLockout(config=config, db_path=db_path)
+            assert lockout2 is not None
+
+    def test_persist_attempt_error(self, tmp_path):
+        """Test _persist_attempt handles sqlite error (lines 203-204)."""
+        db_path = str(tmp_path / "lockout.db")
+        config = LockoutConfig(persist_to_database=True)
+        lockout = AccountLockout(config=config, db_path=db_path)
+
+        # Mock sqlite3.connect to raise error during persist
+        with mock.patch('sqlite3.connect', side_effect=sqlite3.Error("Persist error")):
+            # Should not crash, just log error
+            state = lockout.record_attempt("user", success=False)
+            assert state.failed_attempts == 1
+
+    def test_cleanup_database_method(self, tmp_path):
+        """Test _cleanup_database method (lines 218-240)."""
+        db_path = str(tmp_path / "lockout.db")
+        config = LockoutConfig(persist_to_database=True)
+        lockout = AccountLockout(config=config, db_path=db_path)
+
+        # Add some old attempts directly to database
+        conn = sqlite3.connect(db_path)
+        cursor = conn.cursor()
+
+        # Add an old attempt (25 hours ago)
+        old_timestamp = time.time() - (25 * 60 * 60)
+        cursor.execute("""
+            INSERT INTO lockout_attempts (identifier, timestamp, success, ip_address)
+            VALUES (?, ?, ?, ?)
+        """, ("old_user", old_timestamp, 0, None))
+
+        # Add a recent attempt
+        recent_timestamp = time.time() - (1 * 60 * 60)
+        cursor.execute("""
+            INSERT INTO lockout_attempts (identifier, timestamp, success, ip_address)
+            VALUES (?, ?, ?, ?)
+        """, ("recent_user", recent_timestamp, 0, None))
+
+        conn.commit()
+        conn.close()
+
+        # Run cleanup
+        lockout._cleanup_database()
+
+        # Verify old attempt was deleted
+        conn = sqlite3.connect(db_path)
+        cursor = conn.cursor()
+        cursor.execute("SELECT COUNT(*) FROM lockout_attempts WHERE identifier = 'old_user'")
+        old_count = cursor.fetchone()[0]
+        cursor.execute("SELECT COUNT(*) FROM lockout_attempts WHERE identifier = 'recent_user'")
+        recent_count = cursor.fetchone()[0]
+        conn.close()
+
+        assert old_count == 0  # Old attempt deleted
+        assert recent_count == 1  # Recent attempt kept
+
+    def test_cleanup_database_without_db_path(self):
+        """Test _cleanup_database early return when db_path is None (line 218)."""
+        config = LockoutConfig(persist_to_database=True)
+        lockout = AccountLockout(config=config, db_path=None)
+
+        # Should not crash
+        lockout._cleanup_database()
+
+    def test_cleanup_database_error(self, tmp_path):
+        """Test _cleanup_database handles sqlite error (lines 239-240)."""
+        db_path = str(tmp_path / "lockout.db")
+        config = LockoutConfig(persist_to_database=True)
+        lockout = AccountLockout(config=config, db_path=db_path)
+
+        # Mock sqlite3.connect to raise error
+        with mock.patch('sqlite3.connect', side_effect=sqlite3.Error("Cleanup error")):
+            # Should not crash, just log error
+            lockout._cleanup_database()
+
+    def test_reset_attempts_with_database(self, tmp_path):
+        """Test reset_attempts with database persistence (lines 389-394)."""
+        db_path = str(tmp_path / "lockout.db")
+        config = LockoutConfig(persist_to_database=True)
+        lockout = AccountLockout(config=config, db_path=db_path)
+
+        # Record an attempt first
+        lockout.record_attempt("user", success=False)
+
+        # Verify it's in database
+        conn = sqlite3.connect(db_path)
+        cursor = conn.cursor()
+        cursor.execute("SELECT COUNT(*) FROM lockout_attempts WHERE identifier = 'user'")
+        count_before = cursor.fetchone()[0]
+        conn.close()
+        assert count_before == 1
+
+        # Reset attempts
+        lockout.reset_attempts("user")
+
+        # Verify it's cleared from database
+        conn = sqlite3.connect(db_path)
+        cursor = conn.cursor()
+        cursor.execute("SELECT COUNT(*) FROM lockout_attempts WHERE identifier = 'user'")
+        count_after = cursor.fetchone()[0]
+        conn.close()
+        assert count_after == 0
+
+        # Memory should also be cleared
+        state = lockout.get_state("user")
+        assert state.failed_attempts == 0
+
+    def test_reset_attempts_database_error(self, tmp_path):
+        """Test reset_attempts handles database error (lines 395-396)."""
+        db_path = str(tmp_path / "lockout.db")
+        config = LockoutConfig(persist_to_database=True)
+        lockout = AccountLockout(config=config, db_path=db_path)
+
+        # Record an attempt first
+        lockout.record_attempt("user", success=False)
+
+        # Mock sqlite3.connect to raise error during reset
+        with mock.patch('sqlite3.connect', side_effect=sqlite3.Error("Reset error")):
+            # Should not crash, just log error
+            lockout.reset_attempts("user")
+
+            # Memory should still be cleared
+            state = lockout.get_state("user")
+            assert state.failed_attempts == 0
+
+    def test_lockout_message_seconds_only(self):
+        """Test lockout message with only seconds remaining (line 416 else branch)."""
+        config = LockoutConfig(
+            max_attempts=2,
+            lockout_duration_minutes=0.5,  # 30 seconds - less than 1 minute
+            sliding_window_minutes=1,
+            persist_to_database=False
+        )
+        lockout = AccountLockout(config=config)
+
+        # Trigger lockout
+        lockout.record_attempt("user", success=False)
+        lockout.record_attempt("user", success=False)
+
+        # Get state immediately - should be locked with less than 60 seconds
+        state = lockout.get_state("user")
+        assert state.is_locked is True
+        assert state.remaining_seconds < 60
+
+        message = lockout.get_lockout_message("user")
+
+        # Message should mention seconds but not have "X minute(s) and Y second(s)"
+        # It should be the "Please try again in X second(s)" format
+        assert "locked" in message.lower()
+        assert "second" in message.lower()
+
+    def test_audit_log_with_identifier_filter_from_db(self, tmp_path):
+        """Test audit log with identifier filter from database (line 470)."""
+        db_path = str(tmp_path / "lockout.db")
+        config = LockoutConfig(persist_to_database=True)
+        lockout = AccountLockout(config=config, db_path=db_path)
+
+        # Record attempts for multiple users
+        lockout.record_attempt("user1", success=False)
+        lockout.record_attempt("user2", success=False)
+        lockout.record_attempt("user1", success=True)
+
+        # Get logs for specific user
+        user1_logs = lockout.get_audit_log(identifier="user1")
+
+        # Should only have user1's logs
+        assert len(user1_logs) == 2
+        assert all(log['identifier'] == 'user1' for log in user1_logs)
+
+    def test_audit_log_database_error(self, tmp_path):
+        """Test audit log handles database error (lines 496-498)."""
+        db_path = str(tmp_path / "lockout.db")
+        config = LockoutConfig(persist_to_database=True)
+        lockout = AccountLockout(config=config, db_path=db_path)
+
+        # Mock sqlite3.connect to raise error
+        with mock.patch('sqlite3.connect', side_effect=sqlite3.Error("Audit error")):
+            # Should return empty list, not crash
+            logs = lockout.get_audit_log()
+            assert logs == []
+
+    def test_ip_rate_limiter_reset_nonexistent_ip(self):
+        """Test reset on non-existent IP (line 561->exit branch)."""
+        limiter = IPRateLimiter(max_requests=3, window_seconds=60)
+
+        # Reset an IP that was never used
+        limiter.reset("192.168.1.999")
+
+        # Should not crash
+        assert True

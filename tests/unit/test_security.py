@@ -512,3 +512,273 @@ class TestSecurityEdgeCases:
         # Should not raise an error
         hash_value = manager.calculate_integrity_hash(settings)
         assert len(hash_value) == 64
+
+    def test_entropy_oserror_read(self, tmp_path):
+        """Test OSError when accessing entropy file (lines 153-154)."""
+        manager = EntropyManager(str(tmp_path))
+
+        # Create entropy file first
+        _ = manager.entropy
+
+        # Mock read_bytes to raise OSError
+        with mock.patch.object(Path, 'read_bytes', side_effect=OSError("Permission denied")):
+            with pytest.raises(EntropyError, match="Failed to access entropy file"):
+                manager._load_or_create_entropy()
+
+    def test_entropy_oserror_write(self, tmp_path):
+        """Test OSError when creating entropy file (lines 176-177)."""
+        manager = EntropyManager(str(tmp_path))
+
+        # Mock write_bytes to raise OSError
+        with mock.patch.object(Path, 'write_bytes', side_effect=OSError("Disk full")):
+            with pytest.raises(EntropyError, match="Failed to create entropy file"):
+                manager._create_random_entropy()
+
+    @pytest.mark.skipif(
+        sys.platform == "win32",
+        reason="Test machine name fallback on non-Windows"
+    )
+    def test_entropy_machine_name_fallback_non_windows(self, tmp_path):
+        """Test machine name fallback on non-Windows (lines 197-201)."""
+        import socket
+
+        config = EntropyConfig()
+        manager = EntropyManager(str(tmp_path), config)
+
+        # Get entropy which will use socket.gethostname()
+        entropy = manager.entropy
+
+        assert entropy is not None
+        assert len(entropy) == 32
+
+    @pytest.mark.skipif(
+        sys.platform != "win32",
+        reason="Test Windows machine name error fallback"
+    )
+    def test_entropy_machine_name_windows_error(self, tmp_path):
+        """Test machine name fallback when win32api fails (lines 197-201)."""
+        import pywintypes
+
+        manager = EntropyManager(str(tmp_path))
+
+        # Mock win32api.GetComputerName to raise error
+        with mock.patch('win32api.GetComputerName', side_effect=pywintypes.error("Access denied")):
+            # This should use fallback
+            entropy = manager._derive_entropy(b"test_random_bytes")
+            assert entropy is not None
+            assert len(entropy) == 32
+
+    def test_reset_entropy_when_path_exists(self, tmp_path):
+        """Test reset_entropy when path exists (line 213->215)."""
+        manager = EntropyManager(str(tmp_path))
+
+        # Create entropy first
+        original_entropy = manager.entropy
+        assert manager._entropy_path.exists()
+
+        # Reset when path exists
+        manager.reset_entropy()
+
+        # Path should be deleted
+        assert not manager._entropy_path.exists()
+        assert manager._entropy is None
+
+        # Getting entropy again should create new one
+        new_entropy = manager.entropy
+        assert new_entropy != original_entropy
+
+    def test_reset_entropy_when_path_not_exists(self, tmp_path):
+        """Test reset_entropy when path doesn't exist."""
+        manager = EntropyManager(str(tmp_path))
+
+        # Don't create entropy yet, just call reset
+        # This tests the if-statement where path doesn't exist
+        manager.reset_entropy()
+
+        # Should just reset the entropy variable
+        assert manager._entropy is None
+        assert not manager._entropy_path.exists()
+
+    @pytest.mark.skipif(
+        sys.platform != "win32",
+        reason="DPAPI only available on Windows"
+    )
+    def test_dpapi_encryption_pywintypes_error(self, tmp_path):
+        """Test DPAPI encryption pywintypes.error (lines 295-300)."""
+        import pywintypes
+
+        manager = CredentialManager(str(tmp_path))
+
+        # Mock CryptProtectData to raise pywintypes.error
+        with mock.patch('win32crypt.CryptProtectData', side_effect=pywintypes.error("DPAPI failed")):
+            with pytest.raises(EncryptionError, match="Failed to encrypt credential"):
+                manager.encrypt_credential("test_password")
+
+    @pytest.mark.skipif(
+        sys.platform != "win32",
+        reason="DPAPI only available on Windows"
+    )
+    def test_dpapi_encryption_unexpected_error(self, tmp_path):
+        """Test unexpected encryption error (lines 298-300)."""
+        manager = CredentialManager(str(tmp_path))
+
+        # Mock CryptProtectData to raise unexpected exception
+        with mock.patch('win32crypt.CryptProtectData', side_effect=RuntimeError("Unexpected error")):
+            with pytest.raises(EncryptionError, match="Failed to encrypt credential"):
+                manager.encrypt_credential("test_password")
+
+    @pytest.mark.skipif(
+        sys.platform != "win32",
+        reason="DPAPI only available on Windows"
+    )
+    def test_dpapi_decryption_unexpected_error(self, tmp_path):
+        """Test unexpected decryption error (lines 342-344)."""
+        manager = CredentialManager(str(tmp_path))
+
+        # Create valid encrypted data first
+        encrypted = manager.encrypt_credential("test_password")
+
+        # Mock CryptUnprotectData to raise unexpected exception
+        with mock.patch('win32crypt.CryptUnprotectData', side_effect=RuntimeError("Unexpected error")):
+            with pytest.raises(DecryptionError, match="Failed to decrypt credential"):
+                manager.decrypt_credential(encrypted)
+
+    @pytest.mark.skipif(
+        sys.platform != "win32",
+        reason="DPAPI only available on Windows"
+    )
+    def test_rotate_entropy_method(self, tmp_path):
+        """Test rotate_entropy method (lines 362-384)."""
+        manager = CredentialManager(str(tmp_path))
+
+        # Create some encrypted credentials
+        old_credentials = {
+            "projector1": manager.encrypt_credential("password1"),
+            "projector2": manager.encrypt_credential("password2"),
+            "projector3": manager.encrypt_credential("password3"),
+        }
+
+        # Rotate entropy
+        new_credentials = manager.rotate_entropy(old_credentials)
+
+        # Verify all credentials were re-encrypted
+        assert len(new_credentials) == 3
+        assert "projector1" in new_credentials
+        assert "projector2" in new_credentials
+        assert "projector3" in new_credentials
+
+        # Verify new encrypted values are different
+        assert new_credentials["projector1"] != old_credentials["projector1"]
+
+        # Verify decryption works with new entropy
+        assert manager.decrypt_credential(new_credentials["projector1"]) == "password1"
+        assert manager.decrypt_credential(new_credentials["projector2"]) == "password2"
+
+    @pytest.mark.skipif(
+        sys.platform != "win32",
+        reason="DPAPI only available on Windows"
+    )
+    def test_rotate_entropy_with_invalid_credential(self, tmp_path):
+        """Test rotate_entropy skips credentials that can't be decrypted."""
+        manager = CredentialManager(str(tmp_path))
+
+        # Create mix of valid and invalid credentials
+        valid_encrypted = manager.encrypt_credential("valid_password")
+        old_credentials = {
+            "valid": valid_encrypted,
+            "invalid": "not_valid_encrypted_data_at_all",
+        }
+
+        # Rotate entropy - should skip invalid credential
+        new_credentials = manager.rotate_entropy(old_credentials)
+
+        # Only valid credential should be in result
+        assert len(new_credentials) == 1
+        assert "valid" in new_credentials
+        assert "invalid" not in new_credentials
+
+    def test_password_hash_unexpected_error(self):
+        """Test password hashing unexpected error (lines 455-457)."""
+        hasher = PasswordHasher(cost=12)
+
+        # Mock bcrypt.gensalt to raise unexpected exception
+        with mock.patch('bcrypt.gensalt', side_effect=RuntimeError("Unexpected error")):
+            with pytest.raises(PasswordHashError, match="Failed to hash password"):
+                hasher.hash_password("test_password")
+
+    def test_password_verify_unexpected_error(self):
+        """Test password verification unexpected error (lines 491-494)."""
+        hasher = PasswordHasher(cost=12)
+        valid_hash = hasher.hash_password("test_password")
+
+        # Mock bcrypt.checkpw to raise unexpected exception
+        with mock.patch('bcrypt.checkpw', side_effect=RuntimeError("Unexpected error")):
+            result = hasher.verify_password("test_password", valid_hash)
+            # Should return False and perform dummy work
+            assert result is False
+
+    def test_needs_rehash_invalid_format(self):
+        """Test needs_rehash with invalid hash format (lines 529-533)."""
+        hasher = PasswordHasher(cost=14)
+
+        # Invalid formats should return True
+        assert hasher.needs_rehash("invalid_hash_format") is True
+        assert hasher.needs_rehash("$2b$") is True  # Too short
+        assert hasher.needs_rehash("$2b$xx$rest") is True  # Non-numeric cost
+        assert hasher.needs_rehash("") is True  # Empty
+
+    def test_database_integrity_with_additional_keys(self):
+        """Test DatabaseIntegrityManager with additional_keys (line 574)."""
+        additional = ["custom_setting", "another_key"]
+        manager = DatabaseIntegrityManager(additional_keys=additional)
+
+        # Verify additional keys are included
+        assert "custom_setting" in manager._critical_keys
+        assert "another_key" in manager._critical_keys
+
+        # Also verify original keys are still there
+        assert "admin_password_hash" in manager._critical_keys
+
+        # Test that additional keys affect hash calculation
+        settings = {
+            "admin_password_hash": "test",
+            "operation_mode": "standalone",
+            "config_version": "1.0",
+            "first_run_complete": "true",
+            "custom_setting": "value1",
+            "another_key": "value2",
+        }
+
+        hash1 = manager.calculate_integrity_hash(settings)
+
+        # Change additional key
+        settings["custom_setting"] = "modified_value"
+        hash2 = manager.calculate_integrity_hash(settings)
+
+        # Hash should be different
+        assert hash1 != hash2
+
+    @pytest.mark.skipif(
+        sys.platform != "win32",
+        reason="DPAPI only available on Windows"
+    )
+    def test_get_credential_manager_without_app_data_dir(self, tmp_path):
+        """Test get_credential_manager without app_data_dir (line 677)."""
+        from utils.security import get_credential_manager
+
+        # Reset singleton
+        _reset_singletons()
+
+        # First call without app_data_dir should raise ValueError
+        with pytest.raises(ValueError, match="app_data_dir required"):
+            get_credential_manager(app_data_dir=None)
+
+        # After initialization with app_data_dir, subsequent calls work
+        manager1 = get_credential_manager(app_data_dir=str(tmp_path))
+        manager2 = get_credential_manager()  # No app_data_dir needed
+
+        # Should be same instance
+        assert manager1 is manager2
+
+        # Clean up
+        _reset_singletons()

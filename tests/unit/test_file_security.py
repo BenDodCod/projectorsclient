@@ -418,3 +418,260 @@ class TestFilePermissionsDataclass:
         assert perms.owner == "TestUser"
         assert perms.is_secure is True
         assert len(perms.aces) == 1
+
+
+class TestFileSecurityEdgeCases:
+    """Tests for edge cases and error handling in file security."""
+
+    def test_set_permissions_pywintypes_error(self, tmp_path):
+        """Test handling of pywintypes error when setting permissions."""
+        test_file = tmp_path / "test.db"
+        test_file.write_text("test content")
+
+        # Mock to raise pywintypes.error
+        import pywintypes
+        with mock.patch('utils.file_security.win32security.GetFileSecurity',
+                       side_effect=pywintypes.error(5, 'GetFileSecurity', 'Access denied')):
+            with pytest.raises(FileSecurityError, match="Failed to set permissions"):
+                set_file_owner_only_permissions(str(test_file))
+
+    def test_recursive_directory_file_error_logged(self, tmp_path):
+        """Test that file errors during recursive are logged but don't stop."""
+        test_dir = tmp_path / "secure_dir"
+        test_dir.mkdir()
+        (test_dir / "file1.txt").write_text("test")
+
+        # Mock set_file_owner_only_permissions to fail on files but not directories
+        original_func = set_file_owner_only_permissions
+        call_count = [0]
+
+        def mock_set_perms(path):
+            call_count[0] += 1
+            if os.path.isfile(path) and call_count[0] > 1:
+                raise FileSecurityError("Mock error on file")
+            return original_func(path)
+
+        with mock.patch('utils.file_security.set_file_owner_only_permissions', side_effect=mock_set_perms):
+            # Should complete despite file error
+            result = set_directory_owner_only_permissions(str(test_dir), recursive=True)
+            assert result is True
+
+    def test_verify_permissions_no_dacl(self, tmp_path):
+        """Test handling of file with no DACL."""
+        test_file = tmp_path / "test.db"
+        test_file.write_text("test content")
+
+        # Create a mock security descriptor with no DACL
+        mock_sd = mock.MagicMock()
+        mock_sd.GetSecurityDescriptorOwner.return_value = mock.MagicMock()
+        mock_sd.GetSecurityDescriptorDacl.return_value = None
+
+        with mock.patch('utils.file_security.win32security.GetFileSecurity', return_value=mock_sd):
+            with mock.patch('utils.file_security.win32security.LookupAccountSid', return_value=('User', 'DOMAIN', 1)):
+                perms = verify_file_permissions(str(test_file))
+                assert perms.is_secure is False
+                assert any("No DACL" in issue for issue in perms.issues)
+
+    def test_verify_permissions_owner_lookup_fails(self, tmp_path):
+        """Test handling when owner SID lookup fails."""
+        test_file = tmp_path / "test.db"
+        test_file.write_text("test content")
+
+        # Create mock objects
+        mock_sid = mock.MagicMock()
+        mock_sid.__str__ = mock.MagicMock(return_value="S-1-5-21-unknown")
+
+        mock_sd = mock.MagicMock()
+        mock_sd.GetSecurityDescriptorOwner.return_value = mock_sid
+        mock_sd.GetSecurityDescriptorDacl.return_value = mock.MagicMock()
+        mock_sd.GetSecurityDescriptorDacl.return_value.GetAceCount.return_value = 0
+
+        import pywintypes
+        with mock.patch('utils.file_security.win32security.GetFileSecurity', return_value=mock_sd):
+            with mock.patch('utils.file_security.win32security.LookupAccountSid',
+                           side_effect=pywintypes.error(1332, 'LookupAccountSid', 'No mapping')):
+                with mock.patch('utils.file_security.win32api.GetUserName', return_value='TestUser'):
+                    perms = verify_file_permissions(str(test_file))
+                    # Owner should be the SID string since lookup failed
+                    assert perms.owner is not None
+
+    def test_verify_permissions_deny_ace(self, tmp_path):
+        """Test handling of DENY ACE type."""
+        test_file = tmp_path / "test.db"
+        test_file.write_text("test content")
+
+        # Create mock ACE with DENY type
+        mock_ace = ((win32security.ACCESS_DENIED_ACE_TYPE, 0), 0x1F01FF, mock.MagicMock())
+
+        mock_dacl = mock.MagicMock()
+        mock_dacl.GetAceCount.return_value = 1
+        mock_dacl.GetAce.return_value = mock_ace
+
+        mock_sd = mock.MagicMock()
+        mock_sd.GetSecurityDescriptorOwner.return_value = mock.MagicMock()
+        mock_sd.GetSecurityDescriptorDacl.return_value = mock_dacl
+
+        with mock.patch('utils.file_security.win32security.GetFileSecurity', return_value=mock_sd):
+            with mock.patch('utils.file_security.win32security.LookupAccountSid', return_value=('User', 'DOMAIN', 1)):
+                with mock.patch('utils.file_security.win32security.ConvertSidToStringSid', return_value='S-1-5-21-123'):
+                    with mock.patch('utils.file_security.win32api.GetUserName', return_value='user'):
+                        perms = verify_file_permissions(str(test_file))
+                        # Should have parsed the ACE
+                        assert len(perms.aces) == 1
+                        assert perms.aces[0].ace_type == "DENY"
+
+    def test_verify_permissions_unknown_ace_type(self, tmp_path):
+        """Test handling of unknown ACE type."""
+        test_file = tmp_path / "test.db"
+        test_file.write_text("test content")
+
+        # Create mock ACE with unknown type (999)
+        mock_ace = ((999, 0), 0x1F01FF, mock.MagicMock())
+
+        mock_dacl = mock.MagicMock()
+        mock_dacl.GetAceCount.return_value = 1
+        mock_dacl.GetAce.return_value = mock_ace
+
+        mock_sd = mock.MagicMock()
+        mock_sd.GetSecurityDescriptorOwner.return_value = mock.MagicMock()
+        mock_sd.GetSecurityDescriptorDacl.return_value = mock_dacl
+
+        with mock.patch('utils.file_security.win32security.GetFileSecurity', return_value=mock_sd):
+            with mock.patch('utils.file_security.win32security.LookupAccountSid', return_value=('User', 'DOMAIN', 1)):
+                with mock.patch('utils.file_security.win32security.ConvertSidToStringSid', return_value='S-1-5-21-123'):
+                    with mock.patch('utils.file_security.win32api.GetUserName', return_value='user'):
+                        perms = verify_file_permissions(str(test_file))
+                        assert len(perms.aces) == 1
+                        assert "OTHER" in perms.aces[0].ace_type
+
+    def test_verify_permissions_trustee_lookup_fails(self, tmp_path):
+        """Test handling when trustee SID lookup fails."""
+        test_file = tmp_path / "test.db"
+        test_file.write_text("test content")
+
+        # Create mock ACE
+        mock_ace = ((win32security.ACCESS_ALLOWED_ACE_TYPE, 0), 0x1F01FF, mock.MagicMock())
+
+        mock_dacl = mock.MagicMock()
+        mock_dacl.GetAceCount.return_value = 1
+        mock_dacl.GetAce.return_value = mock_ace
+
+        mock_sd = mock.MagicMock()
+        mock_sd.GetSecurityDescriptorOwner.return_value = mock.MagicMock()
+        mock_sd.GetSecurityDescriptorDacl.return_value = mock_dacl
+
+        import pywintypes
+
+        def mock_lookup(server, sid):
+            # First call for owner succeeds, second for ACE fails
+            if hasattr(mock_lookup, 'called'):
+                raise pywintypes.error(1332, 'LookupAccountSid', 'No mapping')
+            mock_lookup.called = True
+            return ('User', 'DOMAIN', 1)
+
+        with mock.patch('utils.file_security.win32security.GetFileSecurity', return_value=mock_sd):
+            with mock.patch('utils.file_security.win32security.LookupAccountSid', side_effect=mock_lookup):
+                with mock.patch('utils.file_security.win32security.ConvertSidToStringSid', return_value='S-1-5-21-123'):
+                    with mock.patch('utils.file_security.win32api.GetUserName', return_value='user'):
+                        perms = verify_file_permissions(str(test_file))
+                        # Should have "Unknown" as trustee
+                        assert len(perms.aces) == 1
+                        assert perms.aces[0].trustee == "Unknown"
+
+    def test_ensure_secure_file_verification_fails(self, tmp_path):
+        """Test ensure_secure_file when verification fails."""
+        test_file = tmp_path / "test.db"
+
+        with mock.patch('utils.file_security.verify_secure_permissions', return_value=False):
+            success, message = ensure_secure_file(str(test_file))
+            assert success is False
+            assert "could not be verified" in message
+
+    def test_ensure_secure_file_unexpected_error(self, tmp_path):
+        """Test ensure_secure_file handles unexpected errors."""
+        test_file = tmp_path / "test.db"
+
+        with mock.patch('utils.file_security.set_file_owner_only_permissions',
+                       side_effect=RuntimeError("Unexpected")):
+            success, message = ensure_secure_file(str(test_file))
+            assert success is False
+            assert "Unexpected error" in message
+
+    def test_secure_application_files_file_error(self, tmp_path):
+        """Test secure_application_files handles file errors."""
+        (tmp_path / "config.db").write_text("test")
+
+        with mock.patch('utils.file_security.set_file_owner_only_permissions',
+                       side_effect=FileSecurityError("Permission denied")):
+            results = secure_application_files(str(tmp_path))
+            # Should have failure results
+            failed = [r for r in results if not r[1]]
+            assert len(failed) >= 1
+            assert "Permission denied" in failed[0][2]
+
+    def test_secure_application_files_logs_error(self, tmp_path):
+        """Test secure_application_files with logs directory error."""
+        (tmp_path / "logs").mkdir()
+        (tmp_path / "logs" / "app.log").write_text("log")
+
+        with mock.patch('utils.file_security.set_directory_owner_only_permissions',
+                       side_effect=FileSecurityError("Logs permission denied")):
+            results = secure_application_files(str(tmp_path))
+            # Should have logged the error
+            log_result = next((r for r in results if "logs" in r[0]), None)
+            assert log_result is not None
+            assert log_result[1] is False
+
+    def test_file_security_manager_secure_database_error(self, tmp_path):
+        """Test FileSecurityManager.secure_database handles errors."""
+        manager = FileSecurityManager(str(tmp_path))
+        db_path = tmp_path / "test.db"
+        db_path.write_text("test")
+
+        with mock.patch('utils.file_security.set_file_owner_only_permissions',
+                       side_effect=FileSecurityError("Access denied")):
+            result = manager.secure_database(str(db_path))
+            assert result is False
+
+    def test_file_security_manager_secure_entropy_error(self, tmp_path):
+        """Test FileSecurityManager.secure_entropy_file handles errors."""
+        manager = FileSecurityManager(str(tmp_path))
+        entropy_path = tmp_path / ".entropy"
+        entropy_path.write_bytes(b"data")
+
+        with mock.patch('utils.file_security.set_file_owner_only_permissions',
+                       side_effect=FileSecurityError("Access denied")):
+            result = manager.secure_entropy_file(str(entropy_path))
+            assert result is False
+
+    def test_file_security_manager_verify_with_entropy(self, tmp_path):
+        """Test FileSecurityManager.verify_security with entropy file."""
+        manager = FileSecurityManager(str(tmp_path))
+
+        # Create both files
+        db_path = tmp_path / "projector_control.db"
+        db_path.write_text("test")
+        entropy_path = tmp_path / ".projector_entropy"
+        entropy_path.write_bytes(b"entropy")
+
+        manager.secure_database(str(db_path))
+        manager.secure_entropy_file(str(entropy_path))
+
+        results = manager.verify_security()
+
+        # Should have results for both files
+        assert len(results) == 2
+        db_result = next((r for r in results if r['type'] == 'database'), None)
+        entropy_result = next((r for r in results if r['type'] == 'entropy'), None)
+        assert db_result is not None
+        assert entropy_result is not None
+
+    def test_file_security_manager_secure_all_failure(self, tmp_path):
+        """Test FileSecurityManager.secure_all handles failures."""
+        manager = FileSecurityManager(str(tmp_path))
+        (tmp_path / "config.db").write_text("test")
+
+        with mock.patch('utils.file_security.secure_application_files',
+                       return_value=[(str(tmp_path / "config.db"), False, "Failed")]):
+            result = manager.secure_all()
+            assert result is False

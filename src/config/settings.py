@@ -778,17 +778,18 @@ class SettingsManager:
         with self._lock:
             if include_sensitive:
                 rows = self.db.fetchall(
-                    "SELECT key, value, value_type FROM app_settings"
+                    "SELECT key, value, value_type, is_sensitive FROM app_settings"
                 )
             else:
                 rows = self.db.fetchall(
-                    "SELECT key, value, value_type FROM app_settings WHERE is_sensitive = 0"
+                    "SELECT key, value, value_type, is_sensitive FROM app_settings WHERE is_sensitive = 0"
                 )
 
             return {
                 row["key"]: {
                     "value": row["value"],
                     "type": row["value_type"],
+                    "sensitive": bool(row["is_sensitive"]),
                 }
                 for row in rows
             }
@@ -816,13 +817,63 @@ class SettingsManager:
 
                 if isinstance(value_data, dict) and "value" in value_data:
                     value = value_data["value"]
-                    value_type = SettingType(value_data.get("type", "string"))
+                    value_type = value_data.get("type", "string")
+                    is_sensitive = value_data.get("sensitive", False)
                 else:
                     value = value_data
-                    value_type = self._infer_type(value)
+                    # Infer type and sensitivity from definition if available
+                    definition = self._definitions.get(key)
+                    if definition:
+                        value_type = definition.setting_type.value
+                        is_sensitive = definition.sensitive
+                        # If simple value provided for sensitive setting, assume it needs encryption
+                        # But here we bypass set(), so we must encrypt manually if needed
+                        if is_sensitive and self._cred_manager and value_type != "encrypted":
+                             try:
+                                 value = self._cred_manager.encrypt_credential(str(value))
+                             except Exception as e:
+                                 logger.warning("Failed to encrypt imported value for '%s': %s", key, e)
+                    else:
+                        value_type = self._infer_type(value).value
+                        is_sensitive = False
+                    
+                    # Serialize simple value
+                    if not isinstance(value, str) or value_type == "json":
+                        if value_type == "json":
+                             value = json.dumps(value)
+                        elif value_type == "boolean":
+                             value = "true" if value else "false"
+                        else:
+                             value = str(value)
 
-                # Don't validate imports
-                self.set(key, value, validate=False)
+                # Direct DB insert/update to preserve raw values (especially encrypted ones)
+                existing = self.db.fetchone(
+                    "SELECT key FROM app_settings WHERE key = ?",
+                    (key,)
+                )
+
+                if existing:
+                    self.db.execute(
+                        """UPDATE app_settings
+                           SET value = ?, value_type = ?, is_sensitive = ?,
+                               updated_at = strftime('%s', 'now')
+                           WHERE key = ?""",
+                        (value, value_type, int(is_sensitive), key)
+                    )
+                else:
+                    self.db.execute(
+                        """INSERT INTO app_settings (key, value, value_type, is_sensitive)
+                           VALUES (?, ?, ?, ?)""",
+                        (key, value, value_type, int(is_sensitive))
+                    )
+                
+                # Update cache
+                # For cache, we need to deserialize/decrypt if we want hot cache
+                # But decrypting everything on import is expensive. 
+                # Let's just invalidate cache for this key
+                if key in self._cache:
+                    del self._cache[key]
+                
                 imported += 1
 
             logger.info("Imported %d settings", imported)

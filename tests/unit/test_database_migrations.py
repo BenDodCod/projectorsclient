@@ -1043,3 +1043,278 @@ class TestV001ToV002Migration:
         cursor.execute("SELECT proj_name FROM projector_config WHERE id = 1")
         result = cursor.fetchone()
         assert result[0] == "Test"
+
+
+class TestMigrationManagerEdgeCases:
+    """Tests for edge cases and error handling in migration manager."""
+
+    def test_initialize_schema_versioning_error(self, db_manager):
+        """Test that initialization error raises MigrationError."""
+        manager = MigrationManager(db_manager)
+
+        # Mock db_manager.execute to raise an exception on the CREATE TABLE
+        with patch.object(db_manager, 'execute', side_effect=Exception("DB error")):
+            with pytest.raises(MigrationError, match="Failed to initialize"):
+                manager.initialize_schema_versioning()
+
+    def test_get_migration_history_no_table(self, db_manager):
+        """Test get_migration_history returns empty list when table doesn't exist."""
+        manager = MigrationManager(db_manager)
+        # Don't initialize - table doesn't exist
+        history = manager.get_migration_history()
+        assert history == []
+
+    def test_get_migration_history_error(self, migration_manager):
+        """Test get_migration_history handles errors gracefully."""
+        with patch.object(migration_manager.db_manager, 'fetchall', side_effect=Exception("Query failed")):
+            history = migration_manager.get_migration_history()
+            assert history == []
+
+    def test_load_migrations_directory_not_found(self, migration_manager, temp_dir):
+        """Test loading from non-existent directory returns 0."""
+        nonexistent = temp_dir / "nonexistent_migrations"
+        count = migration_manager.load_migrations_from_directory(str(nonexistent))
+        assert count == 0
+
+    def test_load_migrations_invalid_filename_format(self, migration_manager, temp_dir):
+        """Test that invalid migration filename format is skipped."""
+        migrations_dir = temp_dir / "migrations"
+        migrations_dir.mkdir()
+
+        # Create file with invalid format (no _to_ separator)
+        invalid_code = '''
+def upgrade(conn):
+    pass
+'''
+        (migrations_dir / "v001_v002.py").write_text(invalid_code)
+
+        count = migration_manager.load_migrations_from_directory(str(migrations_dir))
+        assert count == 0
+
+    def test_load_migrations_file_error(self, migration_manager, temp_dir):
+        """Test that migration file load errors are handled."""
+        migrations_dir = temp_dir / "migrations"
+        migrations_dir.mkdir()
+
+        # Create file with syntax error
+        bad_code = '''
+def upgrade(conn)  # Missing colon - syntax error
+    pass
+'''
+        (migrations_dir / "v001_to_v002.py").write_text(bad_code)
+
+        count = migration_manager.load_migrations_from_directory(str(migrations_dir))
+        assert count == 0
+
+    def test_no_migration_path_raises_error(self, migration_manager):
+        """Test that missing migration path raises MigrationError."""
+        # Register migration from 1->2 but request path to 5
+        migration = Migration(
+            version_from=1,
+            version_to=2,
+            description="Test",
+            upgrade_func=lambda conn: None,
+        )
+        migration_manager.register_migration(migration)
+
+        with pytest.raises(MigrationError, match="No migration path"):
+            migration_manager.get_pending_migrations(target_version=5)
+
+    def test_record_migration_failure_error(self, migration_manager):
+        """Test handling when recording migration failure also fails."""
+        def upgrade_func(conn):
+            raise Exception("Migration failed")
+
+        migration = Migration(
+            version_from=1,
+            version_to=2,
+            description="Test",
+            upgrade_func=upgrade_func,
+        )
+        migration_manager.register_migration(migration)
+
+        # Mock execute to fail on the INSERT for recording the failure
+        original_execute = migration_manager.db_manager.execute
+
+        def mock_execute(sql, params=None):
+            if "INSERT INTO schema_version" in sql and params and params[2] == 0:
+                raise Exception("Failed to record failure")
+            return original_execute(sql, params)
+
+        with patch.object(migration_manager.db_manager, 'execute', side_effect=mock_execute):
+            success, error = migration_manager.apply_migration(migration)
+            assert success is False
+            assert "Migration failed" in error
+
+    def test_rollback_migration_error(self, migration_manager):
+        """Test that rollback errors are handled properly."""
+        def upgrade_func(conn):
+            cursor = conn.cursor()
+            cursor.execute("CREATE TABLE rollback_error_test (id INTEGER)")
+
+        def downgrade_func(conn):
+            raise Exception("Rollback failed")
+
+        migration = Migration(
+            version_from=1,
+            version_to=2,
+            description="Test",
+            upgrade_func=upgrade_func,
+            downgrade_func=downgrade_func,
+        )
+        migration_manager.register_migration(migration)
+        migration_manager.apply_migration(migration)
+
+        success, error = migration_manager.rollback_migration(migration)
+        assert success is False
+        assert "Rollback failed" in error
+
+    def test_migrate_to_latest_already_up_to_date(self, migration_manager):
+        """Test migrate_to_latest when already at latest version."""
+        # No migrations registered, already at version 1
+        final_version, errors = migration_manager.migrate_to_latest()
+        assert final_version == 1
+        assert len(errors) == 0
+
+    def test_migrate_to_version_already_at_target(self, migration_manager):
+        """Test migrate_to_version when already at target version."""
+        success, errors = migration_manager.migrate_to_version(1)
+        assert success is True
+        assert len(errors) == 0
+
+    def test_migrate_to_version_rollback(self, migration_manager):
+        """Test migrate_to_version with rollback (target < current)."""
+        def upgrade_func(conn):
+            cursor = conn.cursor()
+            cursor.execute("CREATE TABLE rollback_test_table (id INTEGER)")
+
+        def downgrade_func(conn):
+            cursor = conn.cursor()
+            cursor.execute("DROP TABLE rollback_test_table")
+
+        migration = Migration(
+            version_from=1,
+            version_to=2,
+            description="Test",
+            upgrade_func=upgrade_func,
+            downgrade_func=downgrade_func,
+        )
+        migration_manager.register_migration(migration)
+        migration_manager.apply_migration(migration)
+
+        assert migration_manager.get_current_version() == 2
+
+        # Rollback to version 1
+        success, errors = migration_manager.migrate_to_version(1)
+        assert success is True
+        assert len(errors) == 0
+        assert migration_manager.get_current_version() == 1
+
+    def test_migrate_to_version_rollback_missing_migration(self, migration_manager):
+        """Test rollback fails when migration for version not found."""
+        # Manually set version to 3 without registering migrations
+        migration_manager.db_manager.execute(
+            f"INSERT INTO {migration_manager.SCHEMA_VERSION_TABLE} (version, description, applied_successfully) VALUES (?, ?, ?)",
+            (3, "Manual", 1)
+        )
+
+        # Try to rollback to version 1
+        success, errors = migration_manager.migrate_to_version(1)
+        assert success is False
+        assert len(errors) > 0
+        assert "No migration found" in errors[0]
+
+    def test_migrate_to_version_forward_error(self, migration_manager):
+        """Test migrate_to_version handles forward migration errors."""
+        migration = Migration(
+            version_from=1,
+            version_to=2,
+            description="Failing migration",
+            upgrade_func=lambda conn: (_ for _ in ()).throw(Exception("Forward failed")),
+        )
+        migration_manager.register_migration(migration)
+
+        success, errors = migration_manager.migrate_to_version(2)
+        assert success is False
+        assert len(errors) == 1
+        assert "Forward failed" in errors[0]
+
+    def test_rollback_to_version_with_error(self, migration_manager):
+        """Test _rollback_to_version handles rollback errors in chain."""
+        def upgrade1(conn):
+            cursor = conn.cursor()
+            cursor.execute("CREATE TABLE rb_test1 (id INTEGER)")
+
+        def downgrade1(conn):
+            cursor = conn.cursor()
+            cursor.execute("DROP TABLE rb_test1")
+
+        def upgrade2(conn):
+            cursor = conn.cursor()
+            cursor.execute("CREATE TABLE rb_test2 (id INTEGER)")
+
+        def downgrade2(conn):
+            raise Exception("Downgrade 2 failed")
+
+        migration1 = Migration(1, 2, "M1", upgrade1, downgrade1)
+        migration2 = Migration(2, 3, "M2", upgrade2, downgrade2)
+
+        migration_manager.register_migration(migration1)
+        migration_manager.register_migration(migration2)
+
+        migration_manager.apply_migration(migration1)
+        migration_manager.apply_migration(migration2)
+
+        assert migration_manager.get_current_version() == 3
+
+        # Try to rollback to 1 - should fail at migration 2's downgrade
+        success, errors = migration_manager._rollback_to_version(1)
+        assert success is False
+        assert len(errors) > 0
+
+    def test_validate_post_migration_version_mismatch(self, migration_manager):
+        """Test post-migration validation catches version mismatch."""
+        # Create a migration that claims to update version but doesn't
+        def upgrade_func(conn):
+            pass  # Does nothing - version won't be updated
+
+        migration = Migration(
+            version_from=1,
+            version_to=2,
+            description="Bad migration",
+            upgrade_func=upgrade_func,
+        )
+
+        # Mock to simulate version not being updated
+        with patch.object(migration_manager, 'get_current_version', return_value=1):
+            with pytest.raises(MigrationValidationError, match="version is v1"):
+                migration_manager._validate_post_migration(migration)
+
+    def test_validate_post_migration_integrity_failure(self, migration_manager):
+        """Test post-migration validation catches integrity failures."""
+        migration = Migration(
+            version_from=1,
+            version_to=2,
+            description="Test",
+            upgrade_func=lambda conn: None,
+        )
+
+        # Mock integrity check to fail
+        with patch.object(migration_manager.db_manager, 'integrity_check', return_value=(False, "Corruption detected")):
+            with patch.object(migration_manager, 'get_current_version', return_value=2):
+                with pytest.raises(MigrationValidationError, match="integrity check failed"):
+                    migration_manager._validate_post_migration(migration)
+
+    def test_validate_pre_migration_integrity_failure(self, migration_manager):
+        """Test pre-migration validation catches integrity failures."""
+        migration = Migration(
+            version_from=1,
+            version_to=2,
+            description="Test",
+            upgrade_func=lambda conn: None,
+        )
+
+        # Mock integrity check to fail
+        with patch.object(migration_manager.db_manager, 'integrity_check', return_value=(False, "Corruption")):
+            with pytest.raises(MigrationValidationError, match="integrity check failed"):
+                migration_manager._validate_pre_migration(migration)

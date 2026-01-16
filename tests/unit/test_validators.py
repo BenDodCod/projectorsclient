@@ -642,3 +642,464 @@ class TestValidateIPOrHostname:
         for hostname in invalid:
             valid, error = validate_ip_or_hostname(hostname)
             assert valid is False, f"Expected {hostname} to be invalid"
+
+    def test_none_address(self):
+        """Test None address is rejected (line 118)."""
+        valid, error = validate_ip_or_hostname(None)
+        assert valid is False
+        assert "required" in error.lower()
+
+    def test_empty_address(self):
+        """Test empty address is rejected."""
+        valid, error = validate_ip_or_hostname("")
+        assert valid is False
+        assert "required" in error.lower()
+
+    def test_whitespace_only_address(self):
+        """Test whitespace-only address is rejected (line 123)."""
+        valid, error = validate_ip_or_hostname("   ")
+        assert valid is False
+        assert "empty" in error.lower()
+
+    def test_non_string_address(self):
+        """Test non-string address is rejected."""
+        valid, error = validate_ip_or_hostname(12345)
+        assert valid is False
+        assert "required" in error.lower()
+
+
+class TestValidateIPAddressEdgeCases:
+    """Additional edge case tests for validate_ip_address."""
+
+    def test_whitespace_only_ip(self):
+        """Test whitespace-only IP is rejected (line 64)."""
+        valid, error = validate_ip_address("   ")
+        assert valid is False
+        assert "empty" in error.lower()
+
+    def test_broadcast_address_explicit(self):
+        """Test broadcast address 255.255.255.255 is rejected (line 94)."""
+        valid, error = validate_ip_address("255.255.255.255")
+        assert valid is False
+        # Should explicitly mention broadcast
+        assert "broadcast" in error.lower() or "reserved" in error.lower()
+
+
+class TestValidatePortEdgeCases:
+    """Additional edge case tests for validate_port."""
+
+    def test_empty_string_port(self):
+        """Test empty string port is rejected (line 171)."""
+        valid, error = validate_port("")
+        assert valid is False
+        assert "required" in error.lower()
+
+    def test_whitespace_only_string_port(self):
+        """Test whitespace-only string port is rejected."""
+        valid, error = validate_port("   ")
+        assert valid is False
+        assert "required" in error.lower()
+
+    def test_non_int_non_string_port(self):
+        """Test non-int, non-string port is rejected (line 178)."""
+        valid, error = validate_port(12.5)  # float
+        assert valid is False
+        assert "number" in error.lower()
+
+    def test_list_port(self):
+        """Test list type port is rejected."""
+        valid, error = validate_port([4352])
+        assert valid is False
+        assert "number" in error.lower()
+
+    def test_none_port(self):
+        """Test None port is rejected."""
+        valid, error = validate_port(None)
+        assert valid is False
+
+
+class TestValidatePjlinkPortEdgeCases:
+    """Additional edge case tests for validate_pjlink_port."""
+
+    def test_string_port_conversion(self):
+        """Test string port is converted for comparison (line 206)."""
+        valid, error = validate_pjlink_port("5000")
+        assert valid is True
+
+    def test_string_standard_port(self):
+        """Test string standard port is accepted."""
+        valid, error = validate_pjlink_port("4352")
+        assert valid is True
+
+
+class TestValidateAdminPasswordEdgeCases:
+    """Additional edge case tests for validate_admin_password."""
+
+    def test_none_password(self):
+        """Test None password is rejected (line 274)."""
+        valid, error = validate_admin_password(None)
+        assert valid is False
+        assert "required" in error.lower()
+
+    def test_empty_password(self):
+        """Test empty password is rejected."""
+        valid, error = validate_admin_password("")
+        assert valid is False
+        assert "required" in error.lower()
+
+    def test_too_long_password(self):
+        """Test password over 128 chars is rejected (line 280)."""
+        # Create a valid-looking password that's too long
+        long_pwd = "Aa1!" * 50  # 200 chars
+        valid, error = validate_admin_password(long_pwd)
+        assert valid is False
+        assert "too long" in error.lower()
+
+    def test_common_password_exact_match(self):
+        """Test exact common password is rejected (line 284)."""
+        # Make a common password meet length requirements
+        # "password" padded to 12+ chars with proper requirements
+        # But actually check if the lowercase is in common passwords
+        valid, error = validate_admin_password("Password1234!@")
+        # This should fail due to sequential "1234"
+        assert valid is False
+
+    def test_common_password_from_list(self):
+        """Test that a common password from the list is rejected (line 284)."""
+        # The common password check requires password.lower() to be in COMMON_PASSWORDS
+        # We need a 12+ char password that when lowercased matches exactly
+        # 'administrator' is 13 chars and in the list
+        # But it doesn't have digits or special chars, so we can't use it directly
+        # The check order is: length -> too_long -> common -> uppercase -> lowercase -> digit -> special -> sequential -> repeated
+        # So common password check happens BEFORE requirement checks
+        # This means 'administrator' (13 chars) will be caught at the common check
+        # even though it doesn't have digits or special chars yet
+        # Wait, looking at the code, let me verify the order...
+        # Line 276: length check first
+        # Line 279: too long check
+        # Line 283-284: common password check
+        # So yes, common password is checked early
+        # 'Administrator' lowercased is 'administrator' which is in COMMON_PASSWORDS
+        valid, error = validate_admin_password("Administrator")
+        assert valid is False
+        assert "too common" in error.lower()
+
+
+class TestValidateProjectorNameEdgeCases:
+    """Additional edge case tests for validate_projector_name."""
+
+    def test_whitespace_only_name(self):
+        """Test whitespace-only name is rejected (line 349)."""
+        valid, error = validate_projector_name("   ")
+        assert valid is False
+        assert "empty" in error.lower()
+
+    def test_none_name(self):
+        """Test None name is rejected."""
+        valid, error = validate_projector_name(None)
+        assert valid is False
+        assert "required" in error.lower()
+
+    def test_non_string_name(self):
+        """Test non-string name is rejected."""
+        valid, error = validate_projector_name(12345)
+        assert valid is False
+        assert "required" in error.lower()
+
+    def test_sql_keyword_in_name(self):
+        """Test SQL keyword patterns are rejected (line 389)."""
+        # Test various SQL keywords
+        sql_names = [
+            "Projector OR admin",
+            "Projector AND test",
+            "Projector UNION all",
+            "Projector SELECT data",
+            "Projector DROP table",
+            "Projector INSERT into",
+            "Projector DELETE from",
+            "Projector UPDATE set",
+        ]
+        for name in sql_names:
+            valid, error = validate_projector_name(name)
+            assert valid is False, f"Expected '{name}' to be rejected"
+            assert "disallowed" in error.lower() or "invalid" in error.lower()
+
+
+class TestSanitizeSqlIdentifierEdgeCases:
+    """Additional edge case tests for sanitize_sql_identifier."""
+
+    def test_none_identifier(self):
+        """Test None identifier returns None (line 417)."""
+        result = sanitize_sql_identifier(None)
+        assert result is None
+
+    def test_empty_identifier(self):
+        """Test empty identifier returns None."""
+        result = sanitize_sql_identifier("")
+        assert result is None
+
+    def test_whitespace_only_identifier(self):
+        """Test whitespace-only identifier returns None (line 422)."""
+        result = sanitize_sql_identifier("   ")
+        assert result is None
+
+    def test_non_string_identifier(self):
+        """Test non-string identifier returns None."""
+        result = sanitize_sql_identifier(12345)
+        assert result is None
+
+
+class TestValidateFilePathEdgeCases:
+    """Additional edge case tests for validate_file_path."""
+
+    def test_whitespace_only_path(self):
+        """Test whitespace-only path is rejected (line 485)."""
+        valid, error = validate_file_path("   ")
+        assert valid is False
+        assert "empty" in error.lower()
+
+    def test_none_path(self):
+        """Test None path is rejected."""
+        valid, error = validate_file_path(None)
+        assert valid is False
+        assert "required" in error.lower()
+
+    def test_non_string_path(self):
+        """Test non-string path is rejected."""
+        valid, error = validate_file_path(12345)
+        assert valid is False
+        assert "required" in error.lower()
+
+    def test_invalid_path_oserror(self):
+        """Test path that causes OSError is rejected (lines 509-510)."""
+        # Test with path that might cause issues - skip platform-specific
+        # The OSError path is difficult to trigger consistently cross-platform
+        # We test with a very long path that may cause issues on some systems
+        import platform
+        if platform.system() == 'Windows':
+            # Windows has a max path length
+            very_long = "C:\\" + "a" * 300 + "\\" + "b" * 300
+            valid, error = validate_file_path(very_long)
+            # May or may not fail depending on Windows version
+            # Just ensure it doesn't crash
+            assert isinstance(valid, bool)
+
+    def test_path_resolve_error_with_mock(self, monkeypatch):
+        """Test OSError/ValueError from Path.resolve is handled (lines 509-510)."""
+        from pathlib import Path
+
+        # Store original resolve
+        original_resolve = Path.resolve
+
+        def mock_resolve(self):
+            if "trigger_error" in str(self):
+                raise OSError("Cannot resolve path")
+            return original_resolve(self)
+
+        monkeypatch.setattr(Path, "resolve", mock_resolve)
+
+        valid, error = validate_file_path("trigger_error_path.txt")
+        assert valid is False
+        assert "invalid" in error.lower()
+
+
+class TestValidateImportFileEdgeCases:
+    """Additional edge case tests for validate_import_file."""
+
+    def test_invalid_path_validation_fails(self):
+        """Test import file with invalid path (line 568)."""
+        valid, error = validate_import_file("../../../invalid")
+        assert valid is False
+
+    def test_directory_not_file(self, tmp_path):
+        """Test directory path is rejected (line 577)."""
+        # tmp_path is a directory
+        valid, error = validate_import_file(str(tmp_path))
+        assert valid is False
+        assert "not a file" in error.lower()
+
+    def test_unicode_decode_error(self, tmp_path):
+        """Test file with invalid UTF-8 is rejected (lines 600-601)."""
+        test_file = tmp_path / "binary.json"
+        # Write invalid UTF-8 bytes
+        test_file.write_bytes(b'{"\xff\xfe": "value"}')
+
+        valid, error = validate_import_file(str(test_file))
+        assert valid is False
+        assert "UTF-8" in error or "Invalid" in error
+
+    def test_cfg_file_no_json_check(self, tmp_path):
+        """Test .cfg file skips JSON check."""
+        test_file = tmp_path / "config.cfg"
+        test_file.write_text("key=value")  # Not JSON format
+
+        valid, error = validate_import_file(str(test_file))
+        assert valid is True  # .cfg files don't need to be valid JSON
+
+    def test_file_read_oserror(self, tmp_path, monkeypatch):
+        """Test OSError during file read is handled (lines 602-603)."""
+        test_file = tmp_path / "test.json"
+        test_file.write_text('{"key": "value"}')
+
+        # Mock open to raise OSError
+        original_open = open
+
+        def mock_open(*args, **kwargs):
+            if str(test_file) in str(args[0]):
+                raise OSError("Permission denied")
+            return original_open(*args, **kwargs)
+
+        monkeypatch.setattr("builtins.open", mock_open)
+
+        valid, error = validate_import_file(str(test_file))
+        assert valid is False
+        assert "Cannot read" in error or "Permission" in error.lower()
+
+
+class TestSanitizeStringEdgeCases:
+    """Additional edge case tests for sanitize_string."""
+
+    def test_none_value(self):
+        """Test None value returns empty string (line 630)."""
+        result = sanitize_string(None)
+        assert result == ""
+
+    def test_non_string_value(self):
+        """Test non-string value returns empty string."""
+        result = sanitize_string(12345)
+        assert result == ""
+
+    def test_empty_string(self):
+        """Test empty string returns empty string."""
+        result = sanitize_string("")
+        assert result == ""
+
+
+class TestValidateIntegerRangeEdgeCases:
+    """Additional edge case tests for validate_integer_range."""
+
+    def test_invalid_string_conversion(self):
+        """Test non-numeric string fails conversion (lines 673-674)."""
+        valid, error = validate_integer_range("not_a_number", 0, 100)
+        assert valid is False
+        assert "number" in error.lower()
+
+    def test_float_value(self):
+        """Test float value is rejected (line 677)."""
+        valid, error = validate_integer_range(50.5, 0, 100)
+        assert valid is False
+        assert "number" in error.lower()
+
+    def test_none_value(self):
+        """Test None value is rejected."""
+        valid, error = validate_integer_range(None, 0, 100)
+        assert valid is False
+        assert "number" in error.lower()
+
+    def test_empty_string(self):
+        """Test empty string fails."""
+        valid, error = validate_integer_range("", 0, 100)
+        assert valid is False
+
+    def test_whitespace_string(self):
+        """Test whitespace string fails."""
+        valid, error = validate_integer_range("   ", 0, 100)
+        assert valid is False
+
+
+class TestValidateProjectorConfigEdgeCases:
+    """Additional edge case tests for validate_projector_config."""
+
+    def test_config_with_password(self):
+        """Test projector config with password validation (lines 722-723)."""
+        results = validate_projector_config(
+            ip="192.168.1.100",
+            port=4352,
+            name="Projector1",
+            password="validpassword123"
+        )
+
+        # Should have 4 results including password
+        assert len(results) == 4
+
+        # Find password result
+        password_result = next(
+            ((v, e) for f, (v, e) in results if f == "password"),
+            None
+        )
+        assert password_result is not None
+        assert password_result[0] is True
+
+    def test_config_with_short_password(self):
+        """Test projector config with short password."""
+        results = validate_projector_config(
+            ip="192.168.1.100",
+            port=4352,
+            name="Projector1",
+            password="short"  # Too short
+        )
+
+        # Find password result
+        password_result = next(
+            ((v, e) for f, (v, e) in results if f == "password"),
+            None
+        )
+        assert password_result is not None
+        assert password_result[0] is False
+
+
+class TestValidateSqlConnectionEdgeCases:
+    """Additional edge case tests for validate_sql_connection."""
+
+    def test_connection_with_password(self):
+        """Test SQL connection with password validation (lines 772-773)."""
+        results = validate_sql_connection(
+            server="192.168.2.25",
+            port=1433,
+            database="ProjectorDB",
+            username="sa",
+            password="ValidPassword123"
+        )
+
+        # Find password result
+        password_result = next(
+            ((v, e) for f, (v, e) in results if f == "password"),
+            None
+        )
+        assert password_result is not None
+        assert password_result[0] is True
+
+    def test_connection_with_short_password(self):
+        """Test SQL connection with short password."""
+        results = validate_sql_connection(
+            server="192.168.2.25",
+            port=1433,
+            database="ProjectorDB",
+            username="sa",
+            password="short"  # Too short
+        )
+
+        # Find password result
+        password_result = next(
+            ((v, e) for f, (v, e) in results if f == "password"),
+            None
+        )
+        assert password_result is not None
+        assert password_result[0] is False
+
+    def test_username_email_format(self):
+        """Test email-like username format."""
+        results = validate_sql_connection(
+            server="sqlserver.local",
+            port=1433,
+            database="MyDB",
+            username="user@domain.com"
+        )
+
+        # Find username result
+        user_result = next(
+            ((v, e) for f, (v, e) in results if f == "username"),
+            None
+        )
+        assert user_result is not None
+        assert user_result[0] is True
