@@ -436,23 +436,31 @@ class TestDatabaseManagerUtilities:
     def test_backup(self, temp_dir):
         """Test database backup."""
         db_path = temp_dir / "test.db"
-        backup_path = temp_dir / "backup.db"
+        backup_path = temp_dir / "backup.json"
         db = DatabaseManager(str(db_path), secure_file=False)
 
         # Add some data
         db.insert("app_settings", {"key": "test", "value": "data"})
 
-        # Backup
-        db.backup(str(backup_path))
+        # Backup (enhanced version returns metadata)
+        result = db.backup(str(backup_path))
         assert backup_path.exists()
+        assert "checksum" in result
+        assert "timestamp" in result
 
-        # Verify backup contains data
-        backup_db = DatabaseManager(str(backup_path), auto_init=False, secure_file=False)
-        row = backup_db.fetchone("SELECT * FROM app_settings WHERE key = ?", ("test",))
-        assert row is not None
-
+        # Verify backup can be restored
         db.close_all()
-        backup_db.close_all()
+        db_path.unlink()
+
+        restored_db = DatabaseManager(str(db_path), auto_init=False, secure_file=False)
+        restore_result = restored_db.restore(str(backup_path))
+        assert restore_result["validation"] == "success"
+
+        row = restored_db.fetchone("SELECT * FROM app_settings WHERE key = ?", ("test",))
+        assert row is not None
+        assert row["value"] == "data"
+
+        restored_db.close_all()
 
     def test_vacuum(self, temp_dir):
         """Test vacuum operation."""

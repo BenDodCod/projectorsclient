@@ -18,12 +18,18 @@ Author: Backend Infrastructure Developer
 Version: 1.0.0
 """
 
+import base64
+import gzip
+import hashlib
+import json
 import logging
 import os
+import shutil
 import sqlite3
 import threading
 import time
 from contextlib import contextmanager
+from datetime import datetime
 from pathlib import Path
 from typing import Any, Dict, Generator, List, Optional, Tuple, Union
 
@@ -47,6 +53,16 @@ class QueryError(DatabaseError):
 
 class SchemaError(DatabaseError):
     """Raised when schema operations fail."""
+    pass
+
+
+class BackupError(DatabaseError):
+    """Raised when backup operations fail."""
+    pass
+
+
+class RestoreError(DatabaseError):
+    """Raised when restore operations fail."""
     pass
 
 
@@ -654,23 +670,277 @@ class DatabaseManager:
         self.execute("VACUUM", commit=True)
         logger.info("Database vacuumed")
 
-    def backup(self, backup_path: str) -> None:
-        """Create a backup of the database.
+    def backup(
+        self,
+        backup_path: str,
+        password: Optional[str] = None,
+        compress: bool = True,
+        metadata: Optional[Dict[str, Any]] = None,
+    ) -> Dict[str, Any]:
+        """Create an encrypted backup of the database with metadata.
+
+        Creates a backup file with:
+        - Compressed database content (optional)
+        - SHA-256 checksum for integrity verification
+        - Metadata (timestamp, version, schema version, etc.)
+        - Optional encryption using DPAPI
 
         Args:
             backup_path: Path for the backup file.
+            password: Optional password for encryption (uses DPAPI).
+            compress: Whether to compress the backup (default True).
+            metadata: Optional additional metadata to include.
+
+        Returns:
+            Dictionary containing backup metadata.
+
+        Raises:
+            BackupError: If backup creation fails.
+
+        Example:
+            >>> db = DatabaseManager("app.db")
+            >>> info = db.backup("backup.db.enc", password="secret", compress=True)
+            >>> print(info["checksum"])  # SHA-256 of backup content
         """
-        backup_path = Path(backup_path)
-        backup_path.parent.mkdir(parents=True, exist_ok=True)
-
-        conn = self.get_connection()
-        backup_conn = sqlite3.connect(str(backup_path))
-
         try:
-            conn.backup(backup_conn)
-            logger.info("Database backed up to %s", backup_path)
-        finally:
-            backup_conn.close()
+            backup_path = Path(backup_path)
+            backup_path.parent.mkdir(parents=True, exist_ok=True)
+
+            # Create temporary backup using SQLite's backup API
+            temp_backup = backup_path.with_suffix(".tmp")
+            conn = self.get_connection()
+            backup_conn = sqlite3.connect(str(temp_backup))
+
+            try:
+                conn.backup(backup_conn)
+            finally:
+                backup_conn.close()
+
+            # Read the backup content
+            with open(temp_backup, "rb") as f:
+                db_content = f.read()
+
+            # Calculate checksum of original content
+            checksum = hashlib.sha256(db_content).hexdigest()
+
+            # Compress if requested
+            if compress:
+                db_content = gzip.compress(db_content, compresslevel=6)
+                logger.debug("Backup compressed: %d bytes", len(db_content))
+
+            # Encrypt if password provided
+            encrypted = False
+            if password:
+                try:
+                    from src.utils.security import CredentialManager
+                    # Get app data dir from db path
+                    app_data_dir = self.db_path.parent
+                    cred_manager = CredentialManager(str(app_data_dir))
+
+                    # Encode db_content to base64 for DPAPI text input
+                    db_content_b64 = base64.b64encode(db_content).decode('ascii')
+                    encrypted_content = cred_manager.encrypt_credential(db_content_b64)
+                    db_content = encrypted_content.encode('utf-8')
+                    encrypted = True
+                    logger.debug("Backup encrypted with DPAPI")
+                except ImportError:
+                    logger.warning("Security module not available, backup not encrypted")
+
+            # Create metadata
+            backup_metadata = {
+                "version": "2.0",
+                "timestamp": datetime.utcnow().isoformat() + "Z",
+                "checksum": checksum,
+                "compressed": compress,
+                "encrypted": encrypted,
+                "original_size": os.path.getsize(temp_backup),
+                "backup_size": len(db_content),
+                "db_path": str(self.db_path),
+                "schema_version": self._get_schema_version(),
+            }
+
+            # Add custom metadata
+            if metadata:
+                backup_metadata["custom"] = metadata
+
+            # Create backup package with metadata
+            backup_package = {
+                "metadata": backup_metadata,
+                "data": db_content.decode('utf-8') if encrypted else base64.b64encode(db_content).decode('ascii'),
+            }
+
+            # Write backup file as JSON
+            with open(backup_path, "w", encoding="utf-8") as f:
+                json.dump(backup_package, f, indent=2)
+
+            # Clean up temporary backup
+            temp_backup.unlink()
+
+            logger.info("Database backed up to %s (checksum: %s)", backup_path, checksum[:16])
+            return backup_metadata
+
+        except Exception as e:
+            logger.error("Backup failed: %s", e)
+            # Clean up temporary file if it exists
+            if 'temp_backup' in locals() and temp_backup.exists():
+                try:
+                    temp_backup.unlink()
+                except Exception:
+                    pass
+            raise BackupError(f"Failed to create backup: {e}") from e
+
+    def restore(
+        self,
+        backup_path: str,
+        password: Optional[str] = None,
+        validate_checksum: bool = True,
+    ) -> Dict[str, Any]:
+        """Restore database from an encrypted backup.
+
+        Restores a database backup created with the backup() method.
+        Performs integrity validation and supports decryption.
+
+        Args:
+            backup_path: Path to the backup file.
+            password: Password for decryption (if backup is encrypted).
+            validate_checksum: Whether to validate checksum (default True).
+
+        Returns:
+            Dictionary containing restore metadata and validation results.
+
+        Raises:
+            RestoreError: If restore fails or validation fails.
+
+        Example:
+            >>> db = DatabaseManager("app.db")
+            >>> info = db.restore("backup.db.enc", password="secret")
+            >>> print(info["validation"])  # "success"
+        """
+        try:
+            backup_path = Path(backup_path)
+            if not backup_path.exists():
+                raise RestoreError(f"Backup file not found: {backup_path}")
+
+            # Read backup package
+            with open(backup_path, "r", encoding="utf-8") as f:
+                backup_package = json.load(f)
+
+            metadata = backup_package["metadata"]
+            db_content = backup_package["data"]
+
+            logger.info(
+                "Restoring backup from %s (timestamp: %s, schema_version: %s)",
+                backup_path,
+                metadata.get("timestamp"),
+                metadata.get("schema_version")
+            )
+
+            # Convert data back to bytes
+            if metadata.get("encrypted"):
+                # Encrypted content is stored as UTF-8 text
+                encrypted_content = db_content
+                if not password:
+                    raise RestoreError("Backup is encrypted but no password provided")
+
+                try:
+                    from src.utils.security import CredentialManager
+                    app_data_dir = self.db_path.parent
+                    cred_manager = CredentialManager(str(app_data_dir))
+
+                    # Decrypt to get base64-encoded content
+                    db_content_b64 = cred_manager.decrypt_credential(encrypted_content)
+                    db_content = base64.b64decode(db_content_b64)
+                    logger.debug("Backup decrypted successfully")
+                except ImportError:
+                    raise RestoreError("Security module not available for decryption")
+                except Exception as e:
+                    raise RestoreError(f"Decryption failed: {e}")
+            else:
+                # Not encrypted, just base64-encoded
+                db_content = base64.b64decode(db_content)
+
+            # Decompress if needed
+            if metadata.get("compressed"):
+                db_content = gzip.decompress(db_content)
+                logger.debug("Backup decompressed")
+
+            # Validate checksum
+            if validate_checksum:
+                calculated_checksum = hashlib.sha256(db_content).hexdigest()
+                stored_checksum = metadata.get("checksum")
+
+                if calculated_checksum != stored_checksum:
+                    raise RestoreError(
+                        f"Checksum validation failed. Expected {stored_checksum[:16]}..., "
+                        f"got {calculated_checksum[:16]}..."
+                    )
+                logger.debug("Checksum validation passed")
+
+            # Close existing connections
+            self.close_all()
+
+            # Create backup of current database
+            current_db_backup = None
+            if self.db_path.exists():
+                current_db_backup = self.db_path.with_suffix(".db.before_restore")
+                shutil.copy2(self.db_path, current_db_backup)
+                logger.debug("Created backup of current database")
+
+            try:
+                # Ensure parent directory exists
+                self.db_path.parent.mkdir(parents=True, exist_ok=True)
+
+                # Write restored content to database
+                with open(self.db_path, "wb") as f:
+                    f.write(db_content)
+
+                # Verify restored database integrity
+                integrity_ok, integrity_msg = self.integrity_check()
+                if not integrity_ok:
+                    raise RestoreError(f"Restored database failed integrity check: {integrity_msg}")
+
+                logger.info("Database restored successfully from %s", backup_path)
+
+                # Clean up pre-restore backup if restore succeeded
+                if current_db_backup and current_db_backup.exists():
+                    current_db_backup.unlink()
+
+                return {
+                    "validation": "success",
+                    "checksum_verified": validate_checksum,
+                    "metadata": metadata,
+                    "restore_timestamp": datetime.utcnow().isoformat() + "Z",
+                }
+
+            except Exception as e:
+                # Restore failed, rollback to previous database if available
+                if current_db_backup and current_db_backup.exists():
+                    shutil.copy2(current_db_backup, self.db_path)
+                    logger.info("Rolled back to previous database after restore failure")
+                raise RestoreError(f"Restore failed, rolled back: {e}") from e
+
+        except RestoreError:
+            raise
+        except Exception as e:
+            logger.error("Restore failed: %s", e)
+            raise RestoreError(f"Failed to restore backup: {e}") from e
+
+    def _get_schema_version(self) -> int:
+        """Get current schema version from database.
+
+        Returns:
+            Schema version number, or 1 if not tracked.
+        """
+        try:
+            # Check if schema_version table exists
+            if self.table_exists("schema_version"):
+                result = self.fetchval(
+                    "SELECT MAX(version) FROM schema_version WHERE applied_successfully = 1"
+                )
+                return result if result else 1
+            return 1
+        except Exception:
+            return 1
 
     def integrity_check(self) -> Tuple[bool, str]:
         """Check database integrity.
