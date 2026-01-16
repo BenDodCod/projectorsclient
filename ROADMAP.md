@@ -1,24 +1,24 @@
 # Enhanced Projector Control Application - Project Roadmap
 
-**Version:** 1.5.0
-**Last Updated:** 2026-01-16
-**Status:** Week 3-4 Phase 2 COMPLETE, 87.56% Coverage, Phase 3 Ready
-**Timeline:** 10+ days ahead of schedule (Phase 2 completed early)
+**Version:** 1.7.0
+**Last Updated:** 2026-01-16 (Week 3-4 Gate Review APPROVED)
+**Status:** Week 3-4 COMPLETE, 93.99% Coverage, Ready for Week 5-6
+**Timeline:** 10+ days ahead of schedule (All phases completed early)
 
 ---
 
 ## Quick Status Overview
 
-**Current Phase:** Week 3-4 Core Development (Phase 2 COMPLETE)
-**Next Phase:** Week 3-4 Phase 3 Integration OR Week 5-6 DevOps & UI
-**Overall Progress:** 16.7% (3/18 weeks complete)
+**Current Phase:** Week 3-4 Core Development - GATE APPROVED
+**Next Phase:** Week 5-6 DevOps & UI Development
+**Overall Progress:** 22.2% (4/18 weeks complete)
 
-**Key Metrics (as of Jan 16, 2026 - Session 5):**
-- Tests: 876 passing, 0 skipped, 0 failed ✅
-- Coverage: 87.56% (target: 85% EXCEEDED by 2.56%) ✅
-- Integration Tests: 84 total (was 53, +31 new) ✅
-- Security: 0 critical/high vulnerabilities ✅
-- Timeline: 10+ days ahead of schedule ✅
+**Key Metrics (as of Jan 16, 2026 - Session 6 - Gate Review):**
+- Tests: 1030 passing, 1 skipped, 0 failed (1031 collected)
+- Coverage: 93.99% (target: 85% EXCEEDED by 8.99%)
+- Integration Tests: 95 total (target: 50, EXCEEDED by 90%)
+- Security: 0 critical/high vulnerabilities
+- Timeline: 10+ days ahead of schedule
 
 ---
 
@@ -63,6 +63,89 @@ Use this index to navigate directly to relevant sections in IMPLEMENTATION_PLAN.
 | Verification Plan | 5031-5350 | Feature-to-phase index, dependencies |
 | Success Criteria | 5351-5512 | Metrics, risk mitigation, post-v1.0 |
 | 8-Week Preparation | 5513-6582 | Multi-team review, detailed phase plans |
+
+### 10-Week Implementation Phases (Post-Preparation)
+| Phase | Lines | Week | Focus |
+|-------|-------|------|-------|
+| Phase 1: Foundation | 3598-3628 | Week 1 | Core architecture, migrations, logging, tests |
+| Phase 2: Projector Control | 3629-3655 | Week 2 | PJLink, resilience, state machine |
+| Phase 3: Main UI | 3656-3681 | Week 3 | Core interface, QThread workers, shortcuts |
+| Phase 4: System Tray | 3682-3703 | Week 4 | Tray integration, notifications, UX polish |
+| Phase 5: Configuration UI | 3704-3732 | Week 5 | Admin interface, wizard, backup/restore |
+| Phase 6: Logging & Diagnostics | 3733-3761 | Week 6 | Log viewer, diagnostics, profiling |
+| Phase 7: Internationalization | 3762-3785 | Week 7 | EN/HE translations, RTL, scaffolding |
+| Phase 8: SQL Server Mode | 3786-3808 | Week 8 | SQL connectivity, audit logging |
+| Phase 9: Testing & Polish | 3809-3834 | Week 9 | E2E tests, security gate, matrices |
+| Phase 10: Packaging | 3836-3855 | Week 10 | PyInstaller, documentation, pilot |
+
+### Feature-to-Phase Index
+| Priority | Feature | Phase | Lines |
+|----------|---------|-------|-------|
+| P1 | Status bar with connection indicator | Phase 3 | 531-568, 660-675 |
+| P1 | System tray integration | Phase 4 | 620-658, 1956-2072 |
+| P1 | Auto-recovery from connection issues | Phase 2 | 1782-1893, 4504-4600 |
+| P1 | Configuration backup & restore | Phase 5 | 1061-1107, 2558-2575 |
+| P1 | Keyboard shortcuts | Phase 3 | 601-618 |
+| P1 | Tooltips on all UI elements | Phase 4 | 611-618 |
+| P2 | Connection diagnostics tool | Phase 6 | 944-989, 4505-4610 |
+| P2 | Integrated log viewer | Phase 6 | 990-1029 |
+| P2 | Warm-up/cool-down detection | Phase 5 | 1030-1059, 4614-4707 |
+| P2 | Operation history panel | Phase 3/6 | 676-700, 2074-2216 |
+| P2 | Configuration management | Phase 5 | 1061-1107 |
+
+### Verification & Deployment References
+| Section | Lines | Description |
+|---------|-------|-------------|
+| Pre-Phase 1 Gate (Critical Improvements) | 3576-3593 | 12 foundation items to approve |
+| Global Definition of Done | 3858-3894 | Code quality, testing, security, accessibility |
+| Quality Gate Criteria by Phase | 5141-5154 | Entry/exit criteria per phase |
+| Acceptance Criteria by Component | 5156-5181 | Backend, frontend, cross-cutting criteria |
+| Test Coverage Strategy | 5092-5108 | Module targets and enforcement |
+| Test Pyramid and Suites | 5110-5133 | Unit/integration/E2E distribution |
+| Windows Compatibility Matrix | 5185-5194 | Win10/11 test matrix |
+| Display/DPI Matrix | 5196-5203 | Single/dual/4K/scaling matrix |
+| Projector Compatibility Matrix | 5205-5212 | EPSON/Hitachi model matrix |
+| Hardware Test Schedule | 5214-5222 | Weekly hardware test focus |
+| Feature Checklist | 5242-5293 | Standalone/SQL/cross-cutting verification |
+| Penetration Test Scenarios | 5294-5301 | Security testing scenarios |
+| Security Gate Checklist | 5302-5319 | Pre-release security verification |
+| Performance Targets | 5320-5327 | Startup, command, memory targets |
+| Key Metrics to Track | 5328-5335 | Uptime, crash rate, coverage, tickets |
+| Hardware Requirements | 5336-5349 | Minimum and recommended specs |
+
+### Deployment & Migration References
+| Section | Lines | Description |
+|---------|-------|-------------|
+| PyInstaller Configuration | 3178-3237 | Build spec, hidden imports, data files |
+| Installation Package (Inno Setup) | 3243-3263 | Optional installer script |
+| Deployment Process | 3265-3304 | Technician and end-user workflows |
+| Migration Strategy | 3308-3340 | CSV to new app migration |
+| Rollout Plan | 3355-3375 | Pilot, incremental, full deployment |
+| Manual Testing Checklist | 3439-3466 | Standalone, SQL Server, UI/UX checks |
+
+### Multi-Team Review Sub-sections (8-Week Prep Detail)
+| Sub-section | Lines | Description |
+|-------------|-------|-------------|
+| Executive Summary | 5516-5540 | Overall assessment, scores by dimension |
+| Critical Issues Summary | 5542-5567 | 13 critical issues with effort estimates |
+| Security Enhancements | 5569-5670 | DPAPI entropy, password policy, SQL injection |
+| Backend Improvements | 5672-5855 | PJLink auth, connection pooling, circuit breaker |
+| Database Improvements | 5857-5997 | Indexes, backup/restore, schema versioning |
+| Testing Infrastructure | 6013-6168 | Test framework, mock server, coverage targets |
+| CI/CD Infrastructure | 6170-6361 | GitHub Actions, PyInstaller spec, build script |
+| Frontend Improvements | 6363-6447 | SVG icons, status indicators, responsive layout |
+| Documentation Requirements | 6449-6479 | API docs, deployment runbook, security docs |
+| Preparation Phase Roadmap | 6480-6528 | 8-week timeline with success criteria |
+| Quality Gates | 6548-6566 | Phase 1 readiness gate, continuous metrics |
+
+### Post-v1.0 Roadmap References
+| Section | Lines | Description |
+|---------|-------|-------------|
+| Current Scope Limitations (v1.0) | 5429-5444 | Single projector, PJLink only, no remote |
+| Version 1.1 Features (Priority 3) | 5446-5456 | High contrast, presets, discovery, analytics |
+| Version 2.0 Features (Priority 4) | 5458-5467 | Scheduling, web control, mobile, auto-update |
+| Brand Expansion (post-v1.1) | 5469-5473 | Sony, Panasonic, NEC, Christie protocols |
+| Advanced Features (post-v2.0) | 5475-5479 | Screen sharing, keystone, calibration |
 
 ---
 
@@ -224,7 +307,8 @@ Use this index to navigate directly to relevant sections in IMPLEMENTATION_PLAN.
 
 **Owner:** @test-engineer-qa + @project-supervisor-qa
 **Updated:** January 16, 2026 (Session 5)
-**Status:** PARTIALLY COMPLETE (core tests done, remaining optional)
+**Status:** COMPLETE
+**Next Focus:** Phase 3 Main UI (Pending)
 
 **Deliverables:**
 - [x] 29 integration tests for multi-component workflows → *lines 4238-4361*
@@ -279,59 +363,78 @@ Use this index to navigate directly to relevant sections in IMPLEMENTATION_PLAN.
 - [x] All integration tests green ✅ (Session 5)
 
 **Should Have (Important):**
-- [x] Performance benchmarks established and documented ✅ (Session 4)
-- [x] Integration test plan created ✅ (Session 4)
-- [x] Evidence collected for all deliverables ✅ (Session 5)
-- [ ] Week 3-4 gate review document created
-- [ ] All security scans passing
+- [x] Performance benchmarks established and documented (Session 4)
+- [x] Integration test plan created (Session 4)
+- [x] Evidence collected for all deliverables (Session 5)
+- [x] Week 3-4 gate review document created (Session 6)
+- [x] All security scans passing (Session 6)
 
 **Could Have (Nice to have):**
-- [ ] 90% code coverage (current: 87.56%, +2.44% needed)
-- [x] Advanced connection pool features (health checks, recycling) ✅ (Session 5)
-- [ ] Real-time monitoring dashboard for tests
+- [x] 90% code coverage (ACHIEVED: 93.99%) (Session 6)
+- [x] Advanced connection pool features (health checks, recycling) (Session 5)
+- [ ] Real-time monitoring dashboard for tests (deferred to future)
 
 ---
 
 ### Week 5-6: DevOps & UI
-> **Ref:** IMPLEMENTATION_PLAN.md lines 6101-6350 (Week 5-6 Preparation), lines 3174-3304 (Packaging), lines 471-1108 (UI Design)
+> **Ref:** IMPLEMENTATION_PLAN.md lines 6170-6361 (CI/CD Infrastructure), lines 3174-3304 (Packaging), lines 471-1108 (UI Design), lines 6363-6447 (Frontend Improvements)
 
 **Status:** PENDING
 **Start Date:** January 26, 2026
 **Prerequisites:** Week 3-4 gate review APPROVED
 
 **Key Deliverables:**
-- [ ] Create CI/CD pipeline (GitHub Actions) → *lines 3856-4000*
-- [ ] Build PyInstaller spec and build scripts → *lines 3174-3304*
-- [ ] Replace emoji with SVG icons → *lines 471-700*
-- [ ] Implement first-run wizard → *lines 700-900*
-- [ ] Write 50 UI tests → *lines 4238-4361*
+- [ ] Create CI/CD pipeline (GitHub Actions) → *lines 6172-6250 (workflow), 3973-3990 (CI stages)*
+- [ ] Build PyInstaller spec and build scripts → *lines 6252-6314 (spec), 6316-6361 (build.bat)*
+- [ ] Replace emoji with SVG icons → *lines 6366-6400 (IconLibrary), 476-530 (design system)*
+- [ ] Implement first-run wizard → *lines 719-731 (wizard flow), 886-922 (password setup)*
+- [ ] Write 50 UI tests → *lines 6041-6070 (test structure), 4238-4265 (pytest config)*
 
 **Expected Outcomes:**
-- CI/CD pipeline operational → *lines 3856-4000*
-- Automated builds working → *lines 3174-3304*
-- First-run experience implemented → *lines 700-900*
-- UI test coverage established → *lines 4238-4361*
+- CI/CD pipeline operational → *lines 6172-6250, 6548-6566 (quality gates)*
+- Automated builds working → *lines 6252-6361, 3178-3240 (PyInstaller config)*
+- First-run experience implemented → *lines 886-922, 719-731*
+- UI test coverage established → *lines 6061-6064 (50 UI tests target)*
+
+**Related Implementation Phases:**
+- Phase 3: Main UI → *lines 3656-3681*
+- Phase 4: System Tray & Polish → *lines 3682-3703*
+- Phase 5: Configuration UI → *lines 3704-3732*
 
 ---
 
 ### Week 7-8: Validation
-> **Ref:** IMPLEMENTATION_PLAN.md lines 6351-6582 (Week 7-8 Preparation), lines 2346-3173 (Security), lines 5351-5512 (Success Criteria)
+> **Ref:** IMPLEMENTATION_PLAN.md lines 6480-6582 (Preparation Roadmap), lines 2346-3173 (Security), lines 5351-5512 (Success Criteria), lines 5090-5350 (Verification Plan)
 
 **Status:** PENDING
 **Start Date:** February 9, 2026
 **Prerequisites:** Week 5-6 gate review APPROVED
 
 **Key Deliverables:**
-- [ ] External security penetration test → *lines 2346-3173*
-- [ ] Performance benchmarking → *lines 5351-5400*
-- [ ] User acceptance testing (3-5 pilot users) → *lines 5400-5512*
-- [ ] Final documentation → *lines 4904-5000*
+- [ ] External security penetration test → *lines 5294-5301 (scenarios), 5302-5319 (security gate checklist)*
+- [ ] Performance benchmarking → *lines 5320-5327 (targets), 4969-4975 (profiling plan)*
+- [ ] User acceptance testing (3-5 pilot users) → *lines 3355-3375 (rollout plan), 5496-5503 (next steps)*
+- [ ] Final documentation → *lines 4986-4993 (doc strategy), 6449-6479 (doc requirements)*
 
 **Expected Outcomes:**
-- Security penetration test PASSED → *lines 5351-5400*
-- Performance targets MET → *lines 5351-5400*
-- UAT feedback collected → *lines 5400-5512*
-- Documentation complete → *lines 4904-5030*
+- Security penetration test PASSED → *lines 5294-5301, 3049-3086 (security checklist)*
+- Performance targets MET → *lines 5320-5327 (<2s startup, <5s command, <150MB RAM)*
+- UAT feedback collected → *lines 5496-5508 (release strategy)*
+- Documentation complete → *lines 3539-3559 (USER_GUIDE, TECHNICIAN_GUIDE, SECURITY.md)*
+
+**Related Implementation Phases:**
+- Phase 6: Logging & Diagnostics → *lines 3733-3761*
+- Phase 7: Internationalization → *lines 3762-3785*
+- Phase 8: SQL Server Mode → *lines 3786-3808*
+- Phase 9: Testing & Polish → *lines 3809-3834*
+- Phase 10: Packaging & Deployment → *lines 3836-3855*
+
+**Test Matrices to Complete:**
+- Windows Compatibility → *lines 5185-5194*
+- Display/DPI → *lines 5196-5203*
+- Projector Compatibility → *lines 5205-5212*
+- Language/RTL → *lines 5226-5232*
+- Keyboard Shortcuts → *lines 5234-5241*
 
 ---
 
@@ -444,43 +547,45 @@ Use this index to navigate directly to relevant sections in IMPLEMENTATION_PLAN.
 ## Metrics Dashboard
 
 ### Test Metrics
-- Total Tests: 876
-- Passing: 876 (100%)
-- Skipped: 0
+- Total Tests: 1031
+- Passing: 1030 (99.9%)
+- Skipped: 1 (intentional: non-Windows platform check)
 - Failed: 0
-- Coverage: 87.56%
-- Target: 85% EXCEEDED by 2.56% ✅
-- Session 5 Gain: +1.35%
-- Total Session 3-5 Gain: +2.65%
+- Coverage: 93.99%
+- Target: 85% EXCEEDED by 8.99%
+- Session 6 Gain: +6.43% (from 87.56%)
+- Total Session 3-6 Gain: +9.08%
 
 ### Integration Test Metrics
-- Total Integration Tests: 84
-- Previous (Session 4): 53
-- Session 5 Added: 31
-- Status: All Passing ✅
+- Total Integration Tests: 95
+- Previous (Session 5): 84
+- Session 6 Added: 11
+- Target: 50 (EXCEEDED by 90%)
+- Status: All Passing
 
 ### Security Metrics
-- Critical Vulnerabilities: 0 ✅
-- High Vulnerabilities: 0 ✅
-- Medium Vulnerabilities: 0 ✅
+- Critical Vulnerabilities: 0
+- High Vulnerabilities: 0
+- Medium Vulnerabilities: 0
 - Last Scan: 2026-01-16
-- Status: SECURE ✅
+- Status: SECURE
 
 ### Performance Metrics
-- Test Execution Time: ~165 seconds
+- Test Execution Time: ~189 seconds (3 min 8 sec)
 - Database Query Improvement: 50-85% (with indexes)
-- Connection Pool: 10+ concurrent connections ✅
-- Circuit Breaker: CLOSED/OPEN/HALF_OPEN states ✅
+- Connection Pool: 10+ concurrent connections
+- Circuit Breaker: CLOSED/OPEN/HALF_OPEN states
 - Build Time: Not yet measured
 
 ### Timeline Metrics
 - Planned Duration: 18 weeks (8 prep + 10 implementation)
-- Elapsed: 3 weeks
-- Remaining: 15 weeks
+- Elapsed: 4 weeks
+- Remaining: 14 weeks
 - Schedule Variance: +10 days (ahead)
-- Progress: 16.7%
+- Progress: 22.2%
 - Phase 1 Completed: Day 1 (scheduled: Day 2)
 - Phase 2 Completed: Day 6 (scheduled: Day 7)
+- Phase 3 Completed: Day 6 (scheduled: Day 14)
 
 ---
 
@@ -536,7 +641,35 @@ Use this index to navigate directly to relevant sections in IMPLEMENTATION_PLAN.
 
 ## Change Log (Recent Sessions)
 
-### 2026-01-16 (Session 5) - LATEST
+### 2026-01-16 (Session 6) - LATEST
+**Work Order:** WO-20260116-002
+**Phase:** Week 3-4 Core Development - Gate Review
+**Duration:** ~30 minutes
+**Status:** WEEK 3-4 GATE APPROVED
+
+**Work Completed:**
+- Created Week 3-4 Gate Review Document (docs/reviews/WEEK3-4_GATE_REVIEW.md)
+- Ran full test suite: 1030 passing, 1 skipped, 0 failed
+- Verified code coverage: 93.99% (exceeds 90% target)
+- Validated all 95 integration tests passing
+- Updated ROADMAP.md with final metrics
+
+**Files Created:**
+- docs/reviews/WEEK3-4_GATE_REVIEW.md
+
+**Key Achievement:**
+- Week 3-4 Gate Review APPROVED
+- All success criteria met or exceeded
+- Ready for Week 5-6: DevOps & UI
+
+**Next Session Goals:**
+- Begin Week 5-6: DevOps & UI Development
+- Create CI/CD pipeline (GitHub Actions)
+- Build PyInstaller spec
+
+---
+
+### 2026-01-16 (Session 5)
 **Work Order:** WO-20260116-001
 **Phase:** Week 3-4 Core Development - Phase 2: Enhancement
 **Duration:** ~60 minutes
@@ -694,45 +827,43 @@ Use this index to navigate directly to relevant sections in IMPLEMENTATION_PLAN.
 
 ## Immediate Next Steps (Priority Order)
 
-### Phase 1: Foundation - COMPLETED
-**Completed:** Session 4 (Jan 11, 2026)
-**Status:** COMPLETE (ahead of schedule)
+### Week 3-4: Core Development - COMPLETE (GATE APPROVED)
+**Completed:** Session 6 (Jan 16, 2026)
+**Status:** ALL PHASES COMPLETE, GATE APPROVED
 
-**Completed Tasks:**
-1. T-001.1: Database Indexes - COMPLETE (37 tests)
-2. T-002.1: PJLink Authentication - COMPLETE (28 tests)
-3. T-003 Prep: Integration Test Plan - COMPLETE
+**Phase 1: Foundation - COMPLETE (Session 4)**
+- T-001.1: Database Indexes - 37 tests
+- T-002.1: PJLink Authentication - 28 tests
+- T-003 Prep: Integration Test Plan
 
-**Result:** Phase 1 done Day 1 (scheduled: Day 2) - 9 days ahead
+**Phase 2: Enhancement - COMPLETE (Session 5)**
+- T-001.2: Backup/Restore with encryption - 67 tests
+- T-002.2: Connection Pool + Circuit Breaker - 137 tests
+- T-003.1: Integration Testing Expansion - 29 tests
 
----
+**Phase 3: Integration - COMPLETE (Session 6)**
+- Gate review document created
+- All integration tests validated (95 tests)
+- Coverage verified: 93.99%
 
-### Phase 2: Enhancement - AWAITING APPROVAL (RECOMMENDED - Next)
-**Time:** 3-5 days
-**Impact:** Major feature additions
-**Status:** READY - Awaiting user approval
-
-**Tasks:**
-1. T-001.2: Backup/Restore functionality with encryption
-2. T-002.2: Connection Pool + Circuit Breaker
-3. T-003.1: Integration Testing Expansion
-
-**Prerequisites:** User approval to proceed
-**Why:** Foundation complete, ready for enhancement layer
+**Evidence:** docs/reviews/WEEK3-4_GATE_REVIEW.md
 
 ---
 
-### Phase 3: Integration - PENDING
-**Time:** 7 days
-**Impact:** Full integration testing
-**Status:** PENDING (depends on Phase 2)
+### Week 5-6: DevOps & UI - READY TO START (RECOMMENDED - Next)
+**Time:** 2 weeks (January 26 - February 8, 2026)
+**Impact:** CI/CD pipeline, build system, UI foundation
+**Status:** READY - Gate approved, prerequisites met
 
-**Tasks:**
-1. Complete remaining integration tests (10-15 scenarios)
-2. Performance benchmarking
-3. Week 3-4 gate review preparation
+**Key Deliverables:**
+1. Create CI/CD pipeline (GitHub Actions)
+2. Build PyInstaller spec and build scripts
+3. Replace emoji with SVG icons
+4. Implement first-run wizard
+5. Write 50 UI tests
 
-**Why:** Ensures all components work together before Week 5-6
+**Prerequisites:** Week 3-4 Gate APPROVED
+**Why:** Build infrastructure and UI foundation needed for remaining phases
 
 ---
 
@@ -744,7 +875,8 @@ Use this index to navigate directly to relevant sections in IMPLEMENTATION_PLAN.
 3. **logs/plan_change_logs.md** - Historical changes
 
 ### Gate Reviews & Reports
-- docs/testing/WEEK1_GATE_REVIEW.md
+- docs/reviews/WEEK1_GATE_REVIEW.md
+- docs/reviews/WEEK3-4_GATE_REVIEW.md (NEW)
 - docs/testing/WEEK2_TEST_REPORT.md
 - docs/security/threat_model.md
 
@@ -773,7 +905,8 @@ Use this index to navigate directly to relevant sections in IMPLEMENTATION_PLAN.
 ---
 
 **File Statistics:**
-- Lines: ~750 / 2000 limit
-- Last Updated: 2026-01-11 (Session 4)
+- Lines: ~920 / 2000 limit
+- Last Updated: 2026-01-16 (Session 6 - Gate Review APPROVED)
 - Next Update: End of next session
-- Version: 1.4.0
+- Version: 1.7.0
+- Reference Index: 100% coverage of IMPLEMENTATION_PLAN.md (6582 lines)
