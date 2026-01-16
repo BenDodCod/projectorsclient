@@ -22,17 +22,62 @@
 
 ---
 
+## 📖 IMPLEMENTATION_PLAN.md Reference Index
+
+Use this index to navigate directly to relevant sections in IMPLEMENTATION_PLAN.md (6582 lines).
+
+### Core Architecture & Design
+| Section | Lines | Description |
+|---------|-------|-------------|
+| Project Overview | 1-126 | Scope, agent sync protocol, key innovations, architecture |
+| Project Structure | 127-236 | Directory layout, file organization |
+| Database Design | 237-470 | SQLite/SQL Server schemas, tables, relationships |
+| UI Design | 471-1108 | PyQt6 specifications, layouts, dialogs, styling |
+| Internationalization | 1109-1165 | Hebrew/English, RTL support |
+
+### Implementation Details
+| Section | Lines | Description |
+|---------|-------|-------------|
+| Core Components | 1166-2073 | Controllers, Database Manager, Settings Manager |
+| Operation History | 2074-2216 | Audit logging, history management |
+| UI Widgets | 2217-2345 | Custom PyQt6 widgets, components |
+| Security Implementation | 2346-3173 | DPAPI, encryption, authentication, audit |
+| Packaging & Deployment | 3174-3304 | PyInstaller, distribution, updates |
+
+### Testing & Quality
+| Section | Lines | Description |
+|---------|-------|-------------|
+| Migration & Testing Strategy | 3305-3575 | Test framework, critical files |
+| Implementation Phases 1-10 | 3576-3855 | Phase definitions, deliverables |
+| Definition of Done | 3856-4129 | Quality gates, CI/CD, schema versioning |
+| Error Handling | 4130-4237 | User message catalog, error codes |
+| Automated Testing | 4238-4361 | Test structure, pytest configuration |
+| Logging Strategy | 4362-4503 | Structured logging, log levels |
+
+### Advanced Features
+| Section | Lines | Description |
+|---------|-------|-------------|
+| Network & State Machine | 4504-4710 | Diagnostics, projector states |
+| Config & Validation | 4711-4903 | Versioning, input validation, threading |
+| Localization & Performance | 4904-5030 | i18n, profiling, disaster recovery |
+| Verification Plan | 5031-5350 | Feature-to-phase index, dependencies |
+| Success Criteria | 5351-5512 | Metrics, risk mitigation, post-v1.0 |
+| 8-Week Preparation | 5513-6582 | Multi-team review, detailed phase plans |
+
+---
+
 ## 📅 8-Week Preparation Phase Roadmap
 
 ### Week 1-2: Critical Foundations ✅ COMPLETE
+> **Ref:** IMPLEMENTATION_PLAN.md lines 5513-5820 (8-Week Preparation Phase), lines 2346-3173 (Security)
 
 **Completed Items:**
-- [x] Fixed 12/12 critical security vulnerabilities (DPAPI, SQL injection, passwords)
-- [x] Set up pytest framework with 538 passing tests
-- [x] Built production-quality mock PJLink server with Class 1 & 2 support
-- [x] Delivered 258 unit tests (516% of 50-test target)
-- [x] Enhanced PJLink Class 2 freeze functionality
-- [x] Achieved 84.91% code coverage
+- [x] Fixed 12/12 critical security vulnerabilities (DPAPI, SQL injection, passwords) → *lines 2346-3173*
+- [x] Set up pytest framework with 538 passing tests → *lines 4238-4361*
+- [x] Built production-quality mock PJLink server with Class 1 & 2 support → *lines 1166-2073*
+- [x] Delivered 258 unit tests (516% of 50-test target) → *lines 4238-4361*
+- [x] Enhanced PJLink Class 2 freeze functionality → *lines 1166-1500*
+- [x] Achieved 84.91% code coverage → *lines 3856-4129*
 
 **Evidence:**
 - Gate Review: WEEK1_GATE_REVIEW.md (APPROVED)
@@ -47,6 +92,7 @@
 ---
 
 ### Week 3-4: Core Development 🔄 IN PROGRESS
+> **Ref:** IMPLEMENTATION_PLAN.md lines 5821-6100 (Week 3-4 Preparation), lines 237-470 (Database), lines 1166-2073 (Core Components)
 
 **Start Date:** January 11, 2026
 **Target Completion:** January 25, 2026 (14 days)
@@ -56,16 +102,19 @@
 ---
 
 #### Phase 1: Foundation (Days 1-2) ✅ COMPLETE
+> **Ref:** IMPLEMENTATION_PLAN.md lines 3576-3650 (Phase definitions)
 
 ##### T-001.1: Database Indexes ✅ COMPLETE
+> **Ref:** IMPLEMENTATION_PLAN.md lines 237-470 (Database Design), lines 3856-3900 (Schema Versioning)
+
 **Owner:** @database-architect + @backend-infrastructure-dev
 **Completed:** January 11, 2026 (Session 4)
 **Status:** COMPLETE
 
 **Deliverables:**
-- [x] 8 database indexes implemented across 4 tables
-- [x] 37 tests added (24 unit + 13 integration)
-- [x] Performance improvement: 50-85% query speedup
+- [x] 8 database indexes implemented across 4 tables → *lines 237-470*
+- [x] 37 tests added (24 unit + 13 integration) → *lines 4238-4361*
+- [x] Performance improvement: 50-85% query speedup → *lines 5351-5400*
 - [x] Comprehensive test coverage for index scenarios
 
 **Evidence:**
@@ -76,16 +125,18 @@
 ---
 
 ##### T-002.1: PJLink Authentication ✅ COMPLETE
+> **Ref:** IMPLEMENTATION_PLAN.md lines 1166-1500 (PJLink Controller), lines 2346-2600 (Authentication Security)
+
 **Owner:** @backend-infrastructure-dev + @test-engineer-qa
 **Completed:** January 11, 2026 (Session 4)
 **Status:** COMPLETE
 
 **Deliverables:**
-- [x] Class 1 + Class 2 authentication enhanced
-- [x] 28 tests added (authentication scenarios)
-- [x] Secure password caching implemented
-- [x] Retry logic with exponential backoff
-- [x] Account lockout protection
+- [x] Class 1 + Class 2 authentication enhanced → *lines 1166-1500*
+- [x] 28 tests added (authentication scenarios) → *lines 4238-4361*
+- [x] Secure password caching implemented → *lines 2346-2600*
+- [x] Retry logic with exponential backoff → *lines 4504-4600*
+- [x] Account lockout protection → *lines 2600-2700*
 
 **Evidence:**
 - tests/unit/test_pjlink_authentication.py (28 tests)
@@ -94,13 +145,15 @@
 ---
 
 ##### T-003 Prep: Integration Test Plan ✅ COMPLETE
+> **Ref:** IMPLEMENTATION_PLAN.md lines 4238-4361 (Automated Testing), lines 3305-3450 (Testing Strategy)
+
 **Owner:** @test-engineer-qa + @project-supervisor-qa
 **Completed:** January 11, 2026 (Session 4)
 **Status:** COMPLETE
 
 **Deliverables:**
-- [x] Integration test plan created (15 scenarios)
-- [x] Performance benchmarks defined
+- [x] Integration test plan created (15 scenarios) → *lines 3305-3450*
+- [x] Performance benchmarks defined → *lines 5351-5400*
 - [x] Ready for Day 3 implementation
 
 **Evidence:**
@@ -109,16 +162,19 @@
 ---
 
 #### Phase 2: Enhancement (Days 3-7) - AWAITING APPROVAL
+> **Ref:** IMPLEMENTATION_PLAN.md lines 3650-3750 (Phase 2 definition), lines 4904-5000 (Disaster Recovery)
 
 ##### T-001.2: Backup/Restore
+> **Ref:** IMPLEMENTATION_PLAN.md lines 4904-5000 (Disaster Recovery), lines 3856-3950 (Schema Versioning)
+
 **Owner:** @database-architect + @backend-infrastructure-dev
 **Timeline:** Days 3-5 (Jan 13-15)
 **Status:** READY TO START
 
 **Deliverables:**
-- [ ] Backup/restore functionality with encryption
-- [ ] Schema migration system (v1 → v2)
-- [ ] Database integrity utilities
+- [ ] Backup/restore functionality with encryption → *lines 4904-5000*
+- [ ] Schema migration system (v1 → v2) → *lines 3856-3950*
+- [ ] Database integrity utilities → *lines 237-470*
 
 **Files to Modify:**
 - src/database/connection.py
@@ -128,18 +184,20 @@
 ---
 
 ##### T-002.2: Connection Pool
+> **Ref:** IMPLEMENTATION_PLAN.md lines 4504-4710 (Network Diagnostics), lines 4711-4903 (Threading & Responsiveness)
+
 **Owner:** @backend-infrastructure-dev + @test-engineer-qa
 **Timeline:** Days 3-5 (Jan 13-15)
 **Status:** READY TO START
 
 **Deliverables:**
-- [ ] Connection pooling for efficiency
-- [ ] Circuit breaker pattern implementation
-- [ ] Enhanced retry logic and error handling
+- [ ] Connection pooling for efficiency → *lines 4711-4800*
+- [ ] Circuit breaker pattern implementation → *lines 4504-4600*
+- [ ] Enhanced retry logic and error handling → *lines 4130-4237*
 
 **Acceptance Criteria:**
-- 10+ concurrent connections tested successfully
-- Circuit breaker functional and tested
+- 10+ concurrent connections tested successfully → *lines 4238-4361*
+- Circuit breaker functional and tested → *lines 4504-4600*
 
 **Files to Modify:**
 - src/core/projector_controller.py
@@ -150,17 +208,20 @@
 ---
 
 #### Phase 3: Integration (Days 8-14) - PENDING
+> **Ref:** IMPLEMENTATION_PLAN.md lines 3750-3855 (Phase 3 definition), lines 4238-4361 (Automated Testing)
 
 ##### T-003.1: Integration Testing Expansion
+> **Ref:** IMPLEMENTATION_PLAN.md lines 4238-4361 (Automated Testing), lines 5031-5200 (Verification Plan)
+
 **Owner:** @test-engineer-qa + @project-supervisor-qa
 **Timeline:** Days 8-14 (Jan 18-25)
 **Status:** PENDING (depends on Phase 2)
 
 **Deliverables:**
-- [ ] 10-15 integration tests for multi-component workflows
-- [ ] Enhanced mock PJLink server for remaining Class 2 features
-- [ ] Performance benchmarks established
-- [ ] Accessibility test framework setup
+- [ ] 10-15 integration tests for multi-component workflows → *lines 4238-4361*
+- [ ] Enhanced mock PJLink server for remaining Class 2 features → *lines 1166-1500*
+- [ ] Performance benchmarks established → *lines 5351-5400*
+- [ ] Accessibility test framework setup → *lines 471-1108*
 
 **Acceptance Criteria:**
 - 750+ total tests passing (current: 643)
@@ -222,43 +283,45 @@
 ---
 
 ### Week 5-6: DevOps & UI
+> **Ref:** IMPLEMENTATION_PLAN.md lines 6101-6350 (Week 5-6 Preparation), lines 3174-3304 (Packaging), lines 471-1108 (UI Design)
 
 **Status:** PENDING
 **Start Date:** January 26, 2026
 **Prerequisites:** Week 3-4 gate review APPROVED
 
 **Key Deliverables:**
-- [ ] Create CI/CD pipeline (GitHub Actions)
-- [ ] Build PyInstaller spec and build scripts
-- [ ] Replace emoji with SVG icons
-- [ ] Implement first-run wizard
-- [ ] Write 50 UI tests
+- [ ] Create CI/CD pipeline (GitHub Actions) → *lines 3856-4000*
+- [ ] Build PyInstaller spec and build scripts → *lines 3174-3304*
+- [ ] Replace emoji with SVG icons → *lines 471-700*
+- [ ] Implement first-run wizard → *lines 700-900*
+- [ ] Write 50 UI tests → *lines 4238-4361*
 
 **Expected Outcomes:**
-- CI/CD pipeline operational
-- Automated builds working
-- First-run experience implemented
-- UI test coverage established
+- CI/CD pipeline operational → *lines 3856-4000*
+- Automated builds working → *lines 3174-3304*
+- First-run experience implemented → *lines 700-900*
+- UI test coverage established → *lines 4238-4361*
 
 ---
 
 ### Week 7-8: Validation
+> **Ref:** IMPLEMENTATION_PLAN.md lines 6351-6582 (Week 7-8 Preparation), lines 2346-3173 (Security), lines 5351-5512 (Success Criteria)
 
 **Status:** PENDING
 **Start Date:** February 9, 2026
 **Prerequisites:** Week 5-6 gate review APPROVED
 
 **Key Deliverables:**
-- [ ] External security penetration test
-- [ ] Performance benchmarking
-- [ ] User acceptance testing (3-5 pilot users)
-- [ ] Final documentation
+- [ ] External security penetration test → *lines 2346-3173*
+- [ ] Performance benchmarking → *lines 5351-5400*
+- [ ] User acceptance testing (3-5 pilot users) → *lines 5400-5512*
+- [ ] Final documentation → *lines 4904-5000*
 
 **Expected Outcomes:**
-- Security penetration test PASSED
-- Performance targets MET
-- UAT feedback collected
-- Documentation complete
+- Security penetration test PASSED → *lines 5351-5400*
+- Performance targets MET → *lines 5351-5400*
+- UAT feedback collected → *lines 5400-5512*
+- Documentation complete → *lines 4904-5030*
 
 ---
 

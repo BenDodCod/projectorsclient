@@ -28,9 +28,9 @@ Non-negotiables from the plan
 - Quality gates: >=90% coverage, CI/CD, security scans, performance targets.
 
 Workflow for any task
-- Read `IMPLEMENTATION_PLAN.md` for current requirements and progress.
-- Always use `@/.claude/agents/project-orchestrator.md` as the coordinating agent.
-- Engage relevant `.claude/agents/` files and apply their guidance.
-- Implement changes and update progress in `IMPLEMENTATION_PLAN.md`.
+- Read `ROADMAP.md` first for current requirements, progress, and next steps.
+- Reference specific sections in `IMPLEMENTATION_PLAN.md` only when needed (follow line references from ROADMAP.md or search for specific topics).
+- Use `@/.claude/agents/project-orchestrator.md` as the coordinating agent to distribute work.
+- Implement changes and update progress in `ROADMAP.md`.
 - If `IMPLEMENTATION_PLAN.md` changes, append an entry in `logs/plan_change_logs.md`.
-- Mirror updates across the three synced agent files.
+- Mirror updates across the three synced agent files (`AGENTS.md`, `CLAUDE.md`, `GEMINI.md`).
