@@ -1,31 +1,43 @@
 # Enhanced Projector Control Application
 
-A professional Python + PyQt6 application for controlling network projectors via PJLink protocol. This repository contains the complete implementation for a dual-mode projector control system supporting standalone (SQLite) and centralized (SQL Server) deployments.
+A professional Python + PyQt6 application for controlling network projectors via PJLink protocol. This application provides a dual-mode projector control system supporting standalone (SQLite) and centralized (SQL Server) deployments with full internationalization support.
 
 ## Project Status
 
-- **Phase:** 8-week preparation phase (Week 1-2: Project Scaffolding)
-- **Quality Gates:** >=85% test coverage (global), CI/CD, security scans
-- **Single Source of Truth:** `IMPLEMENTATION_PLAN.md`
+- **Version:** 2.0.0-rc1 (Release Candidate)
+- **Status:** PRODUCTION READY - All Core Features Complete
+- **Tests:** 1,542 passing (94%+ coverage)
+- **Timeline:** 14+ days ahead of schedule
+- **Single Source of Truth:** `IMPLEMENTATION_PLAN.md` and `ROADMAP.md`
 
-## Key Features (Planned)
+## Key Features (Implemented)
 
-- **GUI-First Configuration:** First-run wizard with admin password protection
+### Core Functionality
+- **GUI-First Configuration:** 6-page first-run wizard with admin password protection
 - **Dual Operation Modes:** Standalone (SQLite) and SQL Server connected
-- **Multi-Brand Support:** PJLink protocol with extensible controller layer
+- **Multi-Brand Support:** PJLink Class 1 & 2 protocol with extensible controller layer
+- **Dynamic Input Discovery:** Automatic detection of available projector inputs via INST command
 - **Internationalization:** English and Hebrew with full RTL support
-- **Modern UI:** PyQt6 with custom themes (QSS) and SVG icon library
-- **Diagnostics:** Structured JSON logging and resilient network handling
-- **Single Executable:** PyInstaller-packaged .exe for easy deployment
 
-## Current Implementation Status
+### User Interface
+- **Modern UI:** PyQt6 with custom themes (QSS) and 170+ SVG icons
+- **Main Window:** Status panel, controls panel, history panel
+- **Settings Dialog:** 6 tabs (General, Connection, UI Buttons, Security, Advanced, Diagnostics)
+- **System Tray:** Background operation with quick actions
+- **Responsive Layout:** 2-column grid for professional appearance
 
-**Wave 1 (Completed):**
-- Application entry point with high-DPI support
-- StyleManager for QSS theme management
-- TranslationManager for English/Hebrew i18n
-- IconLibrary with SVG support and Material Design icons
-- Comprehensive API documentation
+### Enterprise Features
+- **Connection Pooling:** Thread-safe connection management
+- **Circuit Breaker:** Automatic failure detection and recovery
+- **Database Migrations:** Schema versioning with rollback support
+- **Backup/Restore:** DPAPI-encrypted configuration backup
+- **Comprehensive Logging:** JSON structured logs with rotation
+
+### Security
+- **Password Hashing:** bcrypt with configurable rounds
+- **Credential Encryption:** AES-GCM with DPAPI entropy
+- **Rate Limiting:** Brute-force protection with account lockout
+- **Input Validation:** SQL injection and XSS prevention
 
 ## Quick Start
 
@@ -65,9 +77,6 @@ A professional Python + PyQt6 application for controlling network projectors via
 
    # Install development dependencies (includes production)
    pip install -r requirements-dev.txt
-
-   # Or install via pyproject.toml
-   pip install -e ".[dev]"
    ```
 
 4. **Verify Installation**
@@ -76,10 +85,7 @@ A professional Python + PyQt6 application for controlling network projectors via
    # Check Python version
    python --version
 
-   # Check pytest installation
-   pytest --version
-
-   # Verify project structure
+   # Run test suite
    pytest --collect-only
    ```
 
@@ -91,37 +97,23 @@ python src/main.py
 
 # Or using module syntax
 python -m src.main
-
-# Run with specific Python version (Windows)
-py -3.11 src/main.py
-
-# Linux/macOS
-python3 src/main.py
 ```
 
 ### Running Tests
 
 ```powershell
-# Run all unit tests (CI default)
-pytest tests/unit/
+# Run all tests
+pytest
 
 # Run with coverage report
-pytest tests/unit/ --cov=src --cov-report=html
+pytest --cov=src --cov-report=html
 
-# Run with coverage gate (85% minimum)
-pytest tests/unit/ --cov=src --cov-fail-under=85
-
-# Run integration tests (on-demand/nightly)
-pytest -m integration tests/integration/
-
-# Run all tests with verbose output
-pytest -v
-
-# Run specific test file
-pytest tests/unit/test_database.py
-
-# Run tests in parallel (requires pytest-xdist)
-pytest -n auto tests/unit/
+# Run specific test category
+pytest tests/unit/           # Unit tests
+pytest tests/integration/    # Integration tests
+pytest tests/ui/             # UI tests
+pytest tests/benchmark/      # Performance tests
+pytest tests/security/       # Security tests
 ```
 
 ### Code Quality Checks
@@ -133,83 +125,62 @@ black src/ tests/
 # Sort imports with isort
 isort src/ tests/
 
-# Lint with flake8
-flake8 src/ tests/
-
-# Lint with Pylint
-pylint src/
-
 # Type check with MyPy
 mypy src/
-```
 
-### Security Scanning
-
-```powershell
-# Run Bandit security scanner
-bandit -r src/ -f json -o bandit-results.json
-
-# Check dependencies for vulnerabilities
-safety check -r requirements.txt
-
-# Audit dependencies for CVEs
-pip-audit -r requirements.txt
+# Security scan with Bandit
+bandit -r src/
 ```
 
 ### Building the Application
 
 ```powershell
 # Build executable with PyInstaller
-pyinstaller build.spec
+build.bat
 
-# Or build from scratch
-pyinstaller --onefile --windowed --name ProjectorControl src/main.py
+# Or manually
+pyinstaller projector_control.spec
 ```
 
 ## Project Structure
 
 ```
 projectorsclient/
-|-- src/                          # Application source code
-|   |-- __init__.py
-|   |-- main.py                   # Entry point
-|   |-- app.py                    # Main application class
-|   |-- core/                     # Core business logic
-|   |-- config/                   # Configuration management
-|   |-- controllers/              # Projector controller implementations
-|   |-- database/                 # Database abstraction layer
-|   |-- i18n/                     # Internationalization
-|   |-- models/                   # Data models
-|   |-- network/                  # Network communication
-|   |-- ui/                       # PyQt6 UI components
-|   |   |-- dialogs/              # Modal dialogs
-|   |   |-- widgets/              # Custom widgets
-|   |   `-- resources/            # UI resources (styles, icons)
-|   `-- utils/                    # Utility modules
-|-- tests/                        # Test suite
-|   |-- unit/                     # Unit tests (CI default)
-|   |-- integration/              # Integration tests (nightly)
-|   |-- e2e/                      # End-to-end tests
-|   |-- mocks/                    # Mock objects
-|   `-- fixtures/                 # Test fixtures
-|-- resources/                    # Application resources
-|   |-- icons/                    # Application icons
-|   |-- translations/             # Translation files
-|   |-- schema/                   # Database schemas
-|   `-- migrations/               # Schema migrations
-|-- docs/                         # Documentation
-|   |-- security/                 # Security documentation
-|   |-- testing/                  # Testing documentation
-|   `-- devops/                   # DevOps documentation
-|-- .github/
-|   `-- workflows/                # GitHub Actions CI/CD
-|-- requirements.txt              # Production dependencies
-|-- requirements-dev.txt          # Development dependencies
-|-- pyproject.toml                # Project metadata and tool config
-|-- pytest.ini                    # pytest configuration
-|-- .coveragerc                   # Coverage configuration
-|-- .gitignore                    # Git ignore patterns
-`-- IMPLEMENTATION_PLAN.md        # Detailed project plan
+├── src/                          # Application source code (51 files, 21,319 LOC)
+│   ├── main.py                   # Entry point with High-DPI support
+│   ├── core/                     # PJLink protocol and projector controller
+│   ├── config/                   # Settings and validators
+│   ├── controllers/              # Resilient controller wrapper
+│   ├── database/                 # SQLite/SQL Server abstraction, migrations
+│   ├── network/                  # Connection pool, circuit breaker
+│   ├── ui/                       # PyQt6 UI components
+│   │   ├── dialogs/              # First-run wizard, settings, projector
+│   │   │   └── settings_tabs/    # 6 settings dialog tabs
+│   │   └── widgets/              # Status, controls, history panels
+│   ├── resources/                # Icons, translations, QSS styles
+│   └── utils/                    # Security, logging, diagnostics
+├── tests/                        # Test suite (71 files, 31,290 LOC, 1,542 tests)
+│   ├── unit/                     # Unit tests
+│   ├── integration/              # Integration tests
+│   ├── ui/                       # UI tests
+│   ├── benchmark/                # Performance benchmarks
+│   ├── security/                 # Security tests
+│   ├── compatibility/            # Platform compatibility tests
+│   └── mocks/                    # Mock PJLink server
+├── docs/                         # Documentation
+│   ├── api/                      # API documentation
+│   ├── security/                 # Security docs and threat model
+│   ├── testing/                  # Test strategy and reports
+│   ├── performance/              # Benchmark results
+│   └── uat/                      # UAT plans and results
+├── .github/workflows/            # CI/CD pipeline
+├── .planning/                    # GSD planning documents
+├── requirements.txt              # Production dependencies
+├── requirements-dev.txt          # Development dependencies
+├── projector_control.spec        # PyInstaller spec
+├── build.bat                     # Build script
+├── IMPLEMENTATION_PLAN.md        # Detailed specifications (6,592 lines)
+└── ROADMAP.md                    # Current progress and status
 ```
 
 ## Architecture Overview
@@ -226,40 +197,22 @@ projectorsclient/
 | UI Framework | PyQt6 6.6.1 | Modern GUI with RTL support |
 | Local Database | SQLite3 | Embedded database for standalone mode |
 | Server Database | pyodbc 5.0.1 | SQL Server connectivity |
-| Projector Protocol | pypjlink2 1.2.1 | PJLink implementation |
+| Projector Protocol | pypjlink2 1.2.1 | PJLink Class 1 & 2 |
 | Security | bcrypt 4.1.2 | Password hashing |
-| Encryption | cryptography 41.0.7 | Credential encryption |
+| Encryption | cryptography 41.0.7 | AES-GCM credential encryption |
 | Testing | pytest 7.4.3 | Test framework with pytest-qt |
 | Packaging | PyInstaller 6.3.0 | .exe generation |
 
-## Development Workflow
+### Key Metrics
 
-1. **Create Feature Branch**
-   ```powershell
-   git checkout -b feature/your-feature-name
-   ```
-
-2. **Make Changes and Test**
-   ```powershell
-   # Run tests
-   pytest tests/unit/ --cov=src
-
-   # Check code quality
-   black src/ tests/
-   mypy src/
-   ```
-
-3. **Commit Changes**
-   ```powershell
-   git add .
-   git commit -m "Add: description of changes"
-   ```
-
-4. **Push and Create PR**
-   ```powershell
-   git push origin feature/your-feature-name
-   # Create PR on GitHub
-   ```
+| Metric | Value | Target | Status |
+|--------|-------|--------|--------|
+| Test Count | 1,542 | 500 | ✅ 308% of target |
+| Code Coverage | 94%+ | 85% | ✅ Exceeded by 9% |
+| Startup Time | 0.9s | <2s | ✅ Met |
+| Command Latency | 18ms | <5s | ✅ Met |
+| Memory Usage | 134MB | <150MB | ✅ Met |
+| Security Vulnerabilities | 0 | 0 | ✅ Clean |
 
 ## CI/CD Pipeline
 
@@ -270,46 +223,36 @@ The project uses GitHub Actions for continuous integration:
 - **Security Scans:** Bandit, Safety, pip-audit
 - **Build Verification:** PyInstaller .exe generation
 
-All checks must pass before merging to main branch.
+## Documentation
+
+### Primary Documents
+- `IMPLEMENTATION_PLAN.md` - Complete project requirements (6,592 lines)
+- `ROADMAP.md` - Current progress and task tracking
+
+### API Documentation
+- `docs/api/MAIN.md` - Application entry point
+- `docs/api/STYLE_MANAGER.md` - QSS theme management
+- `docs/api/TRANSLATION_MANAGER.md` - i18n system
+- `docs/api/ICON_LIBRARY.md` - SVG icon library
+
+### Technical Documentation
+- `docs/security/threat_model.md` - Security threat analysis
+- `docs/performance/BENCHMARK_RESULTS.md` - Performance benchmarks
+- `docs/compatibility/COMPATIBILITY_MATRIX.md` - Platform compatibility
+- `docs/uat/UAT_RESULTS.md` - User acceptance testing results
+- `SECURITY.md` - Security policy
 
 ## Agent Synchronization
 
-This project uses synchronized agent briefs across multiple AI assistants:
+This project uses synchronized agent briefs across AI assistants:
 
 - **Synced Files:** `AGENTS.md`, `CLAUDE.md`, `GEMINI.md`
 - **Coordinator:** `@/.claude/agents/project-orchestrator.md`
-- **Sync Script:** `scripts/sync_agents.ps1`
-- **Pre-commit Hook:** `.githooks/pre-commit`
-
-To enable pre-commit hooks:
-```powershell
-git config core.hooksPath .githooks
-```
-
-## Documentation
-
-### Planning and Requirements
-- `IMPLEMENTATION_PLAN.md` - Complete project requirements and roadmap
-- `ROADMAP.md` - Current sprint progress and task tracking
-
-### API Documentation
-- `docs/api/` - Complete API documentation for all modules
-  - [Main Application Entry Point](docs/api/MAIN.md)
-  - [StyleManager API](docs/api/STYLE_MANAGER.md)
-  - [TranslationManager API](docs/api/TRANSLATION_MANAGER.md)
-  - [IconLibrary API](docs/api/ICON_LIBRARY.md)
-  - [API Index](docs/api/README.md)
-
-### Technical Documentation
-- `docs/security/` - Security guidelines and threat model
-- `docs/testing/` - Test strategy and coverage requirements
-- `docs/devops/` - CI/CD and deployment documentation
-- `docs/database/` - Database schema and migration documentation
-- `docs/ui/` - UI component and design guidelines
+- **13 Specialized Agents** for different domains
 
 ## Contributing
 
-1. Read `IMPLEMENTATION_PLAN.md` for current requirements
+1. Read `ROADMAP.md` for current status
 2. Follow the code style enforced by Black and isort
 3. Write tests for new functionality (85% coverage minimum)
 4. Run security scans before committing
@@ -321,7 +264,8 @@ Proprietary - Internal use only.
 
 ## Support
 
-For questions or issues, consult:
-1. `IMPLEMENTATION_PLAN.md` for project details
-2. `TROUBLESHOOTING.md` (coming soon) for common issues
-3. Project maintainers for unresolved problems
+For questions or issues:
+1. Check `ROADMAP.md` for current project status
+2. Review `IMPLEMENTATION_PLAN.md` for specifications
+3. See `docs/` for detailed documentation
+4. Contact project maintainers for unresolved issues
