@@ -923,3 +923,148 @@ def create_settings_manager(
             logger.warning("Could not initialize credential manager: %s", e)
 
     return SettingsManager(db, cred_manager)
+
+
+# Database mode constants
+DB_MODE_STANDALONE = "standalone"
+DB_MODE_SQL_SERVER = "sql_server"
+
+
+def get_database_manager(
+    settings: SettingsManager,
+    app_data_dir: str,
+) -> "DatabaseManagerProtocol":
+    """Factory method to get appropriate database manager based on settings.
+
+    Returns DatabaseManager for standalone mode or SQLServerManager for
+    SQL Server mode. Both implement the same interface for drop-in replacement.
+
+    Args:
+        settings: SettingsManager instance to read configuration from.
+        app_data_dir: Application data directory for SQLite database.
+
+    Returns:
+        Database manager instance (either DatabaseManager or SQLServerManager).
+
+    Raises:
+        ValueError: If database mode is not recognized.
+        ConnectionError: If SQL Server connection fails.
+
+    Example:
+        >>> settings = create_settings_manager(db_path, app_data_dir)
+        >>> db = get_database_manager(settings, app_data_dir)
+        >>> # Use db with same interface regardless of mode
+        >>> db.execute("SELECT * FROM projector_config")
+    """
+    from pathlib import Path
+
+    db_mode = settings.get_str("app.operation_mode", DB_MODE_STANDALONE)
+
+    if db_mode == DB_MODE_STANDALONE:
+        # Use SQLite database
+        from src.database.connection import DatabaseManager
+
+        db_path = Path(app_data_dir) / "projector.db"
+        logger.info("Using standalone mode with SQLite at %s", db_path)
+        return DatabaseManager(str(db_path))
+
+    elif db_mode == DB_MODE_SQL_SERVER:
+        # Use SQL Server database
+        from src.database.sqlserver_manager import (
+            SQLServerManager,
+            build_connection_string,
+            PYODBC_AVAILABLE,
+        )
+        from src.database.sqlserver_pool import SQLServerConnectionPool, PoolConfig
+
+        if not PYODBC_AVAILABLE:
+            raise ValueError(
+                "SQL Server mode requires pyodbc. Install with: pip install pyodbc"
+            )
+
+        # Get SQL Server settings
+        server = settings.get_str("sql.server", "")
+        port = settings.get_int("sql.port", 1433)
+        database = settings.get_str("sql.database", "ProjectorControl")
+        use_windows_auth = settings.get_bool("sql.use_windows_auth", True)
+        username = settings.get_str("sql.username", "")
+
+        # Build server with port if not default
+        server_addr = f"{server}:{port}" if port != 1433 else server
+
+        if not server:
+            raise ValueError("SQL Server mode requires sql.server setting")
+
+        # Get password (encrypted)
+        password = None
+        if not use_windows_auth:
+            password = settings.get_secure("sql.password_encrypted")
+
+        # Build connection string
+        conn_str = build_connection_string(
+            server=server_addr,
+            database=database,
+            username=username if not use_windows_auth else None,
+            password=password if not use_windows_auth else None,
+            trusted_connection=use_windows_auth,
+        )
+
+        # Create pool with default settings
+        pool_config = PoolConfig(
+            pool_size=10,
+            max_overflow=5,
+            timeout=5.0,
+            validate_on_borrow=True,
+        )
+
+        logger.info(
+            "Using SQL Server mode: %s/%s (Windows Auth: %s)",
+            server_addr, database, use_windows_auth
+        )
+
+        pool = SQLServerConnectionPool(conn_str, config=pool_config)
+        return SQLServerManager(conn_str, pool=pool)
+
+    else:
+        raise ValueError(f"Unknown database mode: {db_mode}")
+
+
+# Type alias for database manager protocol
+class DatabaseManagerProtocol:
+    """Protocol defining the interface both database managers implement.
+
+    This is for documentation/type hints - both DatabaseManager and
+    SQLServerManager implement these methods.
+    """
+
+    def execute(self, sql: str, params=()) -> Any:
+        """Execute SQL statement."""
+        ...
+
+    def fetchone(self, sql: str, params=()) -> Optional[Dict[str, Any]]:
+        """Fetch single row."""
+        ...
+
+    def fetchall(self, sql: str, params=()) -> List[Dict[str, Any]]:
+        """Fetch all rows."""
+        ...
+
+    def insert(self, table: str, data: Dict[str, Any]) -> int:
+        """Insert row and return ID."""
+        ...
+
+    def update(self, table: str, data: Dict[str, Any], where: str, where_params=()) -> int:
+        """Update rows."""
+        ...
+
+    def delete(self, table: str, where: str, where_params=()) -> int:
+        """Delete rows."""
+        ...
+
+    def table_exists(self, table: str) -> bool:
+        """Check if table exists."""
+        ...
+
+    def close_all(self) -> None:
+        """Close all connections."""
+        ...
