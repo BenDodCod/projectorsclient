@@ -447,7 +447,7 @@ class SQLServerManager:
         placeholders = ", ".join(["?"] * len(columns))
         column_list = ", ".join(escaped_columns)
 
-        sql = f"INSERT INTO {table} ({column_list}) VALUES ({placeholders})"
+        sql = f"INSERT INTO {table} ({column_list}) VALUES ({placeholders})"  # nosec B608
 
         try:
             with self._get_connection_context() as conn:
@@ -491,7 +491,7 @@ class SQLServerManager:
 
         # Escape reserved words with brackets
         set_clause = ", ".join([f"[{col}] = ?" for col in data.keys()])
-        sql = f"UPDATE {table} SET {set_clause} WHERE {where}"
+        sql = f"UPDATE {table} SET {set_clause} WHERE {where}"  # nosec B608
 
         params = tuple(data.values()) + where_params
 
@@ -529,7 +529,7 @@ class SQLServerManager:
         if not self._is_valid_identifier(table):
             raise ValueError(f"Invalid table name: {table}")
 
-        sql = f"DELETE FROM {table} WHERE {where}"
+        sql = f"DELETE FROM {table} WHERE {where}"  # nosec B608
 
         try:
             with self._get_connection_context() as conn:

@@ -46,8 +46,26 @@ class IconLibrary:
     with caching and fallback support.
     """
 
-    # Base directory for icons (relative to this file)
-    ICON_DIR = Path(__file__).parent
+    # Base directory for icons - set dynamically based on running mode
+    _icon_dir: Optional[Path] = None
+
+    @classmethod
+    def _get_icon_dir(cls) -> Path:
+        """Get the icon directory, handling both development and PyInstaller modes."""
+        if cls._icon_dir is not None:
+            return cls._icon_dir
+        
+        import sys
+        if getattr(sys, 'frozen', False) and hasattr(sys, '_MEIPASS'):
+            # Running as PyInstaller bundle
+            cls._icon_dir = Path(sys._MEIPASS) / 'resources' / 'icons'
+            logger.info(f"Running as frozen app, icons dir: {cls._icon_dir}")
+        else:
+            # Running in development
+            cls._icon_dir = Path(__file__).parent
+            logger.info(f"Running in development, icons dir: {cls._icon_dir}")
+        
+        return cls._icon_dir
 
     # Icon name to filename mapping
     # Using Material Design icon naming convention
@@ -226,7 +244,7 @@ class IconLibrary:
             return cls._create_fallback_icon(name, size)
 
         filename = cls.ICONS[name]
-        filepath = cls.ICON_DIR / filename
+        filepath = cls._get_icon_dir() / filename
 
         if not filepath.exists():
             logger.warning(f"Icon file not found: {filepath}, using fallback")
@@ -318,7 +336,7 @@ class IconLibrary:
         """Check if an icon exists by name."""
         if name not in cls.ICONS:
             return False
-        filepath = cls.ICON_DIR / cls.ICONS[name]
+        filepath = cls._get_icon_dir() / cls.ICONS[name]
         return filepath.exists()
 
     @classmethod

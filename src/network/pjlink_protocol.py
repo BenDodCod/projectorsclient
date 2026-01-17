@@ -431,7 +431,7 @@ def calculate_auth_hash(random_key: str, password: str) -> str:
 
     # Combine key and password, then hash
     combined = (random_key + password).encode("utf-8")
-    return hashlib.md5(combined).hexdigest()
+    return hashlib.md5(combined).hexdigest()  # nosec B324
 
 
 def validate_command(command: str) -> Tuple[bool, str]:

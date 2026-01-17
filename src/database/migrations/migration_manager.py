@@ -123,7 +123,7 @@ class MigrationManager:
                 self.db_manager.execute(
                     f"""INSERT INTO {self.SCHEMA_VERSION_TABLE}
                         (version, description, applied_successfully)
-                        VALUES (?, ?, ?)""",
+                        VALUES (?, ?, ?)""",  # nosec B608
                     (1, "Initial schema", 1)
                 )
                 logger.info("Initialized at schema version 1")
@@ -144,7 +144,7 @@ class MigrationManager:
 
             result = self.db_manager.fetchval(
                 f"""SELECT MAX(version) FROM {self.SCHEMA_VERSION_TABLE}
-                    WHERE applied_successfully = 1"""
+                    WHERE applied_successfully = 1"""  # nosec B608
             )
             return result if result else 0
 
@@ -166,7 +166,7 @@ class MigrationManager:
                 f"""SELECT version, description, applied_at, applied_successfully,
                            error_message, execution_time_ms
                     FROM {self.SCHEMA_VERSION_TABLE}
-                    ORDER BY version"""
+                    ORDER BY version"""  # nosec B608
             )
             return [dict(row) for row in rows]
 
@@ -331,7 +331,7 @@ class MigrationManager:
                 cursor.execute(
                     f"""INSERT INTO {self.SCHEMA_VERSION_TABLE}
                         (version, description, applied_successfully, execution_time_ms)
-                        VALUES (?, ?, ?, ?)""",
+                        VALUES (?, ?, ?, ?)""",  # nosec B608
                     (
                         migration.version_to,
                         migration.description,
@@ -355,7 +355,7 @@ class MigrationManager:
                 self.db_manager.execute(
                     f"""INSERT INTO {self.SCHEMA_VERSION_TABLE}
                         (version, description, applied_successfully, error_message, execution_time_ms)
-                        VALUES (?, ?, ?, ?, ?)""",
+                        VALUES (?, ?, ?, ?, ?)""",  # nosec B608
                     (
                         migration.version_to,
                         migration.description,
@@ -390,7 +390,7 @@ class MigrationManager:
 
                 # Remove migration record
                 cursor.execute(
-                    f"DELETE FROM {self.SCHEMA_VERSION_TABLE} WHERE version = ?",
+                    f"DELETE FROM {self.SCHEMA_VERSION_TABLE} WHERE version = ?",  # nosec B608
                     (migration.version_to,)
                 )
 

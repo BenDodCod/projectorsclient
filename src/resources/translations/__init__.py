@@ -38,7 +38,19 @@ class TranslationManager:
         """
         self._current_language = self.DEFAULT_LANGUAGE
         self._translations: Dict[str, Dict[str, str]] = {}
-        self._translations_dir = Path(__file__).parent
+        
+        # Determine the correct path for translations
+        # When running as a PyInstaller bundle, files are in sys._MEIPASS
+        # When running normally, files are relative to this module
+        import sys
+        if getattr(sys, 'frozen', False) and hasattr(sys, '_MEIPASS'):
+            # Running as PyInstaller bundle
+            self._translations_dir = Path(sys._MEIPASS) / 'resources' / 'translations'
+            logger.info(f"Running as frozen app, translations dir: {self._translations_dir}")
+        else:
+            # Running in development
+            self._translations_dir = Path(__file__).parent
+            logger.info(f"Running in development, translations dir: {self._translations_dir}")
 
         # Preload all available languages
         self._load_all_languages()
