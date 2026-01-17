@@ -18,6 +18,8 @@ from PyQt6.QtWidgets import QApplication, QMessageBox
 from PyQt6.QtCore import Qt
 from PyQt6.QtGui import QIcon
 
+from src.resources.translations import get_translation_manager
+
 # Application information
 APP_NAME = "Projector Control"
 APP_VERSION = "1.0.0"
@@ -172,6 +174,10 @@ def show_first_run_wizard(db: "DatabaseManager") -> bool:
         try:
             settings = SettingsManager(db)
 
+            # Save language setting
+            language = config.get("language", "en")
+            settings.set("app.language", language)
+
             # Save connection mode
             mode = "standalone" if config.get("standalone_mode", True) else "sql_server"
             settings.set("app.operation_mode", mode)
@@ -271,7 +277,7 @@ def main() -> int:
     logger.info("App data directory: %s", app_data_dir)
     logger.info("=" * 60)
 
-    # Initialize database
+    # Initialize database (needed to check language setting)
     db_path = get_database_path(app_data_dir)
     db = initialize_database(db_path)
 
@@ -283,6 +289,19 @@ def main() -> int:
             "The application cannot continue. Please check the logs for details."
         )
         return 1
+
+    # Load saved language setting and apply RTL if needed
+    try:
+        from src.config.settings import SettingsManager
+        settings = SettingsManager(db)
+        saved_language = settings.get("app.language", "en")
+        translation_manager = get_translation_manager(saved_language)
+        if translation_manager.is_rtl():
+            app.setLayoutDirection(Qt.LayoutDirection.RightToLeft)
+            logger.info("RTL layout enabled for Hebrew language")
+    except Exception as e:
+        logger.warning(f"Could not load language setting: {e}, defaulting to English")
+        get_translation_manager("en")
 
     # Check if first run
     if check_first_run(db):

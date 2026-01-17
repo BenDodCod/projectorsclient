@@ -262,3 +262,54 @@ class StatusPanel(QWidget):
             return '#F59E0B'  # Orange - warning
         else:
             return '#10B981'  # Green - OK
+
+    def retranslate(self) -> None:
+        """Retranslate all UI text after language change."""
+        # Find and update label widgets
+        # The labels are stored in the layout structure
+        layout = self.layout()
+        if layout:
+            # Update status section labels
+            # Connection section
+            self._update_section_label(0, t('status.connection', 'Connection'))
+            # Power section
+            self._update_section_label(1, t('status.power', 'Power'))
+            # Input section
+            self._update_section_label(2, t('status.input', 'Input'))
+            # Lamp hours section
+            self._update_section_label(3, t('status.lamp_hours', 'Lamp Hours'))
+
+        # Update current status values with translations
+        self.set_connection_status(self._connection_status)
+        self.update_status(self._power_state, self._input_source, self._lamp_hours)
+
+    def _update_section_label(self, section_index: int, new_text: str) -> None:
+        """Update a section's label text by index."""
+        layout = self.layout()
+        if not layout:
+            return
+
+        # Get the section layout (QVBoxLayout)
+        item = layout.itemAt(section_index)
+        if not item:
+            return
+
+        section_layout = item.layout()
+        if not section_layout:
+            return
+
+        # The first item is the header layout (QHBoxLayout)
+        header_item = section_layout.itemAt(0)
+        if not header_item:
+            return
+
+        header_layout = header_item.layout()
+        if not header_layout:
+            return
+
+        # The second widget in header is the label
+        label_item = header_layout.itemAt(1)
+        if label_item and label_item.widget():
+            label_widget = label_item.widget()
+            if isinstance(label_widget, QLabel):
+                label_widget.setText(new_text)

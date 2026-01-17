@@ -59,6 +59,7 @@ class MainWindow(QMainWindow):
     input_change_requested = pyqtSignal()
     volume_change_requested = pyqtSignal()
     settings_requested = pyqtSignal()
+    language_changed = pyqtSignal(str)  # Emitted when language is changed
 
     def __init__(self, db_manager, parent: Optional[QWidget] = None):
         """
@@ -142,9 +143,8 @@ class MainWindow(QMainWindow):
         # Status bar
         self._create_status_bar()
 
-        # Set RTL layout if Hebrew
-        if self._translation_manager.is_rtl():
-            self.setLayoutDirection(Qt.LayoutDirection.RightToLeft)
+        # Note: RTL layout direction is now set at application level in main.py
+        # Individual window layout direction is inherited from QApplication
 
     def _create_header(self) -> QWidget:
         """
@@ -485,3 +485,75 @@ class MainWindow(QMainWindow):
             )
         else:
             event.accept()
+
+    def set_language(self, language: str) -> None:
+        """
+        Set the application language and update UI.
+
+        Args:
+            language: Language code (e.g., "en", "he")
+        """
+        from PyQt6.QtWidgets import QApplication
+
+        # Update the translation manager
+        self._translation_manager.set_language(language)
+
+        # Update layout direction at application level
+        app = QApplication.instance()
+        if app:
+            if self._translation_manager.is_rtl():
+                app.setLayoutDirection(Qt.LayoutDirection.RightToLeft)
+            else:
+                app.setLayoutDirection(Qt.LayoutDirection.LeftToRight)
+
+        # Refresh all translated text
+        self._retranslate_ui()
+
+        # Notify panels to retranslate
+        if hasattr(self.status_panel, 'retranslate'):
+            self.status_panel.retranslate()
+        if hasattr(self.controls_panel, 'retranslate'):
+            self.controls_panel.retranslate()
+        if hasattr(self.history_panel, 'retranslate'):
+            self.history_panel.retranslate()
+
+        # Emit language changed signal
+        self.language_changed.emit(language)
+
+        logger.info(f"Language changed to: {language}")
+
+    def _retranslate_ui(self) -> None:
+        """Retranslate all UI text after language change."""
+        # Update window title
+        self.setWindowTitle(f"{t('app.name', 'Projector Control')} - {self._projector_name}")
+
+        # Update header button tooltips
+        # Settings and minimize buttons are in the header
+        header = self.centralWidget().layout().itemAt(0).widget()
+        if header:
+            for child in header.findChildren(QPushButton):
+                if child.accessibleName() == "Settings button":
+                    child.setToolTip(t('buttons.settings', 'Settings'))
+                elif child.accessibleName() == "Minimize to tray button":
+                    child.setToolTip(t('buttons.minimize', 'Minimize to tray'))
+
+        # Update status bar
+        self._update_connection_indicator()
+
+        # Update tray icon and menu if available
+        if hasattr(self, 'tray_icon'):
+            self.tray_icon.setToolTip(t('app.name', 'Projector Control'))
+            # Update tray menu text
+            menu = self.tray_icon.contextMenu()
+            if menu:
+                for action in menu.actions():
+                    if action.text() in ['Show', t('tray.show', 'Show')]:
+                        action.setText(t('tray.show', 'Show'))
+                    elif action.text() in ['Power On', t('buttons.power_on', 'Power On')]:
+                        action.setText(t('buttons.power_on', 'Power On'))
+                    elif action.text() in ['Power Off', t('buttons.power_off', 'Power Off')]:
+                        action.setText(t('buttons.power_off', 'Power Off'))
+                    elif action.text() in ['Settings', t('buttons.settings', 'Settings')]:
+                        action.setText(t('buttons.settings', 'Settings'))
+                    elif action.text() in ['Exit', t('tray.exit', 'Exit')]:
+                        action.setText(t('tray.exit', 'Exit'))

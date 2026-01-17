@@ -269,3 +269,13 @@ class HistoryPanel(QWidget):
 
         if self._entries:
             self.empty_label.hide()
+
+    def retranslate(self) -> None:
+        """Retranslate all UI text after language change."""
+        # Update title
+        title_widget = self.findChild(QLabel, "panel_title")
+        if title_widget:
+            title_widget.setText(t('history.title', 'Recent Operations'))
+
+        # Update empty state message
+        self.empty_label.setText(t('history.empty', 'No operations yet'))

@@ -338,3 +338,37 @@ class ControlsPanel(QWidget):
         self.freeze_btn.setEnabled(enabled)
         self.input_btn.setEnabled(enabled)
         self.volume_btn.setEnabled(enabled)
+
+    def retranslate(self) -> None:
+        """Retranslate all UI text after language change."""
+        # Update title
+        title_widget = self.findChild(QLabel, "panel_title")
+        if title_widget:
+            title_widget.setText(t('controls.title', 'Controls'))
+
+        # Update button text
+        self.power_on_btn.setText(t('buttons.power_on', 'Power On'))
+        self.power_off_btn.setText(t('buttons.power_off', 'Power Off'))
+
+        # Blank button text depends on state
+        if self._blank_active:
+            self.blank_btn.setText(t('buttons.unblank', 'Unblank'))
+        else:
+            self.blank_btn.setText(t('buttons.blank', 'Blank'))
+
+        # Freeze button text depends on state
+        if self._freeze_active:
+            self.freeze_btn.setText(t('buttons.unfreeze', 'Unfreeze'))
+        else:
+            self.freeze_btn.setText(t('buttons.freeze', 'Freeze'))
+
+        self.input_btn.setText(t('buttons.input', 'Input'))
+        self.volume_btn.setText(t('buttons.volume', 'Volume'))
+
+        # Update tooltips
+        self.power_on_btn.setToolTip(t('tooltips.power_on', 'Turn projector on (Ctrl+P)'))
+        self.power_off_btn.setToolTip(t('tooltips.power_off', 'Turn projector off (Ctrl+O)'))
+        self.blank_btn.setToolTip(t('tooltips.blank', 'Toggle blank screen (Ctrl+B)'))
+        self.freeze_btn.setToolTip(t('tooltips.freeze', 'Toggle freeze screen (Ctrl+F)'))
+        self.input_btn.setToolTip(t('tooltips.input', 'Select input source (Ctrl+I)'))
+        self.volume_btn.setToolTip(t('tooltips.volume', 'Adjust volume'))

@@ -42,8 +42,102 @@ from PyQt6.QtCore import Qt, pyqtSignal
 from PyQt6.QtGui import QFont, QPixmap
 
 from src.resources.icons import IconLibrary
+from src.resources.translations import get_translation_manager, t
 
 logger = logging.getLogger(__name__)
+
+
+class LanguageSelectionPage(QWizardPage):
+    """Language selection page (first page for RTL/i18n support)."""
+
+    def __init__(self, parent: Optional[QWizard] = None):
+        super().__init__(parent)
+        self.setTitle("Language / ")
+        self.setSubTitle("Select your preferred language / ")
+
+        layout = QVBoxLayout(self)
+        layout.setSpacing(20)
+
+        # Language icon
+        icon_label = QLabel()
+        try:
+            icon = IconLibrary.get_icon('settings')
+            icon_label.setPixmap(icon.pixmap(64, 64))
+        except Exception:
+            pass
+        icon_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        layout.addWidget(icon_label)
+
+        # Explanation text (bilingual)
+        info_text = QLabel(
+            "Please select your preferred language.\n"
+            "The interface will update immediately.\n\n"
+            ""
+        )
+        info_text.setWordWrap(True)
+        info_text.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        layout.addWidget(info_text)
+
+        # Language selection group
+        lang_group = QGroupBox("Language / ")
+        lang_layout = QVBoxLayout(lang_group)
+
+        self.english_radio = QRadioButton("English")
+        self.english_radio.setChecked(True)
+        self.english_radio.setAccessibleName("English language")
+        self.english_radio.setAccessibleDescription("Select English as the interface language")
+        self.english_radio.toggled.connect(self._on_language_changed)
+        lang_layout.addWidget(self.english_radio)
+
+        self.hebrew_radio = QRadioButton(" (Hebrew)")
+        self.hebrew_radio.setAccessibleName("Hebrew language")
+        self.hebrew_radio.setAccessibleDescription("Select Hebrew as the interface language with right-to-left layout")
+        self.hebrew_radio.toggled.connect(self._on_language_changed)
+        lang_layout.addWidget(self.hebrew_radio)
+
+        layout.addWidget(lang_group)
+
+        # RTL notice
+        self.rtl_notice = QLabel(
+            "Note: Selecting Hebrew will enable right-to-left (RTL) layout."
+        )
+        self.rtl_notice.setWordWrap(True)
+        self.rtl_notice.setStyleSheet("color: #666; font-style: italic;")
+        self.rtl_notice.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        layout.addWidget(self.rtl_notice)
+
+        layout.addStretch()
+
+        # Register fields
+        self.registerField("language_english", self.english_radio)
+        self.registerField("language_hebrew", self.hebrew_radio)
+
+    def _on_language_changed(self) -> None:
+        """Handle language selection change - apply immediately."""
+        from PyQt6.QtWidgets import QApplication
+
+        translation_manager = get_translation_manager()
+        app = QApplication.instance()
+
+        if self.hebrew_radio.isChecked():
+            translation_manager.set_language('he')
+            if app:
+                app.setLayoutDirection(Qt.LayoutDirection.RightToLeft)
+            # Update notice in Hebrew
+            self.rtl_notice.setText(
+                " (RTL) "
+            )
+        else:
+            translation_manager.set_language('en')
+            if app:
+                app.setLayoutDirection(Qt.LayoutDirection.LeftToRight)
+            self.rtl_notice.setText(
+                "Note: Selecting Hebrew will enable right-to-left (RTL) layout."
+            )
+
+    def get_selected_language(self) -> str:
+        """Get the selected language code."""
+        return 'he' if self.hebrew_radio.isChecked() else 'en'
 
 
 class WelcomePage(QWizardPage):
@@ -267,6 +361,9 @@ class ConnectionModePage(QWizardPage):
         self.setTitle("Connection Mode")
         self.setSubTitle("Choose how the application will store configuration data.")
 
+        # Track if SQL Server connection has been tested
+        self._connection_tested = False
+
         layout = QVBoxLayout(self)
         layout.setSpacing(15)
 
@@ -364,9 +461,68 @@ class ConnectionModePage(QWizardPage):
 
     def _test_connection(self) -> None:
         """Test the SQL Server connection."""
-        # Placeholder - would actually test connection here
-        self.conn_status_label.setText("Connection test not implemented in wizard.")
-        self.conn_status_label.setStyleSheet("color: orange;")
+        server = self.server_edit.text().strip()
+        database = self.database_edit.text().strip()
+        username = self.sql_user_edit.text().strip()
+        password = self.sql_pass_edit.text()
+
+        if not server or not database:
+            self.conn_status_label.setText("Please enter server and database.")
+            self.conn_status_label.setStyleSheet("color: red;")
+            return
+
+        # Disable button during test
+        self.test_conn_btn.setEnabled(False)
+        self.conn_status_label.setText("Testing connection...")
+        self.conn_status_label.setStyleSheet("color: gray;")
+
+        # Process events to update UI
+        from PyQt6.QtWidgets import QApplication
+        QApplication.processEvents()
+
+        try:
+            from src.database.sqlserver_manager import (
+                SQLServerManager,
+                build_connection_string,
+                PYODBC_AVAILABLE,
+            )
+
+            if not PYODBC_AVAILABLE:
+                self.conn_status_label.setText("pyodbc not installed. Install with: pip install pyodbc")
+                self.conn_status_label.setStyleSheet("color: red;")
+                return
+
+            # Build connection string
+            use_windows_auth = not username  # If no username, use Windows auth
+            conn_str = build_connection_string(
+                server=server,
+                database=database,
+                username=username if not use_windows_auth else None,
+                password=password if not use_windows_auth else None,
+                trusted_connection=use_windows_auth,
+                connection_timeout=10,
+            )
+
+            # Test connection
+            manager = SQLServerManager(conn_str, auto_init=False)
+            success, message = manager.test_connection()
+            manager.close_all()
+
+            if success:
+                self.conn_status_label.setText("Connection successful!")
+                self.conn_status_label.setStyleSheet("color: green;")
+                self._connection_tested = True
+            else:
+                self.conn_status_label.setText(f"Connection failed: {message}")
+                self.conn_status_label.setStyleSheet("color: red;")
+                self._connection_tested = False
+
+        except Exception as e:
+            self.conn_status_label.setText(f"Error: {str(e)[:100]}")
+            self.conn_status_label.setStyleSheet("color: red;")
+            self._connection_tested = False
+        finally:
+            self.test_conn_btn.setEnabled(True)
 
     def isComplete(self) -> bool:
         """Check if page is complete."""
@@ -683,12 +839,13 @@ class FirstRunWizard(QWizard):
     setup_cancelled = pyqtSignal()
 
     # Page IDs
-    PAGE_WELCOME = 0
-    PAGE_PASSWORD = 1
-    PAGE_CONNECTION = 2
-    PAGE_PROJECTOR = 3
-    PAGE_UI = 4
-    PAGE_COMPLETE = 5
+    PAGE_LANGUAGE = 0
+    PAGE_WELCOME = 1
+    PAGE_PASSWORD = 2
+    PAGE_CONNECTION = 3
+    PAGE_PROJECTOR = 4
+    PAGE_UI = 5
+    PAGE_COMPLETE = 6
 
     def __init__(self, parent=None):
         super().__init__(parent)
@@ -701,7 +858,8 @@ class FirstRunWizard(QWizard):
         # Set minimum size
         self.setMinimumSize(600, 500)
 
-        # Add pages
+        # Add pages - Language selection is first
+        self.setPage(self.PAGE_LANGUAGE, LanguageSelectionPage(self))
         self.setPage(self.PAGE_WELCOME, WelcomePage(self))
         self.setPage(self.PAGE_PASSWORD, PasswordSetupPage(self))
         self.setPage(self.PAGE_CONNECTION, ConnectionModePage(self))
@@ -732,7 +890,11 @@ class FirstRunWizard(QWizard):
 
     def _collect_configuration(self) -> dict:
         """Collect all configuration from wizard fields."""
+        # Determine selected language
+        language = 'he' if self.field('language_hebrew') else 'en'
+
         return {
+            'language': language,
             'password': self.field('password'),
             'standalone_mode': self.field('standalone_mode'),
             'sql_server': self.field('sql_server'),
