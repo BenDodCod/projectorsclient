@@ -687,13 +687,20 @@ class ProjectorConfigPage(QWizardPage):
         self.protocol_label = QLabel()
         form_layout.addRow(self.protocol_label, self.type_combo)
 
+        self.auth_user_edit = QLineEdit()
+        self.auth_user_edit.setPlaceholderText("Projector username (if required)")
+        self.auth_user_edit.setAccessibleName("Projector authentication username")
+        self.auth_user_edit.setAccessibleDescription("Enter the projector username if authentication is required")
+        self.auth_user_label = QLabel()
+        form_layout.addRow(self.auth_user_label, self.auth_user_edit)
+
         self.auth_pass_edit = QLineEdit()
         self.auth_pass_edit.setEchoMode(QLineEdit.EchoMode.Password)
         self.auth_pass_edit.setPlaceholderText("Projector authentication password (if required)")
         self.auth_pass_edit.setAccessibleName("Projector authentication password")
         self.auth_pass_edit.setAccessibleDescription("Enter the projector password if authentication is required")
-        self.auth_label = QLabel()
-        form_layout.addRow(self.auth_label, self.auth_pass_edit)
+        self.auth_pass_label = QLabel()
+        form_layout.addRow(self.auth_pass_label, self.auth_pass_edit)
 
         self.location_edit = QLineEdit()
         self.location_edit.setPlaceholderText("e.g., Building A - Floor 2")
@@ -724,6 +731,7 @@ class ProjectorConfigPage(QWizardPage):
         self.registerField("projector_ip*", self.ip_edit)
         self.registerField("projector_port", self.port_spin)
         self.registerField("projector_type", self.type_combo)
+        self.registerField("projector_username", self.auth_user_edit)
         self.registerField("projector_auth", self.auth_pass_edit)
         self.registerField("projector_location", self.location_edit)
 
@@ -737,11 +745,7 @@ class ProjectorConfigPage(QWizardPage):
             self.proj_status_label.setStyleSheet("color: red;")
             return
 
-        port_text = self.port_edit.text().strip()
-        try:
-            port = int(port_text) if port_text else 4352
-        except ValueError:
-            port = 4352
+        port = self.port_spin.value()
 
         # Show testing message
         self.test_proj_btn.setEnabled(False)
@@ -790,7 +794,8 @@ class ProjectorConfigPage(QWizardPage):
         self.ip_label.setText(f"{t('wizard.projector_ip_label', 'IP Address')}:")
         self.port_label.setText(f"{t('wizard.projector_port_label', 'Port')}:")
         self.protocol_label.setText(f"{t('wizard.projector_protocol_label', 'Protocol')}:")
-        self.auth_label.setText(f"{t('wizard.projector_auth_label', 'Auth Password')}:")
+        self.auth_user_label.setText(f"{t('wizard.projector_username_label', 'Username')}:")
+        self.auth_pass_label.setText(f"{t('wizard.projector_auth_label', 'Password')}:")
         self.location_label.setText(f"{t('wizard.projector_location_label', 'Location')}:")
         self.test_proj_btn.setText(t('wizard.projector_test', 'Test Projector Connection'))
 
@@ -1093,6 +1098,7 @@ class FirstRunWizard(QWizard):
                 'ip': self.field('projector_ip'),
                 'port': self.field('projector_port'),
                 'type': self.field('projector_type'),
+                'auth_username': self.field('projector_username'),
                 'auth_password': self.field('projector_auth'),
                 'location': self.field('projector_location'),
             },
