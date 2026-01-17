@@ -1,0 +1,236 @@
+{
+  "_meta": {
+    "language": "English",
+    "code": "en",
+    "direction": "ltr",
+    "version": "1.0.0"
+  },
+
+  "app": {
+    "name": "Projector Control",
+    "version": "1.0.0",
+    "welcome": "Welcome to Projector Control"
+  },
+
+  "wizard": {
+    "title": "Setup Wizard",
+    "subtitle": "Configure your projector control application",
+    "page_welcome": "Welcome",
+    "page_password": "Security",
+    "page_connection": "Database Connection",
+    "page_projector": "Projector Settings",
+    "page_ui": "User Interface",
+    "page_complete": "Complete",
+
+    "welcome_title": "Welcome to Projector Control",
+    "welcome_text": "This wizard will help you configure the application for first use. You'll set up the admin password, database connection, projector settings, and interface preferences.",
+
+    "password_title": "Set Administrator Password",
+    "password_text": "Create a secure password to protect your projector control settings.",
+    "password_label": "Admin Password",
+    "password_confirm_label": "Confirm Password",
+    "password_strength": "Password Strength",
+    "password_requirements": "Password must be at least 8 characters long",
+    "password_mismatch": "Passwords do not match",
+    "password_weak": "Weak",
+    "password_medium": "Medium",
+    "password_strong": "Strong",
+
+    "connection_title": "Database Connection",
+    "connection_text": "Choose how to store projector data and configuration.",
+    "connection_mode_label": "Connection Mode",
+    "connection_mode_standalone": "Standalone (SQLite)",
+    "connection_mode_sqlserver": "SQL Server",
+    "connection_server_label": "Server Address",
+    "connection_database_label": "Database Name",
+    "connection_auth_label": "Authentication",
+    "connection_auth_windows": "Windows Authentication",
+    "connection_auth_sql": "SQL Server Authentication",
+    "connection_username_label": "Username",
+    "connection_password_label": "Password",
+    "connection_test": "Test Connection",
+    "connection_testing": "Testing connection...",
+    "connection_success": "Connection successful",
+    "connection_failed": "Connection failed",
+
+    "projector_title": "Projector Configuration",
+    "projector_text": "Add and configure your projectors.",
+    "projector_add": "Add Projector",
+    "projector_remove": "Remove Projector",
+    "projector_name_label": "Projector Name",
+    "projector_ip_label": "IP Address",
+    "projector_port_label": "Port",
+    "projector_brand_label": "Brand",
+    "projector_model_label": "Model",
+    "projector_test": "Test Connection",
+    "projector_no_projectors": "No projectors configured. Click 'Add Projector' to begin.",
+
+    "ui_title": "User Interface Preferences",
+    "ui_text": "Customize the application appearance and behavior.",
+    "ui_language_label": "Language",
+    "ui_language_english": "English",
+    "ui_language_hebrew": "Hebrew",
+    "ui_theme_label": "Theme",
+    "ui_theme_light": "Light",
+    "ui_theme_dark": "Dark",
+    "ui_theme_system": "System Default",
+    "ui_startup_label": "Startup Options",
+    "ui_startup_minimized": "Start minimized to system tray",
+    "ui_startup_auto": "Launch on Windows startup",
+
+    "complete_title": "Setup Complete",
+    "complete_text": "Your projector control application is ready to use.",
+    "complete_summary": "Configuration Summary",
+    "complete_mode": "Mode",
+    "complete_projectors": "Projectors Configured",
+    "complete_language": "Language",
+    "complete_launch": "Launch Application"
+  },
+
+  "buttons": {
+    "next": "Next",
+    "back": "Back",
+    "finish": "Finish",
+    "cancel": "Cancel",
+    "test": "Test",
+    "ok": "OK",
+    "apply": "Apply",
+    "close": "Close",
+    "save": "Save",
+    "add": "Add",
+    "remove": "Remove",
+    "edit": "Edit",
+    "delete": "Delete",
+    "refresh": "Refresh",
+    "retry": "Retry",
+    "help": "Help",
+    "about": "About"
+  },
+
+  "status": {
+    "connected": "Connected",
+    "disconnected": "Disconnected",
+    "connecting": "Connecting...",
+    "warming_up": "Warming Up",
+    "cooling_down": "Cooling Down",
+    "standby": "Standby",
+    "on": "On",
+    "off": "Off",
+    "error": "Error",
+    "unknown": "Unknown",
+    "ready": "Ready",
+    "busy": "Busy"
+  },
+
+  "power": {
+    "on": "Power On",
+    "off": "Power Off",
+    "state": "Power State",
+    "turning_on": "Turning on...",
+    "turning_off": "Turning off...",
+    "confirm_off": "Are you sure you want to turn off the projector?",
+    "confirm_title": "Confirm Power Off",
+    "cooldown_required": "Projector is cooling down. Please wait before turning it back on.",
+    "warmup_required": "Projector is warming up. Please wait before turning it off."
+  },
+
+  "controls": {
+    "blank": "Blank Screen",
+    "unblank": "Unblank Screen",
+    "freeze": "Freeze",
+    "unfreeze": "Unfreeze",
+    "mute": "Mute",
+    "unmute": "Unmute",
+    "input_select": "Input Source",
+    "input_hdmi1": "HDMI 1",
+    "input_hdmi2": "HDMI 2",
+    "input_vga": "VGA",
+    "input_displayport": "DisplayPort",
+    "input_usbc": "USB-C",
+    "volume": "Volume",
+    "volume_up": "Volume Up",
+    "volume_down": "Volume Down",
+    "brightness": "Brightness",
+    "contrast": "Contrast",
+    "aspect_ratio": "Aspect Ratio",
+    "picture_mode": "Picture Mode"
+  },
+
+  "errors": {
+    "connection_failed": "Failed to connect to projector",
+    "connection_timeout": "Connection timeout",
+    "auth_failed": "Authentication failed",
+    "invalid_response": "Invalid response from projector",
+    "command_failed": "Command failed",
+    "network_error": "Network error",
+    "database_error": "Database error",
+    "configuration_error": "Configuration error",
+    "unknown_error": "An unknown error occurred",
+    "no_projectors": "No projectors configured",
+    "projector_busy": "Projector is busy",
+    "invalid_state": "Invalid projector state for this operation"
+  },
+
+  "menu": {
+    "file": "File",
+    "file_settings": "Settings",
+    "file_exit": "Exit",
+    "projector": "Projector",
+    "projector_add": "Add Projector",
+    "projector_manage": "Manage Projectors",
+    "projector_refresh": "Refresh Status",
+    "tools": "Tools",
+    "tools_backup": "Backup Configuration",
+    "tools_restore": "Restore Configuration",
+    "tools_logs": "View Logs",
+    "help": "Help",
+    "help_documentation": "Documentation",
+    "help_about": "About"
+  },
+
+  "settings": {
+    "title": "Settings",
+    "general": "General",
+    "database": "Database",
+    "projectors": "Projectors",
+    "interface": "Interface",
+    "advanced": "Advanced",
+    "save_success": "Settings saved successfully",
+    "save_failed": "Failed to save settings",
+    "restore_defaults": "Restore Defaults",
+    "confirm_restore": "Are you sure you want to restore default settings?"
+  },
+
+  "notifications": {
+    "projector_on": "Projector turned on",
+    "projector_off": "Projector turned off",
+    "connection_lost": "Connection to projector lost",
+    "connection_restored": "Connection to projector restored",
+    "command_sent": "Command sent successfully",
+    "settings_saved": "Settings saved",
+    "backup_created": "Backup created successfully",
+    "backup_restored": "Backup restored successfully"
+  },
+
+  "accessibility": {
+    "screen_reader_enabled": "Screen reader support enabled",
+    "keyboard_navigation": "Use Tab to navigate, Enter to activate",
+    "high_contrast": "High Contrast Mode",
+    "font_size": "Font Size",
+    "font_size_small": "Small",
+    "font_size_medium": "Medium",
+    "font_size_large": "Large",
+    "font_size_xlarge": "Extra Large"
+  },
+
+  "validation": {
+    "required_field": "This field is required",
+    "invalid_ip": "Invalid IP address",
+    "invalid_port": "Invalid port number",
+    "invalid_email": "Invalid email address",
+    "min_length": "Minimum length: {0} characters",
+    "max_length": "Maximum length: {0} characters",
+    "numeric_only": "Numbers only",
+    "alphanumeric_only": "Letters and numbers only"
+  }
+}

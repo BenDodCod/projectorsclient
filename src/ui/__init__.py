@@ -1,6 +1,17 @@
 """
-PyQt6 UI components.
+User Interface Package for Projector Control Application.
 
-Contains all user interface components including main window, dialogs,
-system tray integration, and custom widgets.
+This package contains all UI components:
+- Main window and dialogs
+- Custom widgets
+- System tray integration
+
+Author: Frontend UI Developer
+Version: 1.0.0
 """
+
+from .main_window import MainWindow
+
+__all__ = [
+    'MainWindow',
+]

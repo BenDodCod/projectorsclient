@@ -193,6 +193,18 @@ def mock_projector_controller():
     return controller
 
 
+@pytest.fixture
+def mock_db_manager():
+    """Mock database manager for UI tests."""
+    db = MagicMock()
+    db.get_setting.return_value = None
+    db.set_setting.return_value = True
+    db.get_projectors.return_value = []
+    db.get_operation_history.return_value = []
+    db.get_audit_log.return_value = []
+    return db
+
+
 # Markers for UI test categories
 def pytest_configure(config):
     """Configure custom pytest markers."""

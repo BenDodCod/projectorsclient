@@ -3,7 +3,7 @@
 # All versions pinned for reproducible builds
 
 # GUI Framework - PyQt6 for modern, professional interface with RTL support
-PyQt6==6.6.1
+PyQt6==6.10.1
 
 # PJLink Protocol - Projector communication
 # Note: pypjlink2 is the maintained fork of pypjlink

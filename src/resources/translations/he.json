@@ -1,0 +1,236 @@
+{
+  "_meta": {
+    "language": "עברית",
+    "code": "he",
+    "direction": "rtl",
+    "version": "1.0.0"
+  },
+
+  "app": {
+    "name": "בקרת מקרן",
+    "version": "1.0.0",
+    "welcome": "ברוכים הבאים לבקרת מקרן"
+  },
+
+  "wizard": {
+    "title": "אשף התקנה",
+    "subtitle": "הגדר את אפליקציית בקרת המקרן",
+    "page_welcome": "ברוכים הבאים",
+    "page_password": "אבטחה",
+    "page_connection": "חיבור למסד נתונים",
+    "page_projector": "הגדרות מקרן",
+    "page_ui": "ממשק משתמש",
+    "page_complete": "הושלם",
+
+    "welcome_title": "ברוכים הבאים לבקרת מקרן",
+    "welcome_text": "אשף זה יעזור לך להגדיר את האפליקציה לשימוש ראשוני. תגדיר את סיסמת המנהל, חיבור למסד נתונים, הגדרות מקרן והעדפות ממשק.",
+
+    "password_title": "הגדר סיסמת מנהל",
+    "password_text": "צור סיסמה מאובטחת להגנה על הגדרות בקרת המקרן שלך.",
+    "password_label": "סיסמת מנהל",
+    "password_confirm_label": "אשר סיסמה",
+    "password_strength": "חוזק הסיסמה",
+    "password_requirements": "הסיסמה חייבת להיות באורך של לפחות 8 תווים",
+    "password_mismatch": "הסיסמאות אינן תואמות",
+    "password_weak": "חלשה",
+    "password_medium": "בינונית",
+    "password_strong": "חזקה",
+
+    "connection_title": "חיבור למסד נתונים",
+    "connection_text": "בחר כיצד לאחסן נתונים והגדרות של המקרן.",
+    "connection_mode_label": "מצב חיבור",
+    "connection_mode_standalone": "עצמאי (SQLite)",
+    "connection_mode_sqlserver": "SQL Server",
+    "connection_server_label": "כתובת שרת",
+    "connection_database_label": "שם מסד נתונים",
+    "connection_auth_label": "אימות",
+    "connection_auth_windows": "אימות Windows",
+    "connection_auth_sql": "אימות SQL Server",
+    "connection_username_label": "שם משתמש",
+    "connection_password_label": "סיסמה",
+    "connection_test": "בדוק חיבור",
+    "connection_testing": "בודק חיבור...",
+    "connection_success": "החיבור הצליח",
+    "connection_failed": "החיבור נכשל",
+
+    "projector_title": "הגדרת מקרן",
+    "projector_text": "הוסף והגדר את המקרנים שלך.",
+    "projector_add": "הוסף מקרן",
+    "projector_remove": "הסר מקרן",
+    "projector_name_label": "שם מקרן",
+    "projector_ip_label": "כתובת IP",
+    "projector_port_label": "פורט",
+    "projector_brand_label": "יצרן",
+    "projector_model_label": "דגם",
+    "projector_test": "בדוק חיבור",
+    "projector_no_projectors": "לא הוגדרו מקרנים. לחץ על 'הוסף מקרן' כדי להתחיל.",
+
+    "ui_title": "העדפות ממשק משתמש",
+    "ui_text": "התאם אישית את מראה האפליקציה והתנהגותה.",
+    "ui_language_label": "שפה",
+    "ui_language_english": "אנגלית",
+    "ui_language_hebrew": "עברית",
+    "ui_theme_label": "ערכת נושא",
+    "ui_theme_light": "בהיר",
+    "ui_theme_dark": "כהה",
+    "ui_theme_system": "ברירת מחדל של המערכת",
+    "ui_startup_label": "אפשרויות הפעלה",
+    "ui_startup_minimized": "התחל ממוזער לשורת המשימות",
+    "ui_startup_auto": "הפעל עם הפעלת Windows",
+
+    "complete_title": "ההתקנה הושלמה",
+    "complete_text": "אפליקציית בקרת המקרן שלך מוכנה לשימוש.",
+    "complete_summary": "סיכום הגדרות",
+    "complete_mode": "מצב",
+    "complete_projectors": "מקרנים שהוגדרו",
+    "complete_language": "שפה",
+    "complete_launch": "הפעל אפליקציה"
+  },
+
+  "buttons": {
+    "next": "הבא",
+    "back": "הקודם",
+    "finish": "סיים",
+    "cancel": "ביטול",
+    "test": "בדיקה",
+    "ok": "אישור",
+    "apply": "החל",
+    "close": "סגור",
+    "save": "שמור",
+    "add": "הוסף",
+    "remove": "הסר",
+    "edit": "ערוך",
+    "delete": "מחק",
+    "refresh": "רענן",
+    "retry": "נסה שוב",
+    "help": "עזרה",
+    "about": "אודות"
+  },
+
+  "status": {
+    "connected": "מחובר",
+    "disconnected": "מנותק",
+    "connecting": "מתחבר...",
+    "warming_up": "מתחמם",
+    "cooling_down": "מתקרר",
+    "standby": "המתנה",
+    "on": "פועל",
+    "off": "כבוי",
+    "error": "שגיאה",
+    "unknown": "לא ידוע",
+    "ready": "מוכן",
+    "busy": "עסוק"
+  },
+
+  "power": {
+    "on": "הפעל",
+    "off": "כבה",
+    "state": "מצב הפעלה",
+    "turning_on": "מפעיל...",
+    "turning_off": "מכבה...",
+    "confirm_off": "האם אתה בטוח שברצונך לכבות את המקרן?",
+    "confirm_title": "אשר כיבוי",
+    "cooldown_required": "המקרן מתקרר. אנא המתן לפני הפעלה מחדש.",
+    "warmup_required": "המקרן מתחמם. אנא המתן לפני כיבוי."
+  },
+
+  "controls": {
+    "blank": "מסך ריק",
+    "unblank": "בטל מסך ריק",
+    "freeze": "הקפא",
+    "unfreeze": "בטל הקפאה",
+    "mute": "השתק",
+    "unmute": "בטל השתקה",
+    "input_select": "מקור קלט",
+    "input_hdmi1": "HDMI 1",
+    "input_hdmi2": "HDMI 2",
+    "input_vga": "VGA",
+    "input_displayport": "DisplayPort",
+    "input_usbc": "USB-C",
+    "volume": "עוצמת קול",
+    "volume_up": "הגבר עוצמה",
+    "volume_down": "הנמך עוצמה",
+    "brightness": "בהירות",
+    "contrast": "ניגודיות",
+    "aspect_ratio": "יחס גובה-רוחב",
+    "picture_mode": "מצב תמונה"
+  },
+
+  "errors": {
+    "connection_failed": "כשל בחיבור למקרן",
+    "connection_timeout": "פסק זמן בחיבור",
+    "auth_failed": "כשל באימות",
+    "invalid_response": "תגובה לא תקינה מהמקרן",
+    "command_failed": "הפקודה נכשלה",
+    "network_error": "שגיאת רשת",
+    "database_error": "שגיאת מסד נתונים",
+    "configuration_error": "שגיאת הגדרות",
+    "unknown_error": "אירעה שגיאה לא ידועה",
+    "no_projectors": "לא הוגדרו מקרנים",
+    "projector_busy": "המקרן עסוק",
+    "invalid_state": "מצב מקרן לא תקין לפעולה זו"
+  },
+
+  "menu": {
+    "file": "קובץ",
+    "file_settings": "הגדרות",
+    "file_exit": "יציאה",
+    "projector": "מקרן",
+    "projector_add": "הוסף מקרן",
+    "projector_manage": "נהל מקרנים",
+    "projector_refresh": "רענן מצב",
+    "tools": "כלים",
+    "tools_backup": "גיבוי הגדרות",
+    "tools_restore": "שחזר הגדרות",
+    "tools_logs": "הצג יומנים",
+    "help": "עזרה",
+    "help_documentation": "תיעוד",
+    "help_about": "אודות"
+  },
+
+  "settings": {
+    "title": "הגדרות",
+    "general": "כללי",
+    "database": "מסד נתונים",
+    "projectors": "מקרנים",
+    "interface": "ממשק",
+    "advanced": "מתקדם",
+    "save_success": "ההגדרות נשמרו בהצלחה",
+    "save_failed": "כשל בשמירת ההגדרות",
+    "restore_defaults": "שחזר ברירות מחדל",
+    "confirm_restore": "האם אתה בטוח שברצונך לשחזר את הגדרות ברירת המחדל?"
+  },
+
+  "notifications": {
+    "projector_on": "המקרן הופעל",
+    "projector_off": "המקרן כובה",
+    "connection_lost": "החיבור למקרן אבד",
+    "connection_restored": "החיבור למקרן שוחזר",
+    "command_sent": "הפקודה נשלחה בהצלחה",
+    "settings_saved": "ההגדרות נשמרו",
+    "backup_created": "הגיבוי נוצר בהצלחה",
+    "backup_restored": "הגיבוי שוחזר בהצלחה"
+  },
+
+  "accessibility": {
+    "screen_reader_enabled": "תמיכה בקורא מסך מופעלת",
+    "keyboard_navigation": "השתמש ב-Tab לניווט, Enter להפעלה",
+    "high_contrast": "מצב ניגודיות גבוהה",
+    "font_size": "גודל גופן",
+    "font_size_small": "קטן",
+    "font_size_medium": "בינוני",
+    "font_size_large": "גדול",
+    "font_size_xlarge": "גדול במיוחד"
+  },
+
+  "validation": {
+    "required_field": "שדה זה הוא חובה",
+    "invalid_ip": "כתובת IP לא תקינה",
+    "invalid_port": "מספר פורט לא תקין",
+    "invalid_email": "כתובת דואר אלקטרוני לא תקינה",
+    "min_length": "אורך מינימלי: {0} תווים",
+    "max_length": "אורך מקסימלי: {0} תווים",
+    "numeric_only": "מספרים בלבד",
+    "alphanumeric_only": "אותיות ומספרים בלבד"
+  }
+}

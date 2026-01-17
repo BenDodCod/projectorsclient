@@ -14,8 +14,18 @@ A professional Python + PyQt6 application for controlling network projectors via
 - **Dual Operation Modes:** Standalone (SQLite) and SQL Server connected
 - **Multi-Brand Support:** PJLink protocol with extensible controller layer
 - **Internationalization:** English and Hebrew with full RTL support
+- **Modern UI:** PyQt6 with custom themes (QSS) and SVG icon library
 - **Diagnostics:** Structured JSON logging and resilient network handling
 - **Single Executable:** PyInstaller-packaged .exe for easy deployment
+
+## Current Implementation Status
+
+**Wave 1 (Completed):**
+- Application entry point with high-DPI support
+- StyleManager for QSS theme management
+- TranslationManager for English/Hebrew i18n
+- IconLibrary with SVG support and Material Design icons
+- Comprehensive API documentation
 
 ## Quick Start
 
@@ -72,6 +82,22 @@ A professional Python + PyQt6 application for controlling network projectors via
    # Verify project structure
    pytest --collect-only
    ```
+
+### Running the Application
+
+```powershell
+# Run from source (development)
+python src/main.py
+
+# Or using module syntax
+python -m src.main
+
+# Run with specific Python version (Windows)
+py -3.11 src/main.py
+
+# Linux/macOS
+python3 src/main.py
+```
 
 ### Running Tests
 
@@ -262,10 +288,24 @@ git config core.hooksPath .githooks
 
 ## Documentation
 
+### Planning and Requirements
 - `IMPLEMENTATION_PLAN.md` - Complete project requirements and roadmap
+- `ROADMAP.md` - Current sprint progress and task tracking
+
+### API Documentation
+- `docs/api/` - Complete API documentation for all modules
+  - [Main Application Entry Point](docs/api/MAIN.md)
+  - [StyleManager API](docs/api/STYLE_MANAGER.md)
+  - [TranslationManager API](docs/api/TRANSLATION_MANAGER.md)
+  - [IconLibrary API](docs/api/ICON_LIBRARY.md)
+  - [API Index](docs/api/README.md)
+
+### Technical Documentation
 - `docs/security/` - Security guidelines and threat model
 - `docs/testing/` - Test strategy and coverage requirements
 - `docs/devops/` - CI/CD and deployment documentation
+- `docs/database/` - Database schema and migration documentation
+- `docs/ui/` - UI component and design guidelines
 
 ## Contributing
 
