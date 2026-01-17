@@ -314,6 +314,20 @@ def main() -> int:
 
         logger.info("First-run wizard completed")
 
+        # Re-read language setting (may have changed in wizard)
+        try:
+            settings = SettingsManager(db)
+            new_language = settings.get("app.language", "en")
+            translation_manager = get_translation_manager()
+            translation_manager.set_language(new_language)
+            if translation_manager.is_rtl():
+                app.setLayoutDirection(Qt.LayoutDirection.RightToLeft)
+                logger.info("RTL layout enabled after wizard (Hebrew selected)")
+            else:
+                app.setLayoutDirection(Qt.LayoutDirection.LeftToRight)
+        except Exception as e:
+            logger.warning(f"Could not apply language from wizard: {e}")
+
     # Show main window
     main_window = show_main_window(db)
 

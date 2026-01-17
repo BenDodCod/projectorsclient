@@ -104,7 +104,31 @@
     "refresh": "רענן",
     "retry": "נסה שוב",
     "help": "עזרה",
-    "about": "אודות"
+    "about": "אודות",
+    "power_on": "הפעל",
+    "power_off": "כבה",
+    "blank": "מסך ריק",
+    "unblank": "בטל מסך ריק",
+    "freeze": "הקפא",
+    "unfreeze": "בטל הקפאה",
+    "input": "קלט",
+    "volume": "עוצמה",
+    "settings": "הגדרות",
+    "minimize": "מזער למגש"
+  },
+
+  "tray": {
+    "show": "הצג",
+    "exit": "יציאה"
+  },
+
+  "tooltips": {
+    "power_on": "הפעל מקרן (Ctrl+P)",
+    "power_off": "כבה מקרן (Ctrl+O)",
+    "blank": "החלף מסך ריק (Ctrl+B)",
+    "freeze": "החלף הקפאה (Ctrl+F)",
+    "input": "בחר מקור קלט (Ctrl+I)",
+    "volume": "כוונן עוצמה"
   },
 
   "status": {
@@ -119,7 +143,20 @@
     "error": "שגיאה",
     "unknown": "לא ידוע",
     "ready": "מוכן",
-    "busy": "עסוק"
+    "busy": "עסוק",
+    "connection": "חיבור",
+    "power": "הפעלה",
+    "input": "קלט",
+    "lamp_hours": "שעות מנורה",
+    "warning": "אזהרה",
+    "checking": "בודק...",
+    "power_on": "פועל",
+    "power_off": "כבוי"
+  },
+
+  "history": {
+    "title": "פעולות אחרונות",
+    "empty": "אין פעולות עדיין"
   },
 
   "power": {
@@ -135,6 +172,7 @@
   },
 
   "controls": {
+    "title": "פקדים",
     "blank": "מסך ריק",
     "unblank": "בטל מסך ריק",
     "freeze": "הקפא",

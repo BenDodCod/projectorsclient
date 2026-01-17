@@ -104,7 +104,31 @@
     "refresh": "Refresh",
     "retry": "Retry",
     "help": "Help",
-    "about": "About"
+    "about": "About",
+    "power_on": "Power On",
+    "power_off": "Power Off",
+    "blank": "Blank",
+    "unblank": "Unblank",
+    "freeze": "Freeze",
+    "unfreeze": "Unfreeze",
+    "input": "Input",
+    "volume": "Volume",
+    "settings": "Settings",
+    "minimize": "Minimize to tray"
+  },
+
+  "tray": {
+    "show": "Show",
+    "exit": "Exit"
+  },
+
+  "tooltips": {
+    "power_on": "Turn projector on (Ctrl+P)",
+    "power_off": "Turn projector off (Ctrl+O)",
+    "blank": "Toggle blank screen (Ctrl+B)",
+    "freeze": "Toggle freeze screen (Ctrl+F)",
+    "input": "Select input source (Ctrl+I)",
+    "volume": "Adjust volume"
   },
 
   "status": {
@@ -119,7 +143,20 @@
     "error": "Error",
     "unknown": "Unknown",
     "ready": "Ready",
-    "busy": "Busy"
+    "busy": "Busy",
+    "connection": "Connection",
+    "power": "Power",
+    "input": "Input",
+    "lamp_hours": "Lamp Hours",
+    "warning": "Warning",
+    "checking": "Checking...",
+    "power_on": "On",
+    "power_off": "Off"
+  },
+
+  "history": {
+    "title": "Recent Operations",
+    "empty": "No operations yet"
   },
 
   "power": {
@@ -135,6 +172,7 @@
   },
 
   "controls": {
+    "title": "Controls",
     "blank": "Blank Screen",
     "unblank": "Unblank Screen",
     "freeze": "Freeze",

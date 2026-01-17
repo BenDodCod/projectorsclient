@@ -84,6 +84,9 @@ class MainWindow(QMainWindow):
         self._setup_shortcuts()
         self._load_window_geometry()
 
+        # Apply saved language setting (ensures translations are correct)
+        self._apply_saved_language()
+
         logger.info("Main window initialized")
 
     def _init_ui(self) -> None:
@@ -521,6 +524,30 @@ class MainWindow(QMainWindow):
         self.language_changed.emit(language)
 
         logger.info(f"Language changed to: {language}")
+
+    def _apply_saved_language(self) -> None:
+        """
+        Apply the saved language setting from database.
+
+        Called during initialization to ensure UI text matches the saved language.
+        This handles the case where widgets are created with English defaults
+        but the saved language is Hebrew (or vice versa).
+        """
+        try:
+            from src.config.settings import SettingsManager
+            settings = SettingsManager(self.db)
+            saved_language = settings.get("app.language", "en")
+
+            # Only apply if different from current
+            if saved_language != self._translation_manager.current_language:
+                logger.info(f"Applying saved language: {saved_language}")
+                self.set_language(saved_language)
+            elif saved_language != "en":
+                # Even if same, need to retranslate since UI was created with defaults
+                logger.info(f"Retranslating UI for language: {saved_language}")
+                self.set_language(saved_language)
+        except Exception as e:
+            logger.warning(f"Could not apply saved language: {e}")
 
     def _retranslate_ui(self) -> None:
         """Retranslate all UI text after language change."""
