@@ -17,13 +17,14 @@ from PyQt6.QtWidgets import (
     QWidget, QVBoxLayout, QHBoxLayout, QFormLayout, QGroupBox,
     QLabel, QLineEdit, QSpinBox, QComboBox, QCheckBox,
     QPushButton, QTableWidget, QTableWidgetItem, QHeaderView,
-    QMessageBox, QAbstractItemView
+    QMessageBox, QAbstractItemView, QDialog
 )
 from PyQt6.QtCore import Qt
 
 from src.resources.icons import IconLibrary
 from src.resources.translations import t
 from src.ui.dialogs.settings_tabs.base_tab import BaseSettingsTab
+from src.ui.dialogs.projector_dialog import ProjectorDialog
 
 logger = logging.getLogger(__name__)
 
@@ -224,35 +225,140 @@ class ConnectionTab(BaseSettingsTab):
 
     def _test_sql_connection(self) -> None:
         """Test SQL Server connection."""
-        # TODO: Implement SQL Server connection test
-        QMessageBox.information(
-            self,
-            t("settings.test_connection", "Test Connection"),
-            t("settings.test_not_implemented", "Connection test will be implemented in a future update."),
-            QMessageBox.StandardButton.Ok
-        )
+        from src.database.sqlserver_manager import SQLServerManager, build_connection_string
+
+        # Collect SQL Server settings from form fields
+        server = self._sql_server_edit.text().strip()
+        port = self._sql_port_spin.value()
+        database = self._sql_database_edit.text().strip()
+        use_windows_auth = self._sql_auth_combo.currentData()
+        username = self._sql_username_edit.text().strip()
+        password = self._sql_password_edit.text()
+
+        # Validate required fields
+        errors = []
+        if not server:
+            errors.append(t("settings.error_sql_server_required", "SQL Server address is required"))
+        if not database:
+            errors.append(t("settings.error_sql_database_required", "Database name is required"))
+        if not use_windows_auth and not username:
+            errors.append(t("settings.error_sql_username_required", "SQL username is required"))
+
+        if errors:
+            QMessageBox.warning(
+                self,
+                t("settings.test_connection", "Test Connection"),
+                "\n".join(errors),
+                QMessageBox.StandardButton.Ok
+            )
+            return
+
+        # Build server string with port if non-default
+        if port != 1433:
+            server_with_port = f"{server}:{port}"
+        else:
+            server_with_port = server
+
+        try:
+            # Build connection string
+            conn_str = build_connection_string(
+                server=server_with_port,
+                database=database,
+                username=username if not use_windows_auth else None,
+                password=password if not use_windows_auth else None,
+                trusted_connection=use_windows_auth,
+            )
+
+            # Create SqlServerManager instance and test connection
+            # Use auto_init=False to avoid creating schema during test
+            sql_manager = SQLServerManager(conn_str, auto_init=False)
+            success, message = sql_manager.test_connection()
+            sql_manager.close_all()
+
+            # Show result
+            if success:
+                QMessageBox.information(
+                    self,
+                    t("settings.test_connection", "Test Connection"),
+                    t("settings.test_connection_success", "Connection successful! The database is reachable."),
+                    QMessageBox.StandardButton.Ok
+                )
+            else:
+                # Connection failed but with controlled error message
+                QMessageBox.warning(
+                    self,
+                    t("settings.test_connection", "Test Connection"),
+                    t("settings.test_connection_failed", f"Connection failed: {message}"),
+                    QMessageBox.StandardButton.Ok
+                )
+
+        except Exception as e:
+            # Handle unexpected errors
+            logger.error(f"SQL Server connection test error: {e}", exc_info=True)
+
+            # Sanitize error message - don't expose credentials
+            error_msg = str(e)
+            if password and password in error_msg:
+                error_msg = error_msg.replace(password, "***")
+
+            QMessageBox.critical(
+                self,
+                t("settings.test_connection", "Test Connection"),
+                t("settings.test_connection_error",
+                  f"Unable to connect to SQL Server.\n\nError: {error_msg}"),
+                QMessageBox.StandardButton.Ok
+            )
 
     def _add_projector(self) -> None:
         """Add a new projector."""
-        # TODO: Open projector edit dialog
-        QMessageBox.information(
-            self,
-            t("settings.add_projector", "Add Projector"),
-            t("settings.projector_editor_not_implemented",
-              "Projector editor will be implemented in a future update."),
-            QMessageBox.StandardButton.Ok
-        )
+        dialog = ProjectorDialog(self.db_manager, self)
+        if dialog.exec() == QDialog.DialogCode.Accepted:
+            projector_data = dialog.get_projector_data()
+
+            # Add to table
+            row_idx = self._projector_table.rowCount()
+            self._projector_table.insertRow(row_idx)
+            self._projector_table.setItem(row_idx, 0, QTableWidgetItem(projector_data["proj_name"]))
+            self._projector_table.setItem(row_idx, 1, QTableWidgetItem(projector_data["proj_ip"]))
+            self._projector_table.setItem(row_idx, 2, QTableWidgetItem(str(projector_data["proj_port"])))
+            self._projector_table.setItem(row_idx, 3, QTableWidgetItem(projector_data["proj_type"]))
+
+            # Mark as dirty to enable Apply button
+            self.mark_dirty()
+
+            logger.info(f"Added projector: {projector_data['proj_name']} ({projector_data['proj_ip']})")
 
     def _edit_projector(self) -> None:
         """Edit selected projector."""
-        # TODO: Open projector edit dialog with selected projector
-        QMessageBox.information(
-            self,
-            t("settings.edit_projector", "Edit Projector"),
-            t("settings.projector_editor_not_implemented",
-              "Projector editor will be implemented in a future update."),
-            QMessageBox.StandardButton.Ok
-        )
+        selected = self._projector_table.selectedItems()
+        if not selected:
+            return
+
+        row = selected[0].row()
+
+        # Gather current projector data from table
+        projector_data = {
+            "proj_name": self._projector_table.item(row, 0).text(),
+            "proj_ip": self._projector_table.item(row, 1).text(),
+            "proj_port": int(self._projector_table.item(row, 2).text()),
+            "proj_type": self._projector_table.item(row, 3).text(),
+            "proj_username": "",  # Not displayed in table
+        }
+
+        dialog = ProjectorDialog(self.db_manager, self, projector_data=projector_data)
+        if dialog.exec() == QDialog.DialogCode.Accepted:
+            updated_data = dialog.get_projector_data()
+
+            # Update table
+            self._projector_table.setItem(row, 0, QTableWidgetItem(updated_data["proj_name"]))
+            self._projector_table.setItem(row, 1, QTableWidgetItem(updated_data["proj_ip"]))
+            self._projector_table.setItem(row, 2, QTableWidgetItem(str(updated_data["proj_port"])))
+            self._projector_table.setItem(row, 3, QTableWidgetItem(updated_data["proj_type"]))
+
+            # Mark as dirty to enable Apply button
+            self.mark_dirty()
+
+            logger.info(f"Updated projector: {updated_data['proj_name']} ({updated_data['proj_ip']})")
 
     def _remove_projector(self) -> None:
         """Remove selected projector."""
@@ -278,13 +384,121 @@ class ConnectionTab(BaseSettingsTab):
 
     def _test_projector_connection(self) -> None:
         """Test connection to selected projector."""
-        # TODO: Implement projector connection test
-        QMessageBox.information(
-            self,
-            t("settings.test_connection", "Test Connection"),
-            t("settings.test_not_implemented", "Connection test will be implemented in a future update."),
-            QMessageBox.StandardButton.Ok
-        )
+        # Check if a projector is selected
+        selected = self._projector_table.selectedItems()
+        if not selected:
+            QMessageBox.warning(
+                self,
+                t("settings.test_connection", "Test Connection"),
+                t("settings.select_projector_first", "Please select a projector from the table first."),
+                QMessageBox.StandardButton.Ok
+            )
+            return
+
+        # Get selected row
+        row = selected[0].row()
+
+        # Extract projector details from table
+        projector_name = self._projector_table.item(row, 0).text()
+        projector_ip = self._projector_table.item(row, 1).text()
+        projector_port_str = self._projector_table.item(row, 2).text()
+
+        # Parse port with fallback to default
+        try:
+            projector_port = int(projector_port_str)
+        except (ValueError, TypeError):
+            projector_port = 4352  # Default PJLink port
+
+        # Get projector password from database (if exists)
+        projector_password = None
+        try:
+            # Query the database for the full projector record
+            result = self.db_manager.fetchone(
+                "SELECT proj_user, proj_pass_encrypted FROM projector_config WHERE proj_name = ? AND active = 1",
+                (projector_name,)
+            )
+            if result and result[1]:  # If password exists
+                # Decrypt password
+                from src.utils.security import CredentialManager
+                from pathlib import Path
+                import os
+
+                # Get app data directory
+                app_data = os.getenv("APPDATA")
+                if app_data:
+                    app_data_dir = Path(app_data) / "ProjectorControl"
+                else:
+                    app_data_dir = Path.home() / "AppData" / "Roaming" / "ProjectorControl"
+
+                cred_manager = CredentialManager(str(app_data_dir))
+                projector_password = cred_manager.decrypt_credential(result[1])
+
+        except Exception as e:
+            logger.warning(f"Could not retrieve projector password: {e}")
+            # Continue with no password
+
+        # Disable button during test
+        self._test_projector_btn.setEnabled(False)
+        self._test_projector_btn.setText(t("settings.testing", "Testing..."))
+
+        try:
+            # Create controller and test connection
+            from src.core.projector_controller import ProjectorController
+
+            controller = ProjectorController(
+                host=projector_ip,
+                port=projector_port,
+                password=projector_password,
+                timeout=5.0
+            )
+
+            # Try to connect
+            if controller.connect():
+                # Success - show success message
+                QMessageBox.information(
+                    self,
+                    t("settings.test_success", "Connection Successful"),
+                    t("settings.connection_successful",
+                      f"Successfully connected to {projector_name}\n"
+                      f"IP: {projector_ip}\n"
+                      f"Port: {projector_port}"),
+                    QMessageBox.StandardButton.Ok
+                )
+
+                # Disconnect cleanly
+                controller.disconnect()
+            else:
+                # Connection failed - show error
+                error_msg = controller.last_error or "Unknown error"
+                QMessageBox.critical(
+                    self,
+                    t("settings.test_failed", "Connection Failed"),
+                    t("settings.connection_failed",
+                      f"Failed to connect to {projector_name}\n\n"
+                      f"Error: {error_msg}\n\n"
+                      f"Please check:\n"
+                      f"- IP address is correct\n"
+                      f"- Projector is powered on and connected to network\n"
+                      f"- Password is correct (if required)\n"
+                      f"- No firewall is blocking port {projector_port}"),
+                    QMessageBox.StandardButton.Ok
+                )
+
+        except Exception as e:
+            # Unexpected error
+            logger.error(f"Error testing projector connection: {e}")
+            QMessageBox.critical(
+                self,
+                t("settings.test_error", "Test Error"),
+                t("settings.test_unexpected_error",
+                  f"An unexpected error occurred while testing the connection:\n\n{str(e)}"),
+                QMessageBox.StandardButton.Ok
+            )
+
+        finally:
+            # Re-enable button
+            self._test_projector_btn.setEnabled(True)
+            self._test_projector_btn.setText(t("settings.test_connection", "Test Connection"))
 
     def _load_projectors(self) -> None:
         """Load projectors from database into table."""
@@ -395,10 +609,15 @@ class ConnectionTab(BaseSettingsTab):
 
         # Buttons
         self._test_sql_btn.setText(t("settings.test_connection", "Test Connection"))
+        self._test_sql_btn.setIcon(IconLibrary.get_icon("connected"))
         self._add_projector_btn.setText(t("settings.add", "Add"))
+        self._add_projector_btn.setIcon(IconLibrary.get_icon("check"))
         self._edit_projector_btn.setText(t("settings.edit", "Edit"))
+        self._edit_projector_btn.setIcon(IconLibrary.get_icon("settings"))
         self._remove_projector_btn.setText(t("settings.remove", "Remove"))
+        self._remove_projector_btn.setIcon(IconLibrary.get_icon("close"))
         self._test_projector_btn.setText(t("settings.test_connection", "Test Connection"))
+        self._test_projector_btn.setIcon(IconLibrary.get_icon("connected"))
 
         # Table headers
         self._projector_table.setHorizontalHeaderLabels([

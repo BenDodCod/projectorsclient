@@ -17,7 +17,37 @@ QWidget {
 
 /* ===== Main Window ===== */
 QMainWindow {
-    background-color: #f5f5f5;
+    background-color: #f0f2f5;
+}
+
+#status_panel, #controls_panel, #history_panel {
+    background-color: #ffffff;
+    border: 2px solid #333333; /* Darker outline for light mode */
+    border-radius: 12px;
+    margin: 10px 16px;
+}
+
+#status_separator {
+    color: #dcdfe6;
+    max-height: 50px;
+}
+
+#status_card {
+    background-color: #ffffff;
+    border: 2px solid #e0e0e0;
+    border-radius: 8px;
+    min-width: 110px;
+}
+
+#status_card:hover {
+    background-color: #f8f9fa;
+    border-color: #333333;
+}
+
+#panel_title {
+    color: #2196F3;
+    padding-bottom: 4px;
+    border-bottom: 1px solid #ebeef5;
 }
 
 /* ===== Buttons ===== */
@@ -47,6 +77,63 @@ QPushButton:disabled {
 QPushButton:focus {
     outline: 2px solid #2196F3;
     outline-offset: 2px;
+}
+
+/* Specific colored buttons for better UX - Light Theme */
+
+/* Power On - Green */
+#power_on_btn {
+    background: qlineargradient(x1:0, y1:0, x2:0, y2:1, stop:0 #4caf50, stop:1 #388e3c);
+    color: #ffffff;
+    border: 1px solid #2e7d32;
+}
+#power_on_btn:hover {
+    background: qlineargradient(x1:0, y1:0, x2:0, y2:1, stop:0 #66bb6a, stop:1 #4caf50);
+    border-color: #388e3c;
+}
+
+/* Power Off - Red */
+#power_off_btn {
+    background: qlineargradient(x1:0, y1:0, x2:0, y2:1, stop:0 #f44336, stop:1 #d32f2f);
+    color: #ffffff;
+    border: 1px solid #c62828;
+}
+#power_off_btn:hover {
+    background: qlineargradient(x1:0, y1:0, x2:0, y2:1, stop:0 #ef5350, stop:1 #f44336);
+    border-color: #d32f2f;
+}
+
+/* Display Controls (Blank/Freeze) - Amber/Orange */
+#blank_btn, #freeze_btn {
+    background: qlineargradient(x1:0, y1:0, x2:0, y2:1, stop:0 #ff9800, stop:1 #f57c00);
+    color: #ffffff;
+    border: 1px solid #ef6c00;
+}
+#blank_btn:hover, #freeze_btn:hover {
+    background: qlineargradient(x1:0, y1:0, x2:0, y2:1, stop:0 #ffb74d, stop:1 #ff9800);
+    border-color: #f57c00;
+}
+
+/* Input/Selector - Blue */
+#input_btn {
+    background: qlineargradient(x1:0, y1:0, x2:0, y2:1, stop:0 #2196f3, stop:1 #1976d2);
+    color: #ffffff;
+    border: 1px solid #1565c0;
+}
+#input_btn:hover {
+    background: qlineargradient(x1:0, y1:0, x2:0, y2:1, stop:0 #42a5f5, stop:1 #2196f3);
+    border-color: #1976d2;
+}
+
+/* Volume/Audio - Purple */
+#volume_btn, #mute_btn {
+    background: qlineargradient(x1:0, y1:0, x2:0, y2:1, stop:0 #9c27b0, stop:1 #7b1fa2);
+    color: #ffffff;
+    border: 1px solid #6a1b9a;
+}
+#volume_btn:hover, #mute_btn:hover {
+    background: qlineargradient(x1:0, y1:0, x2:0, y2:1, stop:0 #ab47bc, stop:1 #9c27b0);
+    border-color: #7b1fa2;
 }
 
 /* Secondary buttons */
@@ -609,3 +696,27 @@ QHeaderView:right-to-left::section {
 #history_panel:right-to-left #history_entry {
     /* Indicator on right side in RTL */
 }
+
+/* ===== Custom Control Buttons ===== */
+QPushButton#control_button {
+    background-color: #f5f5f5;
+    color: #212121;
+    border: 1px solid #e0e0e0;
+    font-size: 10pt;
+}
+
+QPushButton#control_button:hover {
+    background-color: #e3f2fd;
+    border-color: #2196f3;
+}
+
+QPushButton#control_button[active="true"] {
+    background-color: #2196f3;
+    color: #ffffff;
+    border-color: #1976d2;
+}
+
+QPushButton#control_button[active="true"]:hover {
+    background-color: #1976d2;
+}
+

@@ -10,6 +10,13 @@
     "version": "1.0.0",
     "welcome": "Welcome to Projector Control"
   },
+  "tray": {
+    "show": "Show",
+    "exit": "Exit",
+    "minimized": "Application minimized to tray",
+    "restored": "Application restored",
+    "quit": "Quit Application"
+  },
   "wizard": {
     "title": "Setup Wizard",
     "subtitle": "Configure your projector control application",
@@ -157,10 +164,6 @@
     "mute": "Mute",
     "unmute": "Unmute"
   },
-  "tray": {
-    "show": "Show",
-    "exit": "Exit"
-  },
   "tooltips": {
     "power_on": "Turn projector on (Ctrl+P)",
     "power_off": "Turn projector off (Ctrl+O)",
@@ -306,6 +309,11 @@
     "refresh_section": "Status Refresh",
     "refresh_interval": "Refresh interval:",
     "refresh_interval_desc": "How often to check projector status (in seconds)",
+    "theme": "Theme:",
+    "theme_light": "Light",
+    "theme_dark": "Dark",
+    "theme_section": "Theme",
+    "theme_tooltip": "Select UI theme",
     "operation_mode": "Operation Mode",
     "current_mode": "Current mode:",
     "mode_note": "Operation mode is set during initial setup and cannot be changed here.",
@@ -401,7 +409,6 @@
     "diagnostics": "Diagnostics",
     "run_diagnostics": "Run Connection Diagnostics",
     "diagnostics_desc": "Tests connectivity to all configured projectors and reports any issues.",
-    "diagnostics_not_implemented": "Connection diagnostics will be implemented in a future update.",
     "about": "About",
     "copyright": "Projector Control Application",
     "database_sqlite": "Database: SQLite (Standalone)",
@@ -432,7 +439,8 @@
     "discard_changes_confirm": "You have unsaved changes. Are you sure you want to discard them?",
     "validation_error": "Validation Error",
     "fix_errors": "Please fix the following errors:",
-    "save_error": "Save Error"
+    "save_error": "Save Error",
+    "test_connection_success": "Connection tested successfully."
   },
   "notifications": {
     "projector_on": "Projector turned on",
@@ -463,5 +471,35 @@
     "max_length": "Maximum length: {0} characters",
     "numeric_only": "Numbers only",
     "alphanumeric_only": "Letters and numbers only"
+  },
+  "projector": {
+    "add_title": "Add Projector",
+    "edit_title": "Edit Projector",
+    "name": "Name:",
+    "ip_address": "IP Address:",
+    "port": "Port:",
+    "type": "Type:",
+    "username": "Username:",
+    "password": "Password:",
+    "username_optional": "Optional",
+    "password_optional": "Optional",
+    "show_password": "Show password",
+    "test_connection": "Test Connection",
+    "testing": "Testing...",
+    "test_success": "Connection successful!",
+    "test_failed": "Connection test failed: ",
+    "test_not_implemented": "Connection test will be implemented in a future update.",
+    "error_name_required": "Projector name is required",
+    "error_name_too_long": "Projector name must be 100 characters or less",
+    "error_ip_required": "IP address is required",
+    "error_ip_invalid": "Invalid IP address format (use xxx.xxx.xxx.xxx)",
+    "error_port_invalid": "Port must be between 1 and 65535",
+    "error_username_too_long": "Username must be 64 characters or less"
+  },
+  "diagnostics": {
+    "title": "Connection Diagnostics",
+    "running": "Running diagnostics...",
+    "copy": "Copy to Clipboard",
+    "complete_with_warnings": "Diagnostics complete with warnings"
   }
 }

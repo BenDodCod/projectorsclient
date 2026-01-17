@@ -19,9 +19,11 @@ from typing import Any, Dict, List, Tuple
 
 from PyQt6.QtWidgets import (
     QWidget, QVBoxLayout, QHBoxLayout, QGroupBox,
-    QLabel, QPushButton, QMessageBox, QFileDialog
+    QLabel, QPushButton, QMessageBox, QFileDialog,
+    QDialog, QTextEdit, QDialogButtonBox, QApplication
 )
-from PyQt6.QtCore import Qt
+from PyQt6.QtCore import Qt, QTimer
+from PyQt6.QtGui import QFont
 
 from src.config.settings import SettingsManager
 from src.resources.icons import IconLibrary
@@ -293,14 +295,22 @@ class DiagnosticsTab(BaseSettingsTab):
 
     def _run_diagnostics(self) -> None:
         """Run connection diagnostics."""
-        # TODO: Implement comprehensive diagnostics
-        QMessageBox.information(
-            self,
-            t("settings.diagnostics", "Diagnostics"),
-            t("settings.diagnostics_not_implemented",
-              "Connection diagnostics will be implemented in a future update."),
-            QMessageBox.StandardButton.Ok
-        )
+        try:
+            from src.utils.diagnostics import ConnectionDiagnostics
+
+            # Create and show diagnostics dialog
+            dialog = DiagnosticsResultDialog(self.db_manager, self)
+            dialog.exec()
+
+        except Exception as e:
+            logger.error(f"Failed to run diagnostics: {e}")
+            QMessageBox.critical(
+                self,
+                t("settings.diagnostics_error", "Diagnostics Error"),
+                t("settings.diagnostics_error_msg",
+                  f"Failed to run diagnostics:\n{str(e)}"),
+                QMessageBox.StandardButton.Ok
+            )
 
     def collect_settings(self) -> Dict[str, Any]:
         """Collect current settings from widgets - Diagnostics tab has no settings."""
@@ -338,10 +348,15 @@ class DiagnosticsTab(BaseSettingsTab):
 
         # Buttons
         self._export_btn.setText(t("settings.export_config", "Export Configuration..."))
+        self._export_btn.setIcon(IconLibrary.get_icon("download"))
         self._import_btn.setText(t("settings.import_config", "Import Configuration..."))
+        self._import_btn.setIcon(IconLibrary.get_icon("upload"))
         self._view_logs_btn.setText(t("settings.view_logs", "View Application Logs..."))
+        self._view_logs_btn.setIcon(IconLibrary.get_icon("description"))
         self._clear_history_btn.setText(t("settings.clear_history", "Clear Operation History"))
+        self._clear_history_btn.setIcon(IconLibrary.get_icon("delete"))
         self._run_diagnostics_btn.setText(t("settings.run_diagnostics", "Run Connection Diagnostics"))
+        self._run_diagnostics_btn.setIcon(IconLibrary.get_icon("build"))
 
         # Descriptions
         self._config_desc.setText(
@@ -357,3 +372,191 @@ class DiagnosticsTab(BaseSettingsTab):
         self._copyright_label.setText(
             t("settings.copyright", "Projector Control Application")
         )
+
+
+class DiagnosticsResultDialog(QDialog):
+    """Dialog for displaying diagnostics results."""
+
+    def __init__(self, db_manager, parent: QWidget = None):
+        """Initialize the diagnostics result dialog.
+
+        Args:
+            db_manager: DatabaseManager instance
+            parent: Optional parent widget
+        """
+        super().__init__(parent)
+        self.db_manager = db_manager
+        self._diagnostics = None
+        self._init_ui()
+        self._run_diagnostics()
+
+    def _init_ui(self) -> None:
+        """Initialize the user interface."""
+        self.setWindowTitle(t("diagnostics.title", "Connection Diagnostics"))
+        self.setMinimumSize(700, 500)
+
+        layout = QVBoxLayout(self)
+        layout.setSpacing(16)
+        layout.setContentsMargins(16, 16, 16, 16)
+
+        # Status label
+        self._status_label = QLabel(t("diagnostics.running", "Running diagnostics..."))
+        self._status_label.setStyleSheet("font-weight: bold; font-size: 10pt;")
+        layout.addWidget(self._status_label)
+
+        # Results text area
+        self._results_text = QTextEdit()
+        self._results_text.setReadOnly(True)
+        self._results_text.setFont(QFont("Courier New", 9))
+        self._results_text.setStyleSheet("""
+            QTextEdit {
+                background-color: #f5f5f5;
+                border: 1px solid #cccccc;
+                border-radius: 4px;
+                padding: 8px;
+            }
+        """)
+        layout.addWidget(self._results_text)
+
+        # Button box
+        button_box = QDialogButtonBox()
+
+        self._copy_btn = QPushButton(t("diagnostics.copy", "Copy to Clipboard"))
+        self._copy_btn.setIcon(IconLibrary.get_icon("content_copy"))
+        self._copy_btn.clicked.connect(self._copy_to_clipboard)
+        self._copy_btn.setEnabled(False)
+        button_box.addButton(self._copy_btn, QDialogButtonBox.ButtonRole.ActionRole)
+
+        self._close_btn = button_box.addButton(QDialogButtonBox.StandardButton.Close)
+        self._close_btn.clicked.connect(self.accept)
+
+        layout.addWidget(button_box)
+
+    def _run_diagnostics(self) -> None:
+        """Run diagnostics in a delayed manner to allow UI to display."""
+        # Use QTimer to run diagnostics after dialog is shown
+        QTimer.singleShot(100, self._execute_diagnostics)
+
+    def _execute_diagnostics(self) -> None:
+        """Execute the diagnostics."""
+        try:
+            from src.utils.diagnostics import ConnectionDiagnostics, DiagnosticStatus
+
+            # Create diagnostics runner
+            self._diagnostics = ConnectionDiagnostics(self.db_manager)
+
+            # Run all diagnostics
+            results = self._diagnostics.run_all()
+
+            # Format and display results
+            formatted_results = self._diagnostics.format_results(include_summary=True)
+            self._results_text.setPlainText(formatted_results)
+
+            # Add color coding
+            self._apply_color_coding(results)
+
+            # Update status
+            summary = self._diagnostics.get_summary()
+            if summary['failed'] > 0:
+                status_text = t("diagnostics.complete_with_errors",
+                              f"Diagnostics complete - {summary['failed']} failed, {summary['passed']} passed")
+                self._status_label.setStyleSheet("font-weight: bold; font-size: 10pt; color: #d32f2f;")
+            elif summary['warnings'] > 0:
+                status_text = t("diagnostics.complete_with_warnings",
+                              f"Diagnostics complete - {summary['warnings']} warnings, {summary['passed']} passed")
+                self._status_label.setStyleSheet("font-weight: bold; font-size: 10pt; color: #f57c00;")
+            else:
+                status_text = t("diagnostics.complete_success",
+                              f"All diagnostics passed ({summary['passed']} checks)")
+                self._status_label.setStyleSheet("font-weight: bold; font-size: 10pt; color: #388e3c;")
+
+            self._status_label.setText(status_text)
+
+            # Enable copy button
+            self._copy_btn.setEnabled(True)
+
+        except Exception as e:
+            logger.error(f"Diagnostics execution failed: {e}")
+            self._results_text.setPlainText(
+                f"ERROR: Diagnostics failed to execute\n\n{str(e)}"
+            )
+            self._status_label.setText(t("diagnostics.error", "Diagnostics failed"))
+            self._status_label.setStyleSheet("font-weight: bold; font-size: 10pt; color: #d32f2f;")
+
+    def _apply_color_coding(self, results) -> None:
+        """Apply color coding to results text.
+
+        Args:
+            results: List of DiagnosticResult objects
+        """
+        from src.utils.diagnostics import DiagnosticStatus
+
+        # Get the plain text
+        text = self._results_text.toPlainText()
+
+        # Apply HTML formatting with colors
+        html_lines = []
+        for line in text.split('\n'):
+            # Check for status indicators
+            if line.strip().startswith('✓'):
+                html_lines.append(f'<span style="color: #388e3c;">{line}</span>')
+            elif line.strip().startswith('✗'):
+                html_lines.append(f'<span style="color: #d32f2f;">{line}</span>')
+            elif line.strip().startswith('⚠'):
+                html_lines.append(f'<span style="color: #f57c00;">{line}</span>')
+            elif line.strip().startswith('○'):
+                html_lines.append(f'<span style="color: #757575;">{line}</span>')
+            elif line.strip().startswith('=') or line.strip().startswith('-'):
+                html_lines.append(f'<span style="color: #666666;">{line}</span>')
+            elif any(keyword in line for keyword in ['DIAGNOSTICS REPORT', 'SUMMARY', 'Generated:']):
+                html_lines.append(f'<span style="font-weight: bold;">{line}</span>')
+            else:
+                html_lines.append(line)
+
+        # Set HTML content
+        html_content = '<pre style="font-family: Courier New; font-size: 9pt;">' + \
+                      '<br>'.join(html_lines) + '</pre>'
+        self._results_text.setHtml(html_content)
+
+    def _copy_to_clipboard(self) -> None:
+        """Copy diagnostics results to clipboard."""
+        try:
+            clipboard = QApplication.clipboard()
+            clipboard.setText(self._results_text.toPlainText())
+
+            # Show confirmation
+            self._status_label.setText(
+                t("diagnostics.copied", "Results copied to clipboard")
+            )
+            self._status_label.setStyleSheet("font-weight: bold; font-size: 10pt; color: #1976d2;")
+
+            # Reset status after 2 seconds
+            QTimer.singleShot(2000, self._reset_status_label)
+
+        except Exception as e:
+            logger.error(f"Failed to copy to clipboard: {e}")
+            QMessageBox.warning(
+                self,
+                t("diagnostics.copy_error", "Copy Error"),
+                t("diagnostics.copy_error_msg", f"Failed to copy to clipboard:\n{str(e)}"),
+                QMessageBox.StandardButton.Ok
+            )
+
+    def _reset_status_label(self) -> None:
+        """Reset status label to original diagnostics result."""
+        if self._diagnostics:
+            summary = self._diagnostics.get_summary()
+            if summary['failed'] > 0:
+                status_text = t("diagnostics.complete_with_errors",
+                              f"Diagnostics complete - {summary['failed']} failed, {summary['passed']} passed")
+                self._status_label.setStyleSheet("font-weight: bold; font-size: 10pt; color: #d32f2f;")
+            elif summary['warnings'] > 0:
+                status_text = t("diagnostics.complete_with_warnings",
+                              f"Diagnostics complete - {summary['warnings']} warnings, {summary['passed']} passed")
+                self._status_label.setStyleSheet("font-weight: bold; font-size: 10pt; color: #f57c00;")
+            else:
+                status_text = t("diagnostics.complete_success",
+                              f"All diagnostics passed ({summary['passed']} checks)")
+                self._status_label.setStyleSheet("font-weight: bold; font-size: 10pt; color: #388e3c;")
+
+            self._status_label.setText(status_text)

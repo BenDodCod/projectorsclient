@@ -339,3 +339,4 @@ class UIButtonsTab(BaseSettingsTab):
 
         # Reset button
         self._reset_btn.setText(t("settings.reset_to_defaults", "Reset to Defaults"))
+        self._reset_btn.setIcon(IconLibrary.get_icon("refresh"))

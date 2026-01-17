@@ -78,6 +78,7 @@ class MainWindow(QMainWindow):
         super().__init__(parent)
 
         self.db = db_manager
+        self._settings = SettingsManager(db_manager)
         self._translation_manager = get_translation_manager()
 
         # Window state
@@ -98,6 +99,9 @@ class MainWindow(QMainWindow):
         # Apply saved language setting (ensures translations are correct)
         self._apply_saved_language()
 
+        # Apply saved theme (ensures icons and styles are correct)
+        self._apply_saved_theme()
+
         # Apply saved button visibility
         self._apply_saved_button_visibility()
 
@@ -116,14 +120,6 @@ class MainWindow(QMainWindow):
         except Exception as e:
             logger.warning(f"Failed to set window icon: {e}")
 
-        # Apply theme
-        try:
-            from PyQt6.QtWidgets import QApplication
-            app = QApplication.instance()
-            if app:
-                StyleManager.apply_theme(app, "light")
-        except Exception as e:
-            logger.warning(f"Failed to apply theme: {e}")
 
         # Create central widget
         central_widget = QWidget()
@@ -141,17 +137,20 @@ class MainWindow(QMainWindow):
         # Status panel
         self.status_panel = StatusPanel()
         self.status_panel.setAccessibleName("Projector status panel")
+        self.status_panel.setObjectName("status_panel")
         main_layout.addWidget(self.status_panel)
 
         # Controls panel
         self.controls_panel = ControlsPanel()
         self.controls_panel.setAccessibleName("Projector controls panel")
+        self.controls_panel.setObjectName("controls_panel")
         self._connect_control_signals()
         main_layout.addWidget(self.controls_panel)
 
         # History panel
         self.history_panel = HistoryPanel()
         self.history_panel.setAccessibleName("Operation history panel")
+        self.history_panel.setObjectName("history_panel")
         main_layout.addWidget(self.history_panel)
 
         # Add stretch to push everything up
@@ -198,6 +197,16 @@ class MainWindow(QMainWindow):
         settings_btn.setAccessibleName("Settings button")
         settings_btn.clicked.connect(self.settings_requested.emit)
         layout.addWidget(settings_btn)
+
+        # Theme toggle button
+        self.theme_btn = QPushButton()
+        self._update_theme_button_icon()
+        self.theme_btn.setIconSize(QSize(24, 24))
+        self.theme_btn.setFixedSize(36, 36)
+        self.theme_btn.setToolTip(t('buttons.toggle_theme', 'Toggle Light/Dark Theme'))
+        self.theme_btn.setAccessibleName("Toggle theme button")
+        self.theme_btn.clicked.connect(self.toggle_theme)
+        layout.addWidget(self.theme_btn)
 
         # Minimize button
         minimize_btn = QPushButton()
@@ -613,10 +622,82 @@ class MainWindow(QMainWindow):
         if any(k.startswith('ui.button.') for k in settings):
             self._apply_saved_button_visibility()
 
+        # Handle theme change
+        if 'ui.theme' in settings:
+            self._settings.clear_cache()
+            self._apply_saved_theme()
+            self._update_theme_button_icon()
+            self._refresh_icons()
+
         # Handle other settings that need immediate effect
         if 'network.status_interval' in settings:
             # Update status timer interval if running
             logger.info(f"Status interval changed to {settings['network.status_interval']} seconds")
+
+    def toggle_theme(self) -> None:
+        """Toggle between light and dark theme."""
+        try:
+            current_theme = self._settings.get_str("ui.theme", "light")
+            new_theme = "dark" if current_theme == "light" else "light"
+            
+            # Save to settings
+            self._settings.set("ui.theme", new_theme)
+            
+            # Apply changes
+            self._apply_saved_theme()
+            self._update_theme_button_icon()
+            self._refresh_icons()
+            
+            # Notify of change
+            logger.info(f"Theme toggled to: {new_theme}")
+        except Exception as e:
+            logger.error(f"Failed to toggle theme: {e}")
+
+    def _update_theme_button_icon(self) -> None:
+        """Update the theme button icon based on current theme."""
+        if not hasattr(self, 'theme_btn'):
+            return
+            
+        theme = self._settings.get_str("ui.theme", "light")
+        icon_name = 'dark_mode' if theme == 'light' else 'light_mode'
+        self.theme_btn.setIcon(IconLibrary.get_icon(icon_name))
+
+    def _refresh_icons(self) -> None:
+        """Refresh icons on all UI components after a theme change."""
+        try:
+            # Update window icon
+            self.setWindowIcon(IconLibrary.get_icon('app_icon'))
+            
+            # Update header icons
+            self._update_theme_button_icon()
+            
+            # Find and update other header buttons
+            header = self.findChild(QWidget, "header")
+            if header:
+                buttons = header.findChildren(QPushButton)
+                for btn in buttons:
+                    if "Settings" in btn.accessibleName():
+                        btn.setIcon(IconLibrary.get_icon('settings'))
+                    elif "Minimize" in btn.accessibleName():
+                        btn.setIcon(IconLibrary.get_icon('minimize'))
+
+            # Update controls panel
+            if hasattr(self, 'controls_panel'):
+                self.controls_panel.retranslate() # retranslate also refreshes icons
+                
+            # Update tray icons
+            if hasattr(self, 'tray_icon'):
+                if self._is_connected:
+                    self.tray_icon.setIcon(IconLibrary.get_icon('tray_connected'))
+                else:
+                    self.tray_icon.setIcon(IconLibrary.get_icon('tray_disconnected'))
+
+            # Update status bar icons
+            self._update_connection_indicator()
+            
+            logger.debug("UI icons refreshed for new theme")
+        except Exception as e:
+            logger.warning(f"Failed to refresh icons: {e}")
 
     def _apply_button_visibility(self, settings: dict) -> None:
         """
@@ -627,6 +708,24 @@ class MainWindow(QMainWindow):
         """
         # Reload button visibility in controls panel
         self._apply_saved_button_visibility()
+    def _apply_saved_theme(self) -> None:
+        """Apply the theme saved in settings."""
+        try:
+            theme = self._settings.get_str("ui.theme", "light")
+            
+            # Update IconLibrary theme
+            IconLibrary.set_theme(theme)
+            
+            # Apply QSS theme
+            from PyQt6.QtWidgets import QApplication
+            app = QApplication.instance()
+            if app:
+                StyleManager.apply_theme(app, theme)
+                
+            logger.info(f"Theme applied: {theme}")
+        except Exception as e:
+            logger.warning(f"Failed to apply saved theme: {e}")
+            
     def _apply_saved_button_visibility(self) -> None:
         """Load and apply button visibility from database."""
         try:

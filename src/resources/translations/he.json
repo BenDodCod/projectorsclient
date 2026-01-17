@@ -10,6 +10,13 @@
     "version": "1.0.0",
     "welcome": "ברוכים הבאים לבקרת מקרן"
   },
+  "tray": {
+    "show": "הצג",
+    "exit": "יציאה",
+    "minimized": "האפליקציה ממוזערת למגש המערכת",
+    "restored": "האפליקציה שוחזרה",
+    "quit": "סגור אפליקציה"
+  },
   "wizard": {
     "title": "אשף התקנה",
     "subtitle": "הגדר את אפליקציית בקרת המקרן",
@@ -153,10 +160,6 @@
     "settings": "הגדרות",
     "minimize": "מזער למגש"
   },
-  "tray": {
-    "show": "הצג",
-    "exit": "יציאה"
-  },
   "tooltips": {
     "power_on": "הפעל מקרן (Ctrl+P)",
     "power_off": "כבה מקרן (Ctrl+O)",
@@ -299,6 +302,11 @@
     "refresh_section": "רענון מצב",
     "refresh_interval": "מרווח רענון:",
     "refresh_interval_desc": "כל כמה זמן לבדוק את מצב המקרן (בשניות)",
+    "theme": "ערכת נושא:",
+    "theme_light": "בהיר",
+    "theme_dark": "כהה",
+    "theme_section": "ערכת נושא",
+    "theme_tooltip": "בחר ערכת נושא",
     "operation_mode": "מצב פעולה",
     "current_mode": "מצב נוכחי:",
     "mode_note": "מצב הפעולה נקבע בהתקנה הראשונית ולא ניתן לשינוי כאן.",
@@ -394,7 +402,6 @@
     "diagnostics": "אבחון",
     "run_diagnostics": "הפעל אבחון חיבור",
     "diagnostics_desc": "בודק קישוריות לכל המקרנים המוגדרים ומדווח על בעיות.",
-    "diagnostics_not_implemented": "אבחון חיבור ייושם בעדכון עתידי.",
     "about": "אודות",
     "copyright": "אפליקציית בקרת מקרן",
     "database_sqlite": "מסד נתונים: SQLite (עצמאי)",
@@ -425,7 +432,8 @@
     "discard_changes_confirm": "יש לך שינויים שלא נשמרו. האם אתה בטוח שברצונך לבטל אותם?",
     "validation_error": "שגיאת אימות",
     "fix_errors": "אנא תקן את השגיאות הבאות:",
-    "save_error": "שגיאת שמירה"
+    "save_error": "שגיאת שמירה",
+    "test_connection_success": "החיבור נבדק בהצלחה."
   },
   "notifications": {
     "projector_on": "המקרן הופעל",
@@ -456,5 +464,35 @@
     "max_length": "אורך מקסימלי: {0} תווים",
     "numeric_only": "מספרים בלבד",
     "alphanumeric_only": "אותיות ומספרים בלבד"
+  },
+  "projector": {
+    "add_title": "הוסף מקרן",
+    "edit_title": "ערוך מקרן",
+    "name": "שם:",
+    "ip_address": "כתובת IP:",
+    "port": "פורט:",
+    "type": "סוג:",
+    "username": "שם משתמש:",
+    "password": "סיסמה:",
+    "username_optional": "אופציונלי",
+    "password_optional": "אופציונלי",
+    "show_password": "הצג סיסמה",
+    "test_connection": "בדוק חיבור",
+    "testing": "בודק...",
+    "test_success": "החיבור הצליח!",
+    "test_failed": "בדיקת החיבור נכשלה: ",
+    "test_not_implemented": "בדיקת חיבור תיושם בעדכון עתידי.",
+    "error_name_required": "שם המקרן נדרש",
+    "error_name_too_long": "שם המקרן חייב להיות 100 תווים או פחות",
+    "error_ip_required": "כתובת IP נדרשת",
+    "error_ip_invalid": "פורמט כתובת IP לא תקין (השתמש ב-xxx.xxx.xxx.xxx)",
+    "error_port_invalid": "הפורט חייב להיות בין 1 ל-65535",
+    "error_username_too_long": "שם המשתמש חייב להיות 64 תווים או פחות"
+  },
+  "diagnostics": {
+    "title": "אבחון חיבור",
+    "running": "מריץ אבחון...",
+    "copy": "העתק ללוח",
+    "complete_with_warnings": "האבחון הושלם עם אזהרות"
   }
 }

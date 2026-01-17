@@ -298,6 +298,25 @@ def mock_sql_server() -> MagicMock:
 
 
 @pytest.fixture
+def mock_db_manager(temp_db_path: Path) -> MagicMock:
+    """
+    Create a mock DatabaseManager for testing.
+
+    Returns:
+        Mock DatabaseManager with common methods mocked.
+    """
+    mock = MagicMock()
+    mock.db_path = temp_db_path
+    mock.fetchall.return_value = []
+    mock.fetchone.return_value = None
+    mock.execute.return_value = None
+    mock.get_connection.return_value = MagicMock()
+    mock.table_exists.return_value = True
+    mock.integrity_check.return_value = (True, "ok")
+    return mock
+
+
+@pytest.fixture
 def mock_network_available() -> Generator[MagicMock, None, None]:
     """Mock network availability check."""
     with pytest.MonkeyPatch.context() as mp:

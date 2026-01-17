@@ -14,7 +14,7 @@ Version: 1.0.0
 import logging
 from typing import Optional
 
-from PyQt6.QtWidgets import QWidget, QHBoxLayout, QVBoxLayout, QLabel
+from PyQt6.QtWidgets import QWidget, QHBoxLayout, QVBoxLayout, QLabel, QFrame
 from PyQt6.QtCore import Qt, QSize
 from PyQt6.QtGui import QPixmap
 
@@ -60,42 +60,40 @@ class StatusPanel(QWidget):
         main_layout.setSpacing(24)
 
         # Connection status section
-        connection_section = self._create_status_item(
+        self.connection_card = self._create_status_item(
             "status",
             t('status.connection', 'Connection'),
             t('status.disconnected', 'Disconnected'),
             "connection_value"
         )
-        main_layout.addLayout(connection_section)
+        main_layout.addWidget(self.connection_card)
 
         # Power state section
-        power_section = self._create_status_item(
+        self.power_card = self._create_status_item(
             "power",
             t('status.power', 'Power'),
             t('status.off', 'Off'),
             "power_value"
         )
-        main_layout.addLayout(power_section)
+        main_layout.addWidget(self.power_card)
 
         # Input source section
-        input_section = self._create_status_item(
+        self.input_card = self._create_status_item(
             "input",
             t('status.input', 'Input'),
             "N/A",
             "input_value"
         )
-        main_layout.addLayout(input_section)
+        main_layout.addWidget(self.input_card)
 
         # Lamp hours section
-        lamp_section = self._create_status_item(
+        self.lamp_card = self._create_status_item(
             "lamp",
             t('status.lamp_hours', 'Lamp Hours'),
             "0 hrs",
             "lamp_value"
         )
-        main_layout.addLayout(lamp_section)
-
-        main_layout.addStretch()
+        main_layout.addWidget(self.lamp_card)
 
     def _create_status_item(
         self,
@@ -103,9 +101,9 @@ class StatusPanel(QWidget):
         label: str,
         value: str,
         value_object_name: str
-    ) -> QVBoxLayout:
+    ) -> QFrame:
         """
-        Create a status item with icon, label, and value.
+        Create a status item card with icon, label, and value.
 
         Args:
             icon_name: Icon name from IconLibrary
@@ -114,14 +112,20 @@ class StatusPanel(QWidget):
             value_object_name: Object name for value label
 
         Returns:
-            QVBoxLayout containing the status item
+            QFrame containing the status item
         """
-        layout = QVBoxLayout()
+        card = QFrame()
+        card.setObjectName("status_card")
+        
+        layout = QVBoxLayout(card)
         layout.setSpacing(4)
+        layout.setContentsMargins(12, 8, 12, 8)
+        layout.setAlignment(Qt.AlignmentFlag.AlignCenter)
 
         # Icon and label row
         header_layout = QHBoxLayout()
         header_layout.setSpacing(8)
+        header_layout.setAlignment(Qt.AlignmentFlag.AlignCenter)
 
         # Icon
         icon_label = QLabel()
@@ -132,10 +136,11 @@ class StatusPanel(QWidget):
         # Label
         label_widget = QLabel(label)
         label_widget.setObjectName("status_label")
+        label_widget.setAlignment(Qt.AlignmentFlag.AlignCenter)
         font = label_widget.font()
         font.setPointSize(9)
         label_widget.setFont(font)
-        label_widget.setStyleSheet("color: #64748b;")
+        label_widget.setStyleSheet("color: #64748b; border: none;") # Ensure no border on interior label
         header_layout.addWidget(label_widget)
         header_layout.addStretch()
 
@@ -144,16 +149,18 @@ class StatusPanel(QWidget):
         # Value
         value_label = QLabel(value)
         value_label.setObjectName(value_object_name)
+        value_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
         font = value_label.font()
         font.setPointSize(12)
         font.setBold(True)
         value_label.setFont(font)
+        value_label.setStyleSheet("border: none;") # Ensure no border on interior label
         layout.addWidget(value_label)
 
         # Store reference to value label
         setattr(self, value_object_name, value_label)
 
-        return layout
+        return card
 
     def update_status(
         self,
@@ -265,41 +272,24 @@ class StatusPanel(QWidget):
 
     def retranslate(self) -> None:
         """Retranslate all UI text after language change."""
-        # Find and update label widgets
-        # The labels are stored in the layout structure
-        layout = self.layout()
-        if layout:
-            # Update status section labels
-            # Connection section
-            self._update_section_label(0, t('status.connection', 'Connection'))
-            # Power section
-            self._update_section_label(1, t('status.power', 'Power'))
-            # Input section
-            self._update_section_label(2, t('status.input', 'Input'))
-            # Lamp hours section
-            self._update_section_label(3, t('status.lamp_hours', 'Lamp Hours'))
+        # Update status item labels via their card structure
+        self._update_card_label(self.connection_card, t('status.connection', 'Connection'))
+        self._update_card_label(self.power_card, t('status.power', 'Power'))
+        self._update_card_label(self.input_card, t('status.input', 'Input'))
+        self._update_card_label(self.lamp_card, t('status.lamp_hours', 'Lamp Hours'))
 
         # Update current status values with translations
         self.set_connection_status(self._connection_status)
         self.update_status(self._power_state, self._input_source, self._lamp_hours)
 
-    def _update_section_label(self, section_index: int, new_text: str) -> None:
-        """Update a section's label text by index."""
-        layout = self.layout()
+    def _update_card_label(self, card: QFrame, new_text: str) -> None:
+        """Update a card's label text."""
+        layout = card.layout()
         if not layout:
             return
 
-        # Get the section layout (QVBoxLayout)
-        item = layout.itemAt(section_index)
-        if not item:
-            return
-
-        section_layout = item.layout()
-        if not section_layout:
-            return
-
         # The first item is the header layout (QHBoxLayout)
-        header_item = section_layout.itemAt(0)
+        header_item = layout.itemAt(0)
         if not header_item:
             return
 

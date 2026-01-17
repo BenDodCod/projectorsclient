@@ -12,6 +12,7 @@ Version: 1.0.0
 """
 
 import logging
+from src.resources.icons import IconLibrary
 from typing import Any, Dict, List, Tuple
 
 from PyQt6.QtWidgets import (
@@ -104,6 +105,18 @@ class GeneralTab(BaseSettingsTab):
 
         layout.addWidget(self._notifications_group)
 
+        # Theme group
+        self._theme_group = QGroupBox()
+        theme_layout = QFormLayout(self._theme_group)
+        theme_layout.setSpacing(10)
+        self._theme_combo = QComboBox()
+        self._theme_combo.addItem(t("settings.theme_light", "Light"), "light")
+        self._theme_combo.addItem(t("settings.theme_dark", "Dark"), "dark")
+        self._theme_combo.setAccessibleName(t("settings.theme", "Theme"))
+        self._theme_label = QLabel()
+        theme_layout.addRow(self._theme_label, self._theme_combo)
+        layout.addWidget(self._theme_group)
+
         # Status refresh group
         self._refresh_group = QGroupBox()
         refresh_layout = QFormLayout(self._refresh_group)
@@ -134,9 +147,13 @@ class GeneralTab(BaseSettingsTab):
         self._language_combo.currentIndexChanged.connect(self.mark_dirty)
         self._start_with_windows_cb.stateChanged.connect(self.mark_dirty)
         self._minimize_to_tray_cb.stateChanged.connect(self.mark_dirty)
+        self._language_combo.currentIndexChanged.connect(self.mark_dirty)
+        self._start_with_windows_cb.stateChanged.connect(self.mark_dirty)
+        self._minimize_to_tray_cb.stateChanged.connect(self.mark_dirty)
         self._show_tray_notifications_cb.stateChanged.connect(self.mark_dirty)
         self._show_confirmations_cb.stateChanged.connect(self.mark_dirty)
         self._status_interval_spin.valueChanged.connect(self.mark_dirty)
+        self._theme_combo.currentIndexChanged.connect(self.mark_dirty)
 
     def collect_settings(self) -> Dict[str, Any]:
         """Collect current settings from widgets."""
@@ -147,6 +164,7 @@ class GeneralTab(BaseSettingsTab):
             "app.show_tray_notifications": self._show_tray_notifications_cb.isChecked(),
             "app.show_confirmations": self._show_confirmations_cb.isChecked(),
             "network.status_interval": self._status_interval_spin.value(),
+            "ui.theme": self._theme_combo.currentData(),
         }
 
     def apply_settings(self, settings: Dict[str, Any]) -> None:
@@ -178,6 +196,13 @@ class GeneralTab(BaseSettingsTab):
             settings.get("network.status_interval", 30)
         )
 
+        # Theme
+        theme = settings.get("ui.theme", "light")
+        index = self._theme_combo.findData(theme)
+        if index >= 0:
+            self._theme_combo.setCurrentIndex(index)
+        IconLibrary.set_theme(theme)
+
     def validate(self) -> Tuple[bool, List[str]]:
         """Validate settings - General tab has no validation errors."""
         return (True, [])
@@ -189,6 +214,7 @@ class GeneralTab(BaseSettingsTab):
         self._startup_group.setTitle(t("settings.startup_section", "Startup"))
         self._notifications_group.setTitle(t("settings.notifications_section", "Notifications"))
         self._refresh_group.setTitle(t("settings.refresh_section", "Status Refresh"))
+        self._theme_group.setTitle(t("settings.theme_section", "Theme"))
 
         # Labels
         self._language_label.setText(t("settings.language", "Language:"))
@@ -216,3 +242,7 @@ class GeneralTab(BaseSettingsTab):
 
         # Spinbox suffix
         self._status_interval_spin.setSuffix(" " + t("settings.seconds", "seconds"))
+
+        # Theme
+        self._theme_label.setText(t("settings.theme", "Theme:"))
+        self._theme_combo.setToolTip(t("settings.theme_tooltip", "Select UI theme"))

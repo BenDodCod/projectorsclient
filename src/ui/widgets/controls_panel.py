@@ -41,6 +41,7 @@ class ControlButton(QPushButton):
         self,
         text: str,
         icon_name: str,
+        active_icon_name: Optional[str] = None,
         parent: Optional[QWidget] = None
     ):
         """
@@ -53,13 +54,11 @@ class ControlButton(QPushButton):
         """
         super().__init__(text, parent)
 
-        # Set icon
-        try:
-            icon = IconLibrary.get_icon(icon_name)
-            self.setIcon(icon)
-            self.setIconSize(QSize(24, 24))
-        except Exception as e:
-            logger.warning(f"Failed to set icon '{icon_name}': {e}")
+        self._inactive_icon_name = icon_name
+        self._active_icon_name = active_icon_name
+
+        # Set initial icon
+        self._update_icon()
 
         # Set properties
         self.setMinimumHeight(48)
@@ -68,6 +67,19 @@ class ControlButton(QPushButton):
 
         # Set object name for styling
         self.setObjectName("control_button")
+
+    def _update_icon(self) -> None:
+        """Update the button icon based on active state."""
+        icon_to_use = self._inactive_icon_name
+        if self.property("active") == "true" and self._active_icon_name:
+            icon_to_use = self._active_icon_name
+
+        try:
+            icon = IconLibrary.get_icon(icon_to_use)
+            self.setIcon(icon)
+            self.setIconSize(QSize(24, 24))
+        except Exception as e:
+            logger.warning(f"Failed to update icon '{icon_to_use}': {e}")
 
     def set_active(self, active: bool) -> None:
         """
@@ -81,9 +93,16 @@ class ControlButton(QPushButton):
         else:
             self.setProperty("active", "false")
 
+        # Update icon
+        self._update_icon()
+
         # Force style refresh
         self.style().unpolish(self)
         self.style().polish(self)
+
+    def retranslate(self) -> None:
+        """Refresh icon and other translatable properties."""
+        self._update_icon()
 
 
 class ControlsPanel(QWidget):
@@ -171,8 +190,10 @@ class ControlsPanel(QWidget):
             'power_on'
         )
         self.power_on_btn.setAccessibleName("Power On button")
+        self.power_on_btn.setAccessibleDescription("Turns the projector power on")
         self.power_on_btn.setToolTip(t('tooltips.power_on', 'Turn projector on (Ctrl+P)'))
         self.power_on_btn.clicked.connect(self.power_on_clicked.emit)
+        self.power_on_btn.setObjectName("power_on_btn")
         grid.addWidget(self.power_on_btn, 0, 0)
 
         self.power_off_btn = ControlButton(
@@ -180,29 +201,37 @@ class ControlsPanel(QWidget):
             'power_off'
         )
         self.power_off_btn.setAccessibleName("Power Off button")
+        self.power_off_btn.setAccessibleDescription("Turns the projector power off")
         self.power_off_btn.setToolTip(t('tooltips.power_off', 'Turn projector off (Ctrl+O)'))
         self.power_off_btn.clicked.connect(self.power_off_clicked.emit)
+        self.power_off_btn.setObjectName("power_off_btn")
         grid.addWidget(self.power_off_btn, 0, 1)
 
         # Row 1: Display controls
         self.blank_btn = ControlButton(
             t('buttons.blank', 'Blank'),
-            'blank'
+            'blank_off',
+            'blank_on'
         )
         self.blank_btn.setAccessibleName("Blank screen button")
+        self.blank_btn.setAccessibleDescription("Toggles the projector blank screen state")
         self.blank_btn.setToolTip(t('tooltips.blank', 'Toggle blank screen (Ctrl+B)'))
         self.blank_btn.setCheckable(True)
         self.blank_btn.clicked.connect(self._on_blank_clicked)
+        self.blank_btn.setObjectName("blank_btn")
         grid.addWidget(self.blank_btn, 1, 0)
 
         self.freeze_btn = ControlButton(
             t('buttons.freeze', 'Freeze'),
-            'freeze'
+            'freeze_off',
+            'freeze_on'
         )
         self.freeze_btn.setAccessibleName("Freeze screen button")
+        self.freeze_btn.setAccessibleDescription("Toggles the projector freeze screen state")
         self.freeze_btn.setToolTip(t('tooltips.freeze', 'Toggle freeze screen (Ctrl+F)'))
         self.freeze_btn.setCheckable(True)
         self.freeze_btn.clicked.connect(self._on_freeze_clicked)
+        self.freeze_btn.setObjectName("freeze_btn")
         grid.addWidget(self.freeze_btn, 1, 1)
 
         # Row 2: Input and Volume
@@ -211,8 +240,10 @@ class ControlsPanel(QWidget):
             'input'
         )
         self.input_btn.setAccessibleName("Input selector button")
+        self.input_btn.setAccessibleDescription("Opens the input source selection menu")
         self.input_btn.setToolTip(t('tooltips.input', 'Select input source (Ctrl+I)'))
         self.input_btn.clicked.connect(self.input_clicked.emit)
+        self.input_btn.setObjectName("input_btn")
         grid.addWidget(self.input_btn, 2, 0)
 
         self.volume_btn = ControlButton(
@@ -220,8 +251,10 @@ class ControlsPanel(QWidget):
             'volume_up'
         )
         self.volume_btn.setAccessibleName("Volume control button")
+        self.volume_btn.setAccessibleDescription("Adjusts the projector volume")
         self.volume_btn.setToolTip(t('tooltips.volume', 'Adjust volume'))
         self.volume_btn.clicked.connect(self.volume_clicked.emit)
+        self.volume_btn.setObjectName("volume_btn")
         grid.addWidget(self.volume_btn, 2, 1)
 
         # Row 3: Dynamic inputs container
@@ -234,12 +267,15 @@ class ControlsPanel(QWidget):
         # Row 4: Mute
         self.mute_btn = ControlButton(
             t('buttons.mute', 'Mute'),
-            'volume_off'
+            'volume_up',
+            'volume_mute'
         )
         self.mute_btn.setAccessibleName("Mute button")
+        self.mute_btn.setAccessibleDescription("Toggles the projector audio mute state")
         self.mute_btn.setToolTip(t('tooltips.mute', 'Toggle mute'))
         self.mute_btn.setCheckable(True)
         self.mute_btn.clicked.connect(self._on_mute_clicked)
+        self.mute_btn.setObjectName("mute_btn")
         grid.addWidget(self.mute_btn, 4, 0)
 
         main_layout.addLayout(grid)
@@ -447,6 +483,21 @@ class ControlsPanel(QWidget):
         self.input_btn.setToolTip(t('tooltips.input', 'Select input source (Ctrl+I)'))
         self.volume_btn.setToolTip(t('tooltips.volume', 'Adjust volume'))
         self.mute_btn.setToolTip(t('tooltips.mute', 'Toggle mute'))
+        
+        # Refresh icons on all buttons
+        self.power_on_btn.retranslate()
+        self.power_off_btn.retranslate()
+        self.blank_btn.retranslate()
+        self.freeze_btn.retranslate()
+        self.input_btn.retranslate()
+        self.volume_btn.retranslate()
+        self.mute_btn.retranslate()
+        
+        # Refresh dynamic input icons
+        for i in range(self.dynamic_inputs_layout.count()):
+            item = self.dynamic_inputs_layout.itemAt(i)
+            if item and item.widget() and isinstance(item.widget(), ControlButton):
+                item.widget().retranslate()
 
     def update_dynamic_inputs(self, buttons_data: list) -> None:
         """Update dynamic input buttons.

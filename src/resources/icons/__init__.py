@@ -39,6 +39,23 @@ DIRECTIONAL_ICONS: List[str] = [
 
 
 class IconLibrary:
+    """Central icon management with SVG support and theme handling.
+
+    The library now supports a light/dark theme. Call ``IconLibrary.set_theme('dark')``
+    to switch to dark mode; the cache is cleared automatically.
+    """
+    # Base directory for icons – set dynamically based on running mode
+    _icon_dir: Optional[Path] = None
+    # Current UI theme ("light" or "dark")
+    _theme: str = "light"
+
+    @classmethod
+    @property
+    def ICON_DIR(cls) -> Path:
+        """Return the icon directory (for backwards compatibility)."""
+        return cls._get_icon_dir()
+
+
     """
     Central icon management with SVG support.
 
@@ -82,6 +99,8 @@ class IconLibrary:
         'vga': 'vga.svg',
         'vga1': 'vga.svg',
         'vga2': 'vga.svg',
+        'input_hdmi': 'hdmi.svg',
+        'input_vga': 'vga.svg',
         'input': 'input.svg',
         'input_select': 'input.svg',
         'video': 'video.svg',
@@ -121,6 +140,15 @@ class IconLibrary:
         'close': 'close.svg',
         'minimize': 'minimize.svg',
         'maximize': 'maximize.svg',
+        'light_mode': 'light_mode.svg',
+        'dark_mode': 'dark_mode.svg',
+        'check': 'check.svg',
+        'arrow_down': 'arrow_down.svg',
+        'arrow_up': 'arrow_up.svg',
+        'arrow_left': 'arrow_left.svg',
+        'arrow_right': 'arrow_right.svg',
+        'content_copy': 'content_copy.svg',
+        'copy': 'content_copy.svg',
 
         # Application icons
         'app': 'projector.svg',
@@ -130,6 +158,7 @@ class IconLibrary:
         'tray_disconnected': 'projector_red.svg',
         'tray_warning': 'projector_yellow.svg',
         'tray_offline': 'projector_gray.svg',
+        'projector': 'projector.svg',
         
         # Help & Documentation
         'help': 'help.svg',
@@ -181,6 +210,20 @@ class IconLibrary:
     DEFAULT_SIZE = QSize(24, 24)
 
     @classmethod
+    def set_theme(cls, theme: str) -> None:
+        """Set the UI theme.
+
+        Accepted values are ``"light"`` or ``"dark"``. Changing the theme clears the
+        icon cache so that icons are re‑loaded with the appropriate variant.
+        """
+        if theme not in ("light", "dark"):
+            logger.warning(f"Unsupported theme '{theme}' – falling back to 'light'.")
+            theme = "light"
+        if cls._theme != theme:
+            cls._theme = theme
+            cls.clear_cache()
+
+    @classmethod
     def get_icon(cls, name: str, size: Optional[QSize] = None) -> QIcon:
         """
         Get an icon by name.
@@ -198,7 +241,7 @@ class IconLibrary:
         if size is None:
             size = cls.DEFAULT_SIZE
 
-        cache_key = f"{name}_{size.width()}x{size.height()}"
+        cache_key = f"{cls._theme}_{name}_{size.width()}x{size.height()}"
 
         if cache_key in cls._icon_cache:
             return cls._icon_cache[cache_key]
@@ -257,7 +300,17 @@ class IconLibrary:
             return cls._create_fallback_icon(name, size)
 
         filename = cls.ICONS[name]
-        filepath = cls._get_icon_dir() / filename
+        # Determine theme‑specific filename
+        base_path = cls._get_icon_dir()
+        if cls._theme == "dark":
+            dark_name = Path(filename).stem + "_dark.svg"
+            dark_path = base_path / dark_name
+            if dark_path.exists():
+                filepath = dark_path
+            else:
+                filepath = base_path / filename
+        else:
+            filepath = base_path / filename
 
         if not filepath.exists():
             logger.warning(f"Icon file not found: {filepath}, using fallback")

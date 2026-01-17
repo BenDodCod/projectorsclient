@@ -207,6 +207,7 @@ class SettingsDialog(QDialog):
             "app.minimize_to_tray": self._settings.get_bool("app.minimize_to_tray", True),
             "app.show_tray_notifications": self._settings.get_bool("app.show_tray_notifications", True),
             "app.show_confirmations": self._settings.get_bool("app.show_confirmations", True),
+            "ui.theme": self._settings.get_str("ui.theme", "light"),
             "network.status_interval": self._settings.get_int("network.status_interval", 30),
 
             # Connection
