@@ -295,13 +295,16 @@ def main() -> int:
         from src.config.settings import SettingsManager
         settings = SettingsManager(db)
         saved_language = settings.get("app.language", "en")
-        translation_manager = get_translation_manager(saved_language)
+        # Note: get_translation_manager() only uses language arg on FIRST call
+        # so we must explicitly call set_language() to ensure it's applied
+        translation_manager = get_translation_manager()
+        translation_manager.set_language(saved_language)
         if translation_manager.is_rtl():
             app.setLayoutDirection(Qt.LayoutDirection.RightToLeft)
             logger.info("RTL layout enabled for Hebrew language")
     except Exception as e:
         logger.warning(f"Could not load language setting: {e}, defaulting to English")
-        get_translation_manager("en")
+        get_translation_manager()
 
     # Check if first run
     if check_first_run(db):
