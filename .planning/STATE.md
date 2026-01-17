@@ -1,7 +1,7 @@
 # Project State: Enhanced Projector Control Application
 
 **Last Updated:** 2026-01-17
-**Session:** Plan 02-02 Complete
+**Session:** Plan 02-01 Complete
 
 ## Project Reference
 
@@ -22,7 +22,7 @@ Plans: Multiple plans executing in parallel (Wave 1)
 
 | Plan  | Name                           | Status     |
 | ----- | ------------------------------ | ---------- |
-| 02-01 | Hebrew Translation Wiring      | Unknown    |
+| 02-01 | Hebrew Translation Wiring      | COMPLETE   |
 | 02-02 | Performance Benchmarking       | COMPLETE   |
 | 02-03 | Security Documentation         | COMPLETE   |
 | 02-04 | SQL Server Integration         | COMPLETE   |
@@ -34,7 +34,7 @@ Plans: Multiple plans executing in parallel (Wave 1)
 
 | Metric | Value | Target | Status |
 |--------|-------|--------|--------|
-| Tests | 1157+ | 1000+ | Pass |
+| Tests | 1178+ | 1000+ | Pass |
 | Coverage | 93.99% | 85% | Pass |
 | Integration Tests | 118 | 50 | Pass |
 | Benchmark Tests | 14 | - | Pass |
@@ -46,6 +46,17 @@ Plans: Multiple plans executing in parallel (Wave 1)
 | Timeline | +12 days | On time | Pass |
 
 ## Recent Activity
+
+### 2026-01-17: Plan 02-01 Complete
+- Implemented RTL layout at application level (QApplication.setLayoutDirection)
+- Added directional icon mirroring via QTransform
+- Added language selection page to first-run wizard
+- Added retranslate() methods to all panels (StatusPanel, ControlsPanel, HistoryPanel)
+- Added set_language() and _retranslate_ui() to MainWindow
+- Added RTL-specific QSS styles to light_theme.qss
+- Created 21 RTL/Hebrew UI tests (9 unit + 12 integration)
+- I18N-03, I18N-04, I18N-05 requirements addressed
+- Summary: .planning/phases/02-validation-i18n/02-01-SUMMARY.md
 
 ### 2026-01-17: Plan 02-02 Complete
 - Created performance benchmark test suite (14 tests)
@@ -91,6 +102,8 @@ Plans: Multiple plans executing in parallel (Wave 1)
 | DB-POOL-CONFIG | Default pool_size=10, max_overflow=5 for enterprise | 2026-01-17 |
 | GRACEFUL-SKIP | Tests skip gracefully when LocalDB unavailable      | 2026-01-17 |
 | PERF-MEM-THRESHOLD | 100MB threshold for operation memory test (bounded vs leak) | 2026-01-17 |
+| RTL-APP-LEVEL | RTL direction set at QApplication level for auto-propagation | 2026-01-17 |
+| ICON-MIRROR | Directional icons mirror via QTransform, not separate files | 2026-01-17 |
 
 ## Blockers
 
@@ -133,16 +146,17 @@ None currently.
 ## Session Continuity
 
 **Last session:** 2026-01-17
-**Completed:** Plan 02-02 (Performance Benchmarking)
-**Summary:** .planning/phases/02-validation-i18n/02-02-SUMMARY.md
+**Completed:** Plan 02-01 (Hebrew Translation Wiring / RTL Support)
+**Summary:** .planning/phases/02-validation-i18n/02-01-SUMMARY.md
 
 ## Context for Next Session
 
 **Current state:**
+- Plan 02-01 complete - RTL/Hebrew UI support implemented (I18N-03/04/05 pass)
 - Plan 02-02 complete - Performance benchmarks validated (PERF-04/05/06 pass)
 - Plan 02-03 complete - SECURITY.md created and verified
 - Plan 02-04 complete - SQL Server integration implemented
-- Wave 1 remaining: 02-01 (Hebrew wiring), 02-05 (Compatibility)
+- Wave 1 remaining: 02-05 (Compatibility)
 - Wave 2 plans (02-06, 02-07) depend on Wave 1
 
 **Key context:**
