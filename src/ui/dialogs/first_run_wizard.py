@@ -730,14 +730,52 @@ class ProjectorConfigPage(QWizardPage):
         self.retranslate()
 
     def _test_projector(self) -> None:
-        """Test the projector connection."""
-        ip = self.ip_edit.text()
-        if ip:
-            self.proj_status_label.setText(t('wizard.projector_test_not_impl', f"Connection test for {ip} not implemented in wizard."))
-            self.proj_status_label.setStyleSheet("color: orange;")
-        else:
+        """Test the projector connection using PJLink."""
+        ip = self.ip_edit.text().strip()
+        if not ip:
             self.proj_status_label.setText(t('wizard.projector_enter_ip', "Please enter an IP address first."))
             self.proj_status_label.setStyleSheet("color: red;")
+            return
+
+        port_text = self.port_edit.text().strip()
+        try:
+            port = int(port_text) if port_text else 4352
+        except ValueError:
+            port = 4352
+
+        # Show testing message
+        self.test_proj_btn.setEnabled(False)
+        self.proj_status_label.setText(t('wizard.connection_testing', 'Testing connection...'))
+        self.proj_status_label.setStyleSheet("color: gray;")
+
+        from PyQt6.QtWidgets import QApplication
+        QApplication.processEvents()
+
+        try:
+            import socket
+            # Simple socket connection test to the projector
+            sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+            sock.settimeout(5)  # 5 second timeout
+            result = sock.connect_ex((ip, port))
+            sock.close()
+
+            if result == 0:
+                self.proj_status_label.setText(t('wizard.connection_success', 'Connection successful!'))
+                self.proj_status_label.setStyleSheet("color: green;")
+            else:
+                self.proj_status_label.setText(t('wizard.connection_failed', 'Connection failed') + f" (error {result})")
+                self.proj_status_label.setStyleSheet("color: red;")
+        except socket.timeout:
+            self.proj_status_label.setText(t('wizard.connection_failed', 'Connection failed') + " (timeout)")
+            self.proj_status_label.setStyleSheet("color: red;")
+        except socket.gaierror as e:
+            self.proj_status_label.setText(t('wizard.connection_failed', 'Connection failed') + f" ({e})")
+            self.proj_status_label.setStyleSheet("color: red;")
+        except Exception as e:
+            self.proj_status_label.setText(t('wizard.connection_failed', 'Connection failed') + f" ({e})")
+            self.proj_status_label.setStyleSheet("color: red;")
+        finally:
+            self.test_proj_btn.setEnabled(True)
 
     def isComplete(self) -> bool:
         """Check if page is complete."""

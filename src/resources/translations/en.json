@@ -265,7 +265,8 @@
     "save_success": "Settings saved successfully",
     "save_failed": "Failed to save settings",
     "restore_defaults": "Restore Defaults",
-    "confirm_restore": "Are you sure you want to restore default settings?"
+    "confirm_restore": "Are you sure you want to restore default settings?",
+    "not_implemented": "Settings dialog will be available in a future update."
   },
   "notifications": {
     "projector_on": "Projector turned on",

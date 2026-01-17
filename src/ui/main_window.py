@@ -77,12 +77,16 @@ class MainWindow(QMainWindow):
         # Window state
         self._projector_name = "Projector"
         self._is_connected = False
+        self._is_quitting = False
 
         # Initialize UI components
         self._init_ui()
         self._setup_system_tray()
         self._setup_shortcuts()
         self._load_window_geometry()
+
+        # Connect settings signal to handler
+        self.settings_requested.connect(self.open_settings)
 
         # Apply saved language setting (ensures translations are correct)
         self._apply_saved_language()
@@ -280,7 +284,7 @@ class MainWindow(QMainWindow):
 
         # Exit action
         exit_action = QAction(t('tray.exit', 'Exit'), self)
-        exit_action.triggered.connect(self.close)
+        exit_action.triggered.connect(self.quit_application)
         tray_menu.addAction(exit_action)
 
         self.tray_icon.setContextMenu(tray_menu)
@@ -477,8 +481,10 @@ class MainWindow(QMainWindow):
         # Save window geometry
         self._save_window_geometry()
 
-        # Minimize to tray instead of closing
-        if hasattr(self, 'tray_icon') and self.tray_icon.isVisible():
+        # Minimize to tray instead of closing (unless quitting)
+        if hasattr(self, '_is_quitting') and self._is_quitting:
+            event.accept()
+        elif hasattr(self, 'tray_icon') and self.tray_icon.isVisible():
             event.ignore()
             self.hide()
             self.show_notification(
@@ -488,6 +494,46 @@ class MainWindow(QMainWindow):
             )
         else:
             event.accept()
+
+    def quit_application(self) -> None:
+        """
+        Quit the application completely.
+
+        Unlike close(), this actually exits the application
+        instead of minimizing to tray.
+        """
+        from PyQt6.QtWidgets import QApplication
+
+        logger.info("Application quit requested")
+
+        # Save window geometry before quitting
+        self._save_window_geometry()
+
+        # Mark that we're quitting to bypass minimize-to-tray
+        self._is_quitting = True
+
+        # Hide tray icon
+        if hasattr(self, 'tray_icon'):
+            self.tray_icon.hide()
+
+        # Quit the application
+        QApplication.quit()
+
+    def open_settings(self) -> None:
+        """
+        Open the settings dialog.
+
+        Currently shows a message that settings are not yet implemented.
+        Will be replaced with actual SettingsDialog in Phase 3.
+        """
+        from PyQt6.QtWidgets import QMessageBox
+
+        QMessageBox.information(
+            self,
+            t('settings.title', 'Settings'),
+            t('settings.not_implemented', 'Settings dialog will be available in a future update.'),
+            QMessageBox.StandardButton.Ok
+        )
 
     def set_language(self, language: str) -> None:
         """
