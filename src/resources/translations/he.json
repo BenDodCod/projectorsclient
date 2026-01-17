@@ -5,13 +5,11 @@
     "direction": "rtl",
     "version": "1.0.0"
   },
-
   "app": {
     "name": "בקרת מקרן",
     "version": "1.0.0",
     "welcome": "ברוכים הבאים לבקרת מקרן"
   },
-
   "wizard": {
     "title": "אשף התקנה",
     "subtitle": "הגדר את אפליקציית בקרת המקרן",
@@ -21,10 +19,8 @@
     "page_projector": "הגדרות מקרן",
     "page_ui": "ממשק משתמש",
     "page_complete": "הושלם",
-
     "welcome_title": "ברוכים הבאים לבקרת מקרן",
-    "welcome_text": "אשף זה יעזור לך להגדיר את האפליקציה לשימוש ראשוני. תגדיר את סיסמת המנהל, חיבור למסד נתונים, הגדרות מקרן והעדפות ממשק.",
-
+    "welcome_text": "ברוכים הבאים לאפליקציית בקרת המקרן המשופרת.\n\nאשף זה ילווה אותך דרך:\n\n  1. הגדרת סיסמת מנהל\n  2. הגדרת חיבור למסד נתונים\n  3. הגדרת המקרן שלך\n  4. התאמה אישית של ממשק המשתמש\n\nלחץ 'הבא' כדי להתחיל.",
     "password_title": "הגדר סיסמת מנהל",
     "password_text": "צור סיסמה מאובטחת להגנה על הגדרות בקרת המקרן שלך.",
     "password_label": "סיסמת מנהל",
@@ -35,7 +31,6 @@
     "password_weak": "חלשה",
     "password_medium": "בינונית",
     "password_strong": "חזקה",
-
     "connection_title": "חיבור למסד נתונים",
     "connection_text": "בחר כיצד לאחסן נתונים והגדרות של המקרן.",
     "connection_mode_label": "מצב חיבור",
@@ -52,7 +47,6 @@
     "connection_testing": "בודק חיבור...",
     "connection_success": "החיבור הצליח",
     "connection_failed": "החיבור נכשל",
-
     "projector_title": "הגדרת מקרן",
     "projector_text": "הוסף והגדר את המקרנים שלך.",
     "projector_add": "הוסף מקרן",
@@ -64,7 +58,6 @@
     "projector_model_label": "דגם",
     "projector_test": "בדוק חיבור",
     "projector_no_projectors": "לא הוגדרו מקרנים. לחץ על 'הוסף מקרן' כדי להתחיל.",
-
     "ui_title": "העדפות ממשק משתמש",
     "ui_text": "התאם אישית את מראה האפליקציה והתנהגותה.",
     "ui_language_label": "שפה",
@@ -77,16 +70,59 @@
     "ui_startup_label": "אפשרויות הפעלה",
     "ui_startup_minimized": "התחל ממוזער לשורת המשימות",
     "ui_startup_auto": "הפעל עם הפעלת Windows",
-
     "complete_title": "ההתקנה הושלמה",
     "complete_text": "אפליקציית בקרת המקרן שלך מוכנה לשימוש.",
     "complete_summary": "סיכום הגדרות",
     "complete_mode": "מצב",
     "complete_projectors": "מקרנים שהוגדרו",
     "complete_language": "שפה",
-    "complete_launch": "הפעל אפליקציה"
+    "complete_launch": "הפעל אפליקציה",
+    "language_title": "שפה",
+    "language_subtitle": "בחר את השפה המועדפת עליך",
+    "language_info": "אנא בחר את השפה המועדפת עליך.\nהממשק יתעדכן מיידית.",
+    "language_rtl_enabled": "פריסה מימין לשמאל (RTL) מופעלת.",
+    "language_rtl_notice": "הערה: בחירת עברית תפעיל פריסה מימין לשמאל (RTL).",
+    "welcome_subtitle": "אשף זה יעזור לך להגדיר את האפליקציה.",
+    "password_subtitle": "הגדר סיסמה מאובטחת להגנה על הגדרות התצורה.",
+    "password_info": "סיסמה זו תידרש לגישה להגדרות התצורה.\nבחר סיסמה חזקה שתזכור.",
+    "password_show": "הצג סיסמה",
+    "password_none": "אין",
+    "password_fair": "סבירה",
+    "password_good": "טובה",
+    "password_req_length": "לפחות 8 תווים",
+    "password_req_uppercase": "מכיל אות גדולה",
+    "password_req_lowercase": "מכיל אות קטנה",
+    "password_req_number": "מכיל מספר",
+    "connection_subtitle": "בחר כיצד האפליקציה תאחסן נתוני תצורה.",
+    "connection_standalone_desc": "  שימוש במסד נתונים SQLite מקומי. מתאים להגדרות מחשב בודד.",
+    "connection_sql_desc": "  התחבר לשרת SQL מרכזי. מתאים לפריסות מרובות מחשבים.",
+    "connection_sql_settings": "הגדרות SQL Server",
+    "projector_subtitle": "הגדר את הגדרות החיבור למקרן.",
+    "projector_settings": "הגדרות מקרן",
+    "projector_protocol_label": "פרוטוקול",
+    "projector_auth_label": "סיסמת אימות",
+    "projector_location_label": "מיקום",
+    "projector_test_not_impl": "בדיקת חיבור לא מיושמת באשף.",
+    "projector_enter_ip": "אנא הזן כתובת IP קודם.",
+    "ui_subtitle": "בחר אילו לחצנים להציג בממשק הראשי.",
+    "ui_power_controls": "פקדי הפעלה",
+    "ui_power_on": "הפעל",
+    "ui_power_off": "כבה",
+    "ui_display_controls": "פקדי תצוגה",
+    "ui_blank": "מסך ריק הפעל/כבה",
+    "ui_freeze": "הקפא הפעל/כבה",
+    "ui_input_controls": "פקדי קלט",
+    "ui_input_selector": "בורר קלט",
+    "ui_hdmi": "כפתור HDMI ישיר",
+    "ui_vga": "כפתור VGA ישיר",
+    "ui_audio_controls": "פקדי שמע",
+    "ui_volume": "שליטה בעוצמת קול",
+    "ui_mute": "כפתור השתקה",
+    "ui_info": "מידע",
+    "ui_lamp_hours": "תצוגת שעות מנורה",
+    "ui_status_panel": "לוח מצב",
+    "complete_subtitle": "התצורה שלך נשמרה בהצלחה."
   },
-
   "buttons": {
     "next": "הבא",
     "back": "הקודם",
@@ -116,12 +152,10 @@
     "settings": "הגדרות",
     "minimize": "מזער למגש"
   },
-
   "tray": {
     "show": "הצג",
     "exit": "יציאה"
   },
-
   "tooltips": {
     "power_on": "הפעל מקרן (Ctrl+P)",
     "power_off": "כבה מקרן (Ctrl+O)",
@@ -130,7 +164,6 @@
     "input": "בחר מקור קלט (Ctrl+I)",
     "volume": "כוונן עוצמה"
   },
-
   "status": {
     "connected": "מחובר",
     "disconnected": "מנותק",
@@ -153,12 +186,10 @@
     "power_on": "פועל",
     "power_off": "כבוי"
   },
-
   "history": {
     "title": "פעולות אחרונות",
     "empty": "אין פעולות עדיין"
   },
-
   "power": {
     "on": "הפעל",
     "off": "כבה",
@@ -170,7 +201,6 @@
     "cooldown_required": "המקרן מתקרר. אנא המתן לפני הפעלה מחדש.",
     "warmup_required": "המקרן מתחמם. אנא המתן לפני כיבוי."
   },
-
   "controls": {
     "title": "פקדים",
     "blank": "מסך ריק",
@@ -193,7 +223,6 @@
     "aspect_ratio": "יחס גובה-רוחב",
     "picture_mode": "מצב תמונה"
   },
-
   "errors": {
     "connection_failed": "כשל בחיבור למקרן",
     "connection_timeout": "פסק זמן בחיבור",
@@ -206,9 +235,10 @@
     "unknown_error": "אירעה שגיאה לא ידועה",
     "no_projectors": "לא הוגדרו מקרנים",
     "projector_busy": "המקרן עסוק",
-    "invalid_state": "מצב מקרן לא תקין לפעולה זו"
+    "invalid_state": "מצב מקרן לא תקין לפעולה זו",
+    "save_config_failed": "שמירת ההגדרות נכשלה. אנא נסה שוב.",
+    "database_init_failed": "אתחול מסד הנתונים נכשל.\n\nהאפליקציה לא יכולה להמשיך. אנא בדוק את היומנים לפרטים."
   },
-
   "menu": {
     "file": "קובץ",
     "file_settings": "הגדרות",
@@ -225,7 +255,6 @@
     "help_documentation": "תיעוד",
     "help_about": "אודות"
   },
-
   "settings": {
     "title": "הגדרות",
     "general": "כללי",
@@ -238,7 +267,6 @@
     "restore_defaults": "שחזר ברירות מחדל",
     "confirm_restore": "האם אתה בטוח שברצונך לשחזר את הגדרות ברירת המחדל?"
   },
-
   "notifications": {
     "projector_on": "המקרן הופעל",
     "projector_off": "המקרן כובה",
@@ -249,7 +277,6 @@
     "backup_created": "הגיבוי נוצר בהצלחה",
     "backup_restored": "הגיבוי שוחזר בהצלחה"
   },
-
   "accessibility": {
     "screen_reader_enabled": "תמיכה בקורא מסך מופעלת",
     "keyboard_navigation": "השתמש ב-Tab לניווט, Enter להפעלה",
@@ -260,7 +287,6 @@
     "font_size_large": "גדול",
     "font_size_xlarge": "גדול במיוחד"
   },
-
   "validation": {
     "required_field": "שדה זה הוא חובה",
     "invalid_ip": "כתובת IP לא תקינה",

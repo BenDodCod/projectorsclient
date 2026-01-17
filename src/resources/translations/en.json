@@ -5,13 +5,11 @@
     "direction": "ltr",
     "version": "1.0.0"
   },
-
   "app": {
     "name": "Projector Control",
     "version": "1.0.0",
     "welcome": "Welcome to Projector Control"
   },
-
   "wizard": {
     "title": "Setup Wizard",
     "subtitle": "Configure your projector control application",
@@ -21,10 +19,8 @@
     "page_projector": "Projector Settings",
     "page_ui": "User Interface",
     "page_complete": "Complete",
-
     "welcome_title": "Welcome to Projector Control",
-    "welcome_text": "This wizard will help you configure the application for first use. You'll set up the admin password, database connection, projector settings, and interface preferences.",
-
+    "welcome_text": "Welcome to the Enhanced Projector Control Application.\n\nThis wizard will guide you through:\n\n  1. Setting up an admin password\n  2. Configuring your database connection\n  3. Setting up your projector\n  4. Customizing the user interface\n\nClick 'Next' to begin.",
     "password_title": "Set Administrator Password",
     "password_text": "Create a secure password to protect your projector control settings.",
     "password_label": "Admin Password",
@@ -35,7 +31,6 @@
     "password_weak": "Weak",
     "password_medium": "Medium",
     "password_strong": "Strong",
-
     "connection_title": "Database Connection",
     "connection_text": "Choose how to store projector data and configuration.",
     "connection_mode_label": "Connection Mode",
@@ -52,7 +47,6 @@
     "connection_testing": "Testing connection...",
     "connection_success": "Connection successful",
     "connection_failed": "Connection failed",
-
     "projector_title": "Projector Configuration",
     "projector_text": "Add and configure your projectors.",
     "projector_add": "Add Projector",
@@ -64,7 +58,6 @@
     "projector_model_label": "Model",
     "projector_test": "Test Connection",
     "projector_no_projectors": "No projectors configured. Click 'Add Projector' to begin.",
-
     "ui_title": "User Interface Preferences",
     "ui_text": "Customize the application appearance and behavior.",
     "ui_language_label": "Language",
@@ -77,16 +70,59 @@
     "ui_startup_label": "Startup Options",
     "ui_startup_minimized": "Start minimized to system tray",
     "ui_startup_auto": "Launch on Windows startup",
-
     "complete_title": "Setup Complete",
     "complete_text": "Your projector control application is ready to use.",
     "complete_summary": "Configuration Summary",
     "complete_mode": "Mode",
     "complete_projectors": "Projectors Configured",
     "complete_language": "Language",
-    "complete_launch": "Launch Application"
+    "complete_launch": "Launch Application",
+    "language_title": "Language",
+    "language_subtitle": "Select your preferred language",
+    "language_info": "Please select your preferred language.\nThe interface will update immediately.",
+    "language_rtl_enabled": "Right-to-left (RTL) layout enabled.",
+    "language_rtl_notice": "Note: Selecting Hebrew will enable right-to-left (RTL) layout.",
+    "welcome_subtitle": "This wizard will help you set up the application.",
+    "password_subtitle": "Set a secure password to protect configuration settings.",
+    "password_info": "This password will be required to access configuration settings.\nChoose a strong password that you will remember.",
+    "password_show": "Show password",
+    "password_none": "None",
+    "password_fair": "Fair",
+    "password_good": "Good",
+    "password_req_length": "At least 8 characters",
+    "password_req_uppercase": "Contains uppercase letter",
+    "password_req_lowercase": "Contains lowercase letter",
+    "password_req_number": "Contains number",
+    "connection_subtitle": "Choose how the application will store configuration data.",
+    "connection_standalone_desc": "  Use local SQLite database. Best for single-computer setups.",
+    "connection_sql_desc": "  Connect to central SQL Server. Best for multi-computer deployments.",
+    "connection_sql_settings": "SQL Server Settings",
+    "projector_subtitle": "Configure your projector connection settings.",
+    "projector_settings": "Projector Settings",
+    "projector_protocol_label": "Protocol",
+    "projector_auth_label": "Auth Password",
+    "projector_location_label": "Location",
+    "projector_test_not_impl": "Connection test not implemented in wizard.",
+    "projector_enter_ip": "Please enter an IP address first.",
+    "ui_subtitle": "Choose which buttons to show in the main interface.",
+    "ui_power_controls": "Power Controls",
+    "ui_power_on": "Power On",
+    "ui_power_off": "Power Off",
+    "ui_display_controls": "Display Controls",
+    "ui_blank": "Blank On/Off",
+    "ui_freeze": "Freeze On/Off",
+    "ui_input_controls": "Input Controls",
+    "ui_input_selector": "Input Selector",
+    "ui_hdmi": "HDMI Direct Button",
+    "ui_vga": "VGA Direct Button",
+    "ui_audio_controls": "Audio Controls",
+    "ui_volume": "Volume Control",
+    "ui_mute": "Mute Button",
+    "ui_info": "Information",
+    "ui_lamp_hours": "Lamp Hours Display",
+    "ui_status_panel": "Status Panel",
+    "complete_subtitle": "Your configuration has been saved successfully."
   },
-
   "buttons": {
     "next": "Next",
     "back": "Back",
@@ -116,12 +152,10 @@
     "settings": "Settings",
     "minimize": "Minimize to tray"
   },
-
   "tray": {
     "show": "Show",
     "exit": "Exit"
   },
-
   "tooltips": {
     "power_on": "Turn projector on (Ctrl+P)",
     "power_off": "Turn projector off (Ctrl+O)",
@@ -130,7 +164,6 @@
     "input": "Select input source (Ctrl+I)",
     "volume": "Adjust volume"
   },
-
   "status": {
     "connected": "Connected",
     "disconnected": "Disconnected",
@@ -153,12 +186,10 @@
     "power_on": "On",
     "power_off": "Off"
   },
-
   "history": {
     "title": "Recent Operations",
     "empty": "No operations yet"
   },
-
   "power": {
     "on": "Power On",
     "off": "Power Off",
@@ -170,7 +201,6 @@
     "cooldown_required": "Projector is cooling down. Please wait before turning it back on.",
     "warmup_required": "Projector is warming up. Please wait before turning it off."
   },
-
   "controls": {
     "title": "Controls",
     "blank": "Blank Screen",
@@ -193,7 +223,6 @@
     "aspect_ratio": "Aspect Ratio",
     "picture_mode": "Picture Mode"
   },
-
   "errors": {
     "connection_failed": "Failed to connect to projector",
     "connection_timeout": "Connection timeout",
@@ -206,9 +235,10 @@
     "unknown_error": "An unknown error occurred",
     "no_projectors": "No projectors configured",
     "projector_busy": "Projector is busy",
-    "invalid_state": "Invalid projector state for this operation"
+    "invalid_state": "Invalid projector state for this operation",
+    "save_config_failed": "Failed to save configuration. Please try again.",
+    "database_init_failed": "Failed to initialize database.\n\nThe application cannot continue. Please check the logs for details."
   },
-
   "menu": {
     "file": "File",
     "file_settings": "Settings",
@@ -225,7 +255,6 @@
     "help_documentation": "Documentation",
     "help_about": "About"
   },
-
   "settings": {
     "title": "Settings",
     "general": "General",
@@ -238,7 +267,6 @@
     "restore_defaults": "Restore Defaults",
     "confirm_restore": "Are you sure you want to restore default settings?"
   },
-
   "notifications": {
     "projector_on": "Projector turned on",
     "projector_off": "Projector turned off",
@@ -249,7 +277,6 @@
     "backup_created": "Backup created successfully",
     "backup_restored": "Backup restored successfully"
   },
-
   "accessibility": {
     "screen_reader_enabled": "Screen reader support enabled",
     "keyboard_navigation": "Use Tab to navigate, Enter to activate",
@@ -260,7 +287,6 @@
     "font_size_large": "Large",
     "font_size_xlarge": "Extra Large"
   },
-
   "validation": {
     "required_field": "This field is required",
     "invalid_ip": "Invalid IP address",
