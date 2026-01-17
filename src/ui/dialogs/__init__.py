@@ -13,8 +13,11 @@ from src.ui.dialogs.first_run_wizard import (
     UICustomizationPage,
     CompletionPage,
 )
+from src.ui.dialogs.password_dialog import PasswordDialog
+from src.ui.dialogs.settings_dialog import SettingsDialog
 
 __all__ = [
+    # First-run wizard
     'FirstRunWizard',
     'WelcomePage',
     'PasswordSetupPage',
@@ -22,4 +25,7 @@ __all__ = [
     'ProjectorConfigPage',
     'UICustomizationPage',
     'CompletionPage',
+    # Settings dialogs
+    'PasswordDialog',
+    'SettingsDialog',
 ]

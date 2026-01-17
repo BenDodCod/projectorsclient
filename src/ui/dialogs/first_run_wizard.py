@@ -37,6 +37,10 @@ from PyQt6.QtWidgets import (
     QSpacerItem,
     QSizePolicy,
     QMessageBox,
+    QTableWidget,
+    QTableWidgetItem,
+    QHeaderView,
+    QAbstractItemView,
 )
 from PyQt6.QtCore import Qt, pyqtSignal
 from PyQt6.QtGui import QFont, QPixmap
@@ -527,11 +531,23 @@ class ConnectionModePage(QWizardPage):
         self.registerField("sql_username", self.sql_user_edit)
         self.registerField("sql_password", self.sql_pass_edit)
 
+        # Connect text changed signals to reset verification and update button
+        for widget in [self.server_edit, self.database_edit, self.sql_user_edit, self.sql_pass_edit]:
+            widget.textChanged.connect(self._on_settings_changed)
+
         self.retranslate()
+        self._connection_tested = False
 
     def _on_mode_changed(self) -> None:
         """Handle mode change."""
         self.sql_settings_group.setVisible(self.sql_server_radio.isChecked())
+        self.completeChanged.emit()
+
+    def _on_settings_changed(self) -> None:
+        """Handle settings text change."""
+        # Any change invalidates previous test
+        self._connection_tested = False
+        self.conn_status_label.setText("") 
         self.completeChanged.emit()
 
     def _test_connection(self) -> None:
@@ -598,18 +614,26 @@ class ConnectionModePage(QWizardPage):
             self._connection_tested = False
         finally:
             self.test_conn_btn.setEnabled(True)
+            self.completeChanged.emit()
 
     def isComplete(self) -> bool:
         """Check if page is complete."""
         if self.standalone_radio.isChecked():
             return True
-        # SQL Server mode requires all fields
+        # SQL Server mode requires all fields and verified connection
         return bool(
             self.server_edit.text() and
             self.database_edit.text() and
             self.sql_user_edit.text() and
-            self.sql_pass_edit.text()
+            self.sql_pass_edit.text() and
+            self._connection_tested
         )
+
+    def nextId(self) -> int:
+        """Determine next page based on mode."""
+        if self.standalone_radio.isChecked():
+            return FirstRunWizard.PAGE_PROJECTOR
+        return FirstRunWizard.PAGE_PROJECTOR_SELECTION
 
     def retranslate(self) -> None:
         """Retranslate all UI text after language change."""
@@ -635,6 +659,261 @@ class ConnectionModePage(QWizardPage):
         self.username_label.setText(f"{t('wizard.connection_username_label', 'Username')}:")
         self.password_label.setText(f"{t('wizard.connection_password_label', 'Password')}:")
         self.test_conn_btn.setText(t('wizard.connection_test', 'Test Connection'))
+
+
+class ProjectorSelectionPage(QWizardPage):
+    """Page to select a projector from the SQL Server database."""
+
+    def __init__(self, parent: Optional[QWizard] = None):
+        super().__init__(parent)
+
+        layout = QVBoxLayout(self)
+        layout.setSpacing(15)
+
+        self.info_label = QLabel()
+        self.info_label.setWordWrap(True)
+        layout.addWidget(self.info_label)
+
+        # Table for projectors
+        self.table = QTableWidget()
+        self.table.setColumnCount(3)
+        self.table.setSelectionBehavior(QAbstractItemView.SelectionBehavior.SelectRows)
+        self.table.setSelectionMode(QAbstractItemView.SelectionMode.SingleSelection)
+        self.table.setEditTriggers(QAbstractItemView.EditTrigger.NoEditTriggers)
+        self.table.horizontalHeader().setStretchLastSection(True)
+        self.table.itemSelectionChanged.connect(self.completeChanged)
+        layout.addWidget(self.table)
+
+        self.status_label = QLabel()
+        self.status_label.setStyleSheet("color: red;")
+        layout.addWidget(self.status_label)
+
+        self.refresh_btn = QPushButton()
+        self.refresh_btn.clicked.connect(self._load_projectors)
+        layout.addWidget(self.refresh_btn)
+
+        # Hidden fields to store selection for the wizard
+        self.name_edit = QLineEdit()
+        self.ip_edit = QLineEdit()
+        self.port_spin = QSpinBox()
+        self.port_spin.setRange(1, 65535)
+        self.type_edit = QLineEdit()
+        self.user_edit = QLineEdit()
+        self.pass_edit = QLineEdit()
+        self.loc_edit = QLineEdit()
+        
+        # Hide them
+        self.name_edit.setVisible(False)
+        self.ip_edit.setVisible(False)
+        self.port_spin.setVisible(False)
+        self.type_edit.setVisible(False)
+        self.user_edit.setVisible(False)
+        self.pass_edit.setVisible(False)
+        self.loc_edit.setVisible(False)
+        
+        # Add to layout but hidden
+        layout.addWidget(self.name_edit)
+        layout.addWidget(self.ip_edit)
+        layout.addWidget(self.port_spin)
+        layout.addWidget(self.type_edit)
+        layout.addWidget(self.user_edit)
+        layout.addWidget(self.pass_edit)
+        layout.addWidget(self.loc_edit)
+
+        # Register fields (reuse names if possible, but standard flow uses names from other page)
+        # Note: QWizard fields are global to the wizard. 
+        # ProjectorConfigPage registers "projector_name" etc.
+        # We must populate those same fields if we skip that page OR register our own and map them.
+        # Since fields are ID-based, we can register them here too? 
+        # QWizard warns if field is registered twice? No, but only one page is active usually.
+        # However, ProjectorConfigPage is initialized in Wizard __init__.
+        # So fields are indeed registered globally.
+        # We will use "projector_name_select" etc and Copy logic in Wizard?
+        # Better: Reuse the SAME field names. 
+        # But QWizardPage registerField binds a widget. We can't bind two widgets to same field easily.
+        # So we'll use "projector_name" etc. IF `ProjectorConfigPage` is NOT visited.
+        # Actually, registering the same field name on multiple pages IS allowed but confusing.
+        # The LAST visited page's value wins.
+        # Since paths are mutually exclusive (SQL vs Standalone), we CAN reuse field names.
+        
+        self.registerField("sql_projector_name", self.name_edit)
+        self.registerField("sql_projector_ip", self.ip_edit)
+        self.registerField("sql_projector_port", self.port_spin)
+        self.registerField("sql_projector_type", self.type_edit)
+        self.registerField("sql_projector_username", self.user_edit)
+        self.registerField("sql_projector_auth", self.pass_edit)
+        self.registerField("sql_projector_location", self.loc_edit)
+
+        self.retranslate()
+        self._projectors_data = []  # List of dicts
+
+    def initializePage(self) -> None:
+        """Load projectors when page is shown."""
+        self._load_projectors()
+
+    def _load_projectors(self) -> None:
+        """Fetch projectors from SQL Server."""
+        self.table.setRowCount(0)
+        self.status_label.setText("")
+        self.refresh_btn.setEnabled(False)
+        self.table.setEnabled(False)
+        
+        # Get connection details from wizard fields
+        wizard = self.wizard()
+        server = wizard.field("sql_server")
+        database = wizard.field("sql_database")
+        username = wizard.field("sql_username")
+        password = wizard.field("sql_password")
+
+        # Process UI before lengthy op
+        from PyQt6.QtWidgets import QApplication
+        QApplication.processEvents()
+
+        try:
+            from src.database.sqlserver_manager import (
+                SQLServerManager,
+                build_connection_string,
+            )
+
+            use_windows_auth = not username
+            conn_str = build_connection_string(
+                server=server,
+                database=database,
+                username=username if not use_windows_auth else None,
+                password=password if not use_windows_auth else None,
+                trusted_connection=use_windows_auth,
+                connection_timeout=5,
+            )
+
+            # Connect and Query
+            manager = SQLServerManager(conn_str)
+            
+            # Check table exists
+
+            table_name = "projector_config"
+            use_legacy = False
+            
+            if not manager.table_exists(table_name):
+                # Fallback to legacy 'projectors' table
+                if manager.table_exists("projectors"):
+                    table_name = "projectors"
+                    use_legacy = True
+                else:
+                    self.status_label.setText("Error: No projector tables found in database.")
+                    return
+
+            # Helper to safely get columns based on table
+            if use_legacy:
+                # Legacy table schema
+                sql = (
+                    "SELECT proj_name, proj_ip, location, proj_user, proj_pass, active "
+                    f"FROM {table_name} ORDER BY proj_name"
+                )
+            else:
+                # New schema
+                sql = (
+                    "SELECT proj_name, proj_ip, location, proj_port, proj_type, proj_user, proj_pass_encrypted, active "
+                    f"FROM {table_name} ORDER BY proj_name"
+                )
+
+            rows = manager.fetchall(sql)
+            
+            # If new table is empty but legacy exists (and we checked config first), try legacy
+            if not rows and not use_legacy and manager.table_exists("projectors"):
+                table_name = "projectors"
+                use_legacy = True
+                sql = (
+                    "SELECT proj_name, proj_ip, location, proj_user, proj_pass, active "
+                    f"FROM {table_name} ORDER BY proj_name"
+                )
+                rows = manager.fetchall(sql)
+
+            manager.close_all()
+
+            self._projectors_data = []
+            
+            # Normalize data
+            for row in rows:
+                # Skip inactive if column exists
+                if 'active' in row and not row['active']:
+                     continue
+                     
+                data = {
+                    'proj_name': row.get('proj_name'),
+                    'proj_ip': row.get('proj_ip'),
+                    'location': row.get('location'),
+                    'proj_user': row.get('proj_user'),
+                }
+                
+                if use_legacy:
+                    # Map legacy columns/defaults
+                    data['proj_pass_encrypted'] = row.get('proj_pass')
+                    data['proj_port'] = 4352  # Default
+                    data['proj_type'] = "PJLink Class 1" # Default
+                else:
+                    data['proj_pass_encrypted'] = row.get('proj_pass_encrypted')
+                    data['proj_port'] = row.get('proj_port', 4352)
+                    data['proj_type'] = row.get('proj_type', "PJLink Class 1")
+                
+                self._projectors_data.append(data)
+
+            self.table.setRowCount(len(self._projectors_data))
+
+            for i, data in enumerate(self._projectors_data):
+                name_item = QTableWidgetItem(str(data.get('proj_name', '')))
+                ip_item = QTableWidgetItem(str(data.get('proj_ip', '')))
+                loc_item = QTableWidgetItem(str(data.get('location', '')))
+                
+                self.table.setItem(i, 0, name_item)
+                self.table.setItem(i, 1, ip_item)
+                self.table.setItem(i, 2, loc_item)
+
+            if not self._projectors_data:
+                self.status_label.setText("No active projectors found in database.")
+            
+        except Exception as e:
+            self.status_label.setText(f"Connection Error: {str(e)}")
+            logger.error("Failed to load projectors: %s", e)
+        finally:
+            self.refresh_btn.setEnabled(True)
+            self.table.setEnabled(True)
+
+    def isComplete(self) -> bool:
+        """Check if a projector is selected."""
+        selected_indexes = self.table.selectionModel().selectedRows()
+        if not selected_indexes:
+            return False
+            
+        # Update hidden fields with selection
+        row_idx = selected_indexes[0].row()
+        if 0 <= row_idx < len(self._projectors_data):
+            data = self._projectors_data[row_idx]
+            self.name_edit.setText(str(data.get('proj_name', '')))
+            self.ip_edit.setText(str(data.get('proj_ip', '')))
+            self.port_spin.setValue(int(data.get('proj_port', 4352)))
+            self.type_edit.setText(str(data.get('proj_type', 'pjlink')))
+            self.user_edit.setText(str(data.get('proj_user', '') or ''))
+            self.pass_edit.setText(str(data.get('proj_pass_encrypted', '') or ''))
+            self.loc_edit.setText(str(data.get('location', '') or ''))
+            return True
+            
+        return False
+
+    def nextId(self) -> int:
+        """Skip manual config and go to UI settings."""
+        return FirstRunWizard.PAGE_UI
+
+    def retranslate(self) -> None:
+        """Retranslate UI."""
+        self.setTitle(t('wizard.select_proj_title', 'Select Projector'))
+        self.setSubTitle(t('wizard.select_proj_subtitle', 'Choose your projector from the list.'))
+        self.info_label.setText(t('wizard.select_proj_info', 'The following projectors were found in the database. Select the one corresponding to this computer/location.'))
+        self.table.setHorizontalHeaderLabels([
+            t('wizard.proj_name', 'Name'),
+            t('wizard.proj_ip', 'IP Address'),
+            t('wizard.proj_location', 'Location')
+        ])
+        self.refresh_btn.setText(t('wizard.refresh_list', 'Refresh List'))
 
 
 class ProjectorConfigPage(QWizardPage):
@@ -738,7 +1017,7 @@ class ProjectorConfigPage(QWizardPage):
         self.retranslate()
 
     def _test_projector(self) -> None:
-        """Test the projector connection using PJLink."""
+        """Test the projector connection using PJLink with full authentication."""
         ip = self.ip_edit.text().strip()
         if not ip:
             self.proj_status_label.setText(t('wizard.projector_enter_ip', "Please enter an IP address first."))
@@ -746,6 +1025,7 @@ class ProjectorConfigPage(QWizardPage):
             return
 
         port = self.port_spin.value()
+        password = self.auth_pass_edit.text()
 
         # Show testing message
         self.test_proj_btn.setEnabled(False)
@@ -756,27 +1036,60 @@ class ProjectorConfigPage(QWizardPage):
         QApplication.processEvents()
 
         try:
-            import socket
-            # Simple socket connection test to the projector
-            sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-            sock.settimeout(5)  # 5 second timeout
-            result = sock.connect_ex((ip, port))
-            sock.close()
-
-            if result == 0:
-                self.proj_status_label.setText(t('wizard.connection_success', 'Connection successful!'))
-                self.proj_status_label.setStyleSheet("color: green;")
+            from src.core.projector_controller import ProjectorController
+            from src.network.pjlink_protocol import PowerState
+            
+            # Create controller with all connection parameters
+            controller = ProjectorController(
+                host=ip,
+                port=port,
+                password=password if password else None,
+                timeout=5.0
+            )
+            
+            # Attempt full PJLink connection with authentication
+            if controller.connect():
+                # Connection successful - try to query power state to verify full communication
+                power_state = controller.get_power_state()
+                last_error = getattr(controller, '_last_error', '')
+                
+                # Check if auth failed during the command
+                if 'auth' in last_error.lower() or 'password' in last_error.lower():
+                    self.proj_status_label.setText(
+                        t('wizard.auth_failed', 'Authentication failed') + f" - {last_error}"
+                    )
+                    self.proj_status_label.setStyleSheet("color: red;")
+                elif power_state == PowerState.UNKNOWN and last_error:
+                    # Command failed for some reason
+                    self.proj_status_label.setText(
+                        t('wizard.connection_failed', 'Connection failed') + f" - {last_error}"
+                    )
+                    self.proj_status_label.setStyleSheet("color: red;")
+                else:
+                    # Successfully connected and authenticated
+                    self.proj_status_label.setText(
+                        t('wizard.connection_success', 'Connection successful!')
+                    )
+                    self.proj_status_label.setStyleSheet("color: green;")
+                
+                controller.disconnect()
             else:
-                self.proj_status_label.setText(t('wizard.connection_failed', 'Connection failed') + f" (error {result})")
+                # Connection failed - show the specific error
+                error_msg = getattr(controller, '_last_error', 'Connection failed')
+                if 'auth' in error_msg.lower() or 'password' in error_msg.lower():
+                    self.proj_status_label.setText(
+                        t('wizard.auth_failed', 'Authentication failed') + f" - {error_msg}"
+                    )
+                else:
+                    self.proj_status_label.setText(
+                        t('wizard.connection_failed', 'Connection failed') + f" - {error_msg}"
+                    )
                 self.proj_status_label.setStyleSheet("color: red;")
-        except socket.timeout:
-            self.proj_status_label.setText(t('wizard.connection_failed', 'Connection failed') + " (timeout)")
-            self.proj_status_label.setStyleSheet("color: red;")
-        except socket.gaierror as e:
-            self.proj_status_label.setText(t('wizard.connection_failed', 'Connection failed') + f" ({e})")
-            self.proj_status_label.setStyleSheet("color: red;")
+                
         except Exception as e:
-            self.proj_status_label.setText(t('wizard.connection_failed', 'Connection failed') + f" ({e})")
+            self.proj_status_label.setText(
+                t('wizard.connection_failed', 'Connection failed') + f" ({e})"
+            )
             self.proj_status_label.setStyleSheet("color: red;")
         finally:
             self.test_proj_btn.setEnabled(True)
@@ -996,8 +1309,14 @@ class CompletionPage(QWizardPage):
             self.summary_layout.addRow("Mode:", QLabel(mode))
 
             # Projector
-            proj_name = wizard.field("projector_name") or "Unnamed"
-            proj_ip = wizard.field("projector_ip") or "Not set"
+            is_standalone = wizard.field("standalone_mode")
+            if is_standalone:
+                proj_name = wizard.field("projector_name") or "Unnamed"
+                proj_ip = wizard.field("projector_ip") or "Not set"
+            else:
+                proj_name = wizard.field("sql_projector_name") or "Unnamed (Selected)"
+                proj_ip = wizard.field("sql_projector_ip") or "Not set"
+                
             self.summary_layout.addRow("Projector:", QLabel(f"{proj_name} ({proj_ip})"))
 
             # UI buttons enabled count
@@ -1008,6 +1327,10 @@ class CompletionPage(QWizardPage):
             ]
             enabled_count = sum(1 for f in button_fields if wizard.field(f))
             self.summary_layout.addRow("UI Buttons:", QLabel(f"{enabled_count} enabled"))
+
+    def nextId(self) -> int:
+        """This is the last page."""
+        return -1
 
 
 class FirstRunWizard(QWizard):
@@ -1035,7 +1358,9 @@ class FirstRunWizard(QWizard):
     PAGE_WELCOME = 1
     PAGE_PASSWORD = 2
     PAGE_CONNECTION = 3
+    PAGE_CONNECTION = 3
     PAGE_PROJECTOR = 4
+    PAGE_PROJECTOR_SELECTION = 10
     PAGE_UI = 5
     PAGE_COMPLETE = 6
 
@@ -1056,6 +1381,7 @@ class FirstRunWizard(QWizard):
         self.setPage(self.PAGE_PASSWORD, PasswordSetupPage(self))
         self.setPage(self.PAGE_CONNECTION, ConnectionModePage(self))
         self.setPage(self.PAGE_PROJECTOR, ProjectorConfigPage(self))
+        self.setPage(self.PAGE_PROJECTOR_SELECTION, ProjectorSelectionPage(self))
         self.setPage(self.PAGE_UI, UICustomizationPage(self))
         self.setPage(self.PAGE_COMPLETE, CompletionPage(self))
 
@@ -1093,15 +1419,7 @@ class FirstRunWizard(QWizard):
             'sql_database': self.field('sql_database'),
             'sql_username': self.field('sql_username'),
             'sql_password': self.field('sql_password'),
-            'projector': {
-                'name': self.field('projector_name'),
-                'ip': self.field('projector_ip'),
-                'port': self.field('projector_port'),
-                'type': self.field('projector_type'),
-                'auth_username': self.field('projector_username'),
-                'auth_password': self.field('projector_auth'),
-                'location': self.field('projector_location'),
-            },
+            'projector': self._collect_projector_config(),
             'ui': {
                 'show_power_on': self.field('show_power_on'),
                 'show_power_off': self.field('show_power_off'),
@@ -1115,6 +1433,21 @@ class FirstRunWizard(QWizard):
                 'show_lamp_hours': self.field('show_lamp_hours'),
                 'show_status': self.field('show_status'),
             }
+        }
+
+    def _collect_projector_config(self) -> dict:
+        """Collect projector config based on mode."""
+        is_standalone = self.field('standalone_mode')
+        prefix = "" if is_standalone else "sql_"
+        
+        return {
+            'name': self.field(f'{prefix}projector_name'),
+            'ip': self.field(f'{prefix}projector_ip'),
+            'port': self.field(f'{prefix}projector_port'),
+            'type': self.field(f'{prefix}projector_type'),
+            'auth_username': self.field(f'{prefix}projector_username'),
+            'auth_password': self.field(f'{prefix}projector_auth'),
+            'location': self.field(f'{prefix}projector_location'),
         }
 
     def validateCurrentPage(self) -> bool:

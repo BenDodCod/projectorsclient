@@ -763,6 +763,49 @@ class SettingsManager:
         else:
             return SettingType.STRING
 
+    def get_ui_button_visibility(self) -> Dict[str, bool]:
+        """Get visibility state for all UI buttons from ui_buttons table.
+
+        Returns:
+            Dictionary mapping keys 'ui.button.{button_id}' to boolean visibility.
+        """
+        with self._lock:
+            try:
+                # Check if table exists first (in case running migrations)
+                if not self.db.table_exists("ui_buttons"):
+                    return {}
+
+                rows = self.db.fetchall("SELECT button_id, visible FROM ui_buttons")
+                return {f"ui.button.{row['button_id']}": bool(row['visible']) for row in rows}
+            except Exception as e:
+                logger.error(f"Failed to load button visibility: {e}")
+                return {}
+
+    def get_ui_buttons_full(self) -> List[Dict[str, Any]]:
+        """Get full details for all UI buttons from ui_buttons table.
+
+        Returns:
+            List of dictionaries with button details (id, visible, label, icon).
+        """
+        with self._lock:
+            try:
+                if not self.db.table_exists("ui_buttons"):
+                    return []
+
+                rows = self.db.fetchall("SELECT button_id, visible, label, icon FROM ui_buttons")
+                return [
+                    {
+                        "id": row["button_id"],
+                        "visible": bool(row["visible"]),
+                        "label": row["label"],
+                        "icon": row["icon"]
+                    }
+                    for row in rows
+                ]
+            except Exception as e:
+                logger.error(f"Failed to load full button details: {e}")
+                return []
+
     def export_settings(
         self,
         include_sensitive: bool = False,

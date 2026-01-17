@@ -357,7 +357,7 @@ class ProjectorController:
                 return False
 
             try:
-                logger.info("Connecting to projector at %s:%d", self.host, self.port)
+                logger.debug("Connecting to projector at %s:%d", self.host, self.port)
 
                 # Create socket
                 self._socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -410,7 +410,7 @@ class ProjectorController:
                     logger.debug("No authentication required for %s", self.host)
 
                 self._connected = True
-                logger.info("Connected to projector at %s:%d", self.host, self.port)
+                logger.debug("Connected to projector at %s:%d", self.host, self.port)
 
                 # Query PJLink class
                 self._query_pjlink_class()
@@ -440,7 +440,7 @@ class ProjectorController:
         """Disconnect from the projector."""
         with self._lock:
             self._cleanup_socket()
-            logger.info("Disconnected from projector at %s:%d", self.host, self.port)
+            logger.debug("Disconnected from projector at %s:%d", self.host, self.port)
 
     def _cleanup_socket(self) -> None:
         """Clean up socket resources."""
@@ -634,7 +634,8 @@ class ProjectorController:
             CommandResult indicating success or failure.
         """
         logger.info("Sending power on command to %s", self.host)
-        return self._send_command(PJLinkCommands.power_on(self._pjlink_class))
+        # POWR is a Class 1 command - always use %1 prefix
+        return self._send_command(PJLinkCommands.power_on(1))
 
     def power_off(self) -> CommandResult:
         """Turn the projector power off.
@@ -643,7 +644,8 @@ class ProjectorController:
             CommandResult indicating success or failure.
         """
         logger.info("Sending power off command to %s", self.host)
-        return self._send_command(PJLinkCommands.power_off(self._pjlink_class))
+        # POWR is a Class 1 command - always use %1 prefix
+        return self._send_command(PJLinkCommands.power_off(1))
 
     def get_power_state(self) -> PowerState:
         """Query the current power state.
@@ -651,7 +653,8 @@ class ProjectorController:
         Returns:
             PowerState enum value.
         """
-        result = self._send_command(PJLinkCommands.power_query(self._pjlink_class))
+        # POWR is a Class 1 command - always use %1 prefix
+        result = self._send_command(PJLinkCommands.power_query(1))
         if result.success and result.data:
             return PowerState.from_response(result.data)
         return PowerState.UNKNOWN
@@ -674,8 +677,9 @@ class ProjectorController:
 
         logger.info("Setting input to %s (%s) on %s",
                    InputSource.get_friendly_name(code), code, self.host)
+        # INPT is a Class 1 command
         return self._send_command(
-            PJLinkCommands.input_select(code, self._pjlink_class)
+            PJLinkCommands.input_select(code, 1)
         )
 
     def get_current_input(self) -> Optional[str]:
@@ -684,7 +688,7 @@ class ProjectorController:
         Returns:
             Input code (e.g., "31"), or None if query failed.
         """
-        result = self._send_command(PJLinkCommands.input_query(self._pjlink_class))
+        result = self._send_command(PJLinkCommands.input_query(1))
         if result.success and result.data:
             return result.data
         return None
@@ -695,7 +699,7 @@ class ProjectorController:
         Returns:
             List of available input codes.
         """
-        result = self._send_command(PJLinkCommands.input_list(self._pjlink_class))
+        result = self._send_command(PJLinkCommands.input_list(1))
         if result.success and result.data:
             return parse_input_list(result.data)
         return []
@@ -712,8 +716,9 @@ class ProjectorController:
             CommandResult indicating success or failure.
         """
         logger.info("Turning mute on for %s", self.host)
+        # AVMT is a Class 1 command
         return self._send_command(
-            PJLinkCommands.mute_on(mute_type, self._pjlink_class)
+            PJLinkCommands.mute_on(mute_type, 1)
         )
 
     def mute_off(self) -> CommandResult:
@@ -723,7 +728,8 @@ class ProjectorController:
             CommandResult indicating success or failure.
         """
         logger.info("Turning mute off for %s", self.host)
-        return self._send_command(PJLinkCommands.mute_off(self._pjlink_class))
+        # AVMT is a Class 1 command
+        return self._send_command(PJLinkCommands.mute_off(1))
 
     def get_mute_state(self) -> Optional[str]:
         """Query the current mute state.
@@ -731,7 +737,7 @@ class ProjectorController:
         Returns:
             Mute state code, or None if query failed.
         """
-        result = self._send_command(PJLinkCommands.mute_query(self._pjlink_class))
+        result = self._send_command(PJLinkCommands.mute_query(1))
         if result.success and result.data:
             return result.data
         return None
@@ -779,9 +785,14 @@ class ProjectorController:
         Returns:
             List of (hours, is_on) tuples for each lamp.
         """
-        result = self._send_command(PJLinkCommands.lamp_query(self._pjlink_class))
+        # LAMP is a Class 1 command
+        result = self._send_command(PJLinkCommands.lamp_query(1))
         if result.success and result.data:
-            return parse_lamp_data(result.data)
+            lamps = parse_lamp_data(result.data)
+            logger.debug("Lamp hours query result: %s", lamps)
+            return lamps
+        elif result.error:
+            logger.debug("Lamp hours query failed: %s", result.error)
         return []
 
     def get_error_status(self) -> Dict[str, int]:

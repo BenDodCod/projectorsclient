@@ -176,7 +176,15 @@ class SQLServerManager:
             SQLServerConnectionError: If connection fails.
         """
         try:
-            conn = pyodbc.connect(self._connection_string, autocommit=False)
+            # DEBUG: Print connection string to console for visibility
+            safe_str = self._connection_string
+            if "PWD=" in safe_str:
+                # Basic redaction for console print
+                safe_str = re.sub(r"PWD=[^;]+", "PWD=********", safe_str)
+            print(f"DEBUG: SQL Manager connecting to: {safe_str}")
+            
+            # Use timeout argument instead of connection string attribute
+            conn = pyodbc.connect(self._connection_string, autocommit=False, timeout=30)
             return conn
         except pyodbc.Error as e:
             error_code = getattr(e, 'args', [None])[0] if e.args else None
@@ -625,12 +633,57 @@ class SQLServerManager:
         self.close_all()
 
 
+def detect_best_driver() -> str:
+    """Detect the best available SQL Server ODBC driver.
+
+    Checks installed drivers in order of preference:
+    1. ODBC Driver 18 for SQL Server
+    2. ODBC Driver 17 for SQL Server
+    3. ODBC Driver 13 for SQL Server
+    4. ODBC Driver 11 for SQL Server
+    5. SQL Server Native Client 11.0
+    6. SQL Server
+
+    Returns:
+        Name of the best available driver, or "SQL Server" if none found.
+    """
+    if not PYODBC_AVAILABLE:
+        return "ODBC Driver 17 for SQL Server"  # Default fallback
+
+    try:
+        available_drivers = pyodbc.drivers()
+        preferred_drivers = [
+            "ODBC Driver 18 for SQL Server",
+            "ODBC Driver 17 for SQL Server",
+            "ODBC Driver 13 for SQL Server",
+            "ODBC Driver 11 for SQL Server",
+            "SQL Server Native Client 11.0",
+            "SQL Server",
+        ]
+
+        for driver in preferred_drivers:
+            if driver in available_drivers:
+                logger.debug("Detected SQL Server driver: %s", driver)
+                return driver
+        
+        # If none of the preferred ones match, return the first one that looks like SQL Server
+        for driver in available_drivers:
+            if "SQL Server" in driver:
+                logger.debug("Detected generic SQL Server driver: %s", driver)
+                return driver
+                
+    except Exception as e:
+        logger.warning("Failed to detect ODBC drivers: %s", e)
+
+    return "ODBC Driver 17 for SQL Server"  # Final fallback
+
+
 def build_connection_string(
     server: str,
     database: str,
     username: str = None,
     password: str = None,
-    driver: str = "ODBC Driver 17 for SQL Server",
+    driver: str = None,  # Auto-detect by default
     trusted_connection: bool = False,
     encrypt: bool = True,
     trust_server_certificate: bool = True,
@@ -643,7 +696,7 @@ def build_connection_string(
         database: Database name.
         username: SQL Server username (for SQL authentication).
         password: SQL Server password (for SQL authentication).
-        driver: ODBC driver name.
+        driver: ODBC driver name. If None, auto-detects best available.
         trusted_connection: Use Windows authentication.
         encrypt: Enable encryption.
         trust_server_certificate: Trust server certificate (for self-signed).
@@ -659,11 +712,18 @@ def build_connection_string(
         ...     trusted_connection=True
         ... )
     """
+    if driver is None:
+        driver = detect_best_driver()
+
+    # Handle port separator - ODBC expects comma, not colon
+    if ":" in server:
+        server = server.replace(":", ",")
+
     parts = [
         f"DRIVER={{{driver}}}",
         f"SERVER={server}",
         f"DATABASE={database}",
-        f"Connection Timeout={connection_timeout}",
+        # Note: Timeout is handled via connect() argument, not connection string
     ]
 
     if trusted_connection:
@@ -672,12 +732,26 @@ def build_connection_string(
         if username:
             parts.append(f"UID={username}")
         if password:
-            parts.append(f"PWD={password}")
+            # Escape password with braces to handle special chars/semicolons
+            # If password already has braces, we might need more complex escaping
+            # but wrapping in {} is standard for special chars in values
+            parts.append(f"PWD={{{password}}}")
 
     if encrypt:
+        # For Driver 18+, Encrypt defaults to yes and requires TrustServerCertificate
         parts.append("Encrypt=yes")
 
     if trust_server_certificate:
         parts.append("TrustServerCertificate=yes")
 
-    return ";".join(parts)
+    conn_str = ";".join(parts)
+    
+    # Log connection string (redacting password)
+    safe_str = conn_str
+    if password:
+        # Reduct the escaped password
+        safe_str = safe_str.replace(f"PWD={{{password}}}", "PWD={********}")
+    logger.debug("Built connection string: %s", safe_str)
+    print(f"DEBUG: Generated connection string: {safe_str}")
+
+    return conn_str

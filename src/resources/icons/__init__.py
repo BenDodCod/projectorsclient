@@ -91,6 +91,7 @@ class IconLibrary:
         'blank': 'visibility_off.svg',
         'blank_on': 'visibility_off.svg',
         'blank_off': 'visibility.svg',
+        'visibility': 'visibility.svg',
         'freeze': 'pause.svg',
         'freeze_on': 'pause.svg',
         'freeze_off': 'play.svg',
@@ -148,6 +149,18 @@ class IconLibrary:
         'unlock': 'lock_open.svg',
         'password': 'password.svg',
         'security': 'security.svg',
+        
+        # Actions (Proxies)
+        'add': 'check.svg',
+        'edit': 'settings.svg',
+        'delete': 'close.svg',
+        'remove': 'close.svg',
+        'download': 'restore.svg',
+        'upload': 'backup.svg',
+        'description': 'documentation.svg',
+        'build': 'settings.svg',
+        'grid_view': 'projector.svg',
+        'tune': 'settings.svg',
 
         # Database
         'database': 'database.svg',

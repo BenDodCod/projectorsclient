@@ -110,6 +110,8 @@ class ControlsPanel(QWidget):
     freeze_toggled = pyqtSignal(bool)
     input_clicked = pyqtSignal()
     volume_clicked = pyqtSignal()
+    input_code_clicked = pyqtSignal(str)  # New signal for dynamic inputs
+    mute_toggled = pyqtSignal(bool)
 
     def __init__(self, parent: Optional[QWidget] = None):
         """
@@ -123,6 +125,7 @@ class ControlsPanel(QWidget):
         # Button state
         self._blank_active = False
         self._freeze_active = False
+        self._mute_active = False
 
         # Visibility configuration
         self._button_visibility: Dict[str, bool] = {
@@ -130,8 +133,11 @@ class ControlsPanel(QWidget):
             'power_off': True,
             'blank': True,
             'freeze': True,
+            'freeze': True,
             'input': True,
             'volume': True,
+            'mute': True,
+            # Dynamic inputs will be added here
         }
 
         self._init_ui()
@@ -218,6 +224,24 @@ class ControlsPanel(QWidget):
         self.volume_btn.clicked.connect(self.volume_clicked.emit)
         grid.addWidget(self.volume_btn, 2, 1)
 
+        # Row 3: Dynamic inputs container
+        self.dynamic_inputs_container = QWidget()
+        self.dynamic_inputs_layout = QGridLayout(self.dynamic_inputs_container)
+        self.dynamic_inputs_layout.setContentsMargins(0, 0, 0, 0)
+        self.dynamic_inputs_layout.setSpacing(12)
+        grid.addWidget(self.dynamic_inputs_container, 3, 0, 1, 2)  # Span 2 columns
+
+        # Row 4: Mute
+        self.mute_btn = ControlButton(
+            t('buttons.mute', 'Mute'),
+            'volume_off'
+        )
+        self.mute_btn.setAccessibleName("Mute button")
+        self.mute_btn.setToolTip(t('tooltips.mute', 'Toggle mute'))
+        self.mute_btn.setCheckable(True)
+        self.mute_btn.clicked.connect(self._on_mute_clicked)
+        grid.addWidget(self.mute_btn, 4, 0)
+
         main_layout.addLayout(grid)
 
         # Apply initial visibility
@@ -247,6 +271,18 @@ class ControlsPanel(QWidget):
         else:
             self.freeze_btn.setText(t('buttons.freeze', 'Freeze'))
 
+    def _on_mute_clicked(self) -> None:
+        """Handle mute button click."""
+        self._mute_active = self.mute_btn.isChecked()
+        self.mute_btn.set_active(self._mute_active)
+        self.mute_toggled.emit(self._mute_active)
+
+        # Update button text
+        if self._mute_active:
+            self.mute_btn.setText(t('buttons.unmute', 'Unmute'))
+        else:
+            self.mute_btn.setText(t('buttons.mute', 'Mute'))
+
     def _apply_button_visibility(self) -> None:
         """Apply button visibility based on configuration."""
         button_map = {
@@ -254,13 +290,16 @@ class ControlsPanel(QWidget):
             'power_off': self.power_off_btn,
             'blank': self.blank_btn,
             'freeze': self.freeze_btn,
+            'freeze': self.freeze_btn,
             'input': self.input_btn,
             'volume': self.volume_btn,
+            'mute': self.mute_btn,
         }
 
         for button_name, button in button_map.items():
-            visible = self._button_visibility.get(button_name, True)
-            button.setVisible(visible)
+            if button:
+                visible = self._button_visibility.get(button_name, True)
+                button.setVisible(visible)
 
     def set_button_visibility(self, button_config: Dict[str, bool]) -> None:
         """
@@ -287,6 +326,7 @@ class ControlsPanel(QWidget):
             'freeze': self.freeze_btn,
             'input': self.input_btn,
             'volume': self.volume_btn,
+            'mute': self.mute_btn,
         }
 
         button = button_map.get(button_name)
@@ -325,6 +365,22 @@ class ControlsPanel(QWidget):
         else:
             self.freeze_btn.setText(t('buttons.freeze', 'Freeze'))
 
+    def set_mute_state(self, active: bool) -> None:
+        """
+        Set the mute button state.
+
+        Args:
+            active: True if mute is active
+        """
+        self._mute_active = active
+        self.mute_btn.setChecked(active)
+        self.mute_btn.set_active(active)
+
+        if active:
+            self.mute_btn.setText(t('buttons.unmute', 'Unmute'))
+        else:
+            self.mute_btn.setText(t('buttons.mute', 'Mute'))
+
     def set_all_enabled(self, enabled: bool) -> None:
         """
         Enable or disable all buttons.
@@ -338,6 +394,15 @@ class ControlsPanel(QWidget):
         self.freeze_btn.setEnabled(enabled)
         self.input_btn.setEnabled(enabled)
         self.volume_btn.setEnabled(enabled)
+        self.input_btn.setEnabled(enabled)
+        self.volume_btn.setEnabled(enabled)
+        self.mute_btn.setEnabled(enabled)
+        
+        # Disable dynamic inputs
+        for i in range(self.dynamic_inputs_layout.count()):
+            item = self.dynamic_inputs_layout.itemAt(i)
+            if item.widget():
+                item.widget().setEnabled(enabled)
 
     def retranslate(self) -> None:
         """Retranslate all UI text after language change."""
@@ -362,8 +427,17 @@ class ControlsPanel(QWidget):
         else:
             self.freeze_btn.setText(t('buttons.freeze', 'Freeze'))
 
+        # Mute button text depends on state
+        if self._mute_active:
+            self.mute_btn.setText(t('buttons.unmute', 'Unmute'))
+        else:
+            self.mute_btn.setText(t('buttons.mute', 'Mute'))
+
         self.input_btn.setText(t('buttons.input', 'Input'))
         self.volume_btn.setText(t('buttons.volume', 'Volume'))
+        # Dynamic inputs are re-rendered on update OR need explicit retrans (maybe keep labels fixed from DB?)
+        # For now, we assume dynamic input labels don't need translation (e.g. "HDMI 1")
+        self.mute_btn.setText(t('buttons.mute', 'Mute'))
 
         # Update tooltips
         self.power_on_btn.setToolTip(t('tooltips.power_on', 'Turn projector on (Ctrl+P)'))
@@ -372,3 +446,55 @@ class ControlsPanel(QWidget):
         self.freeze_btn.setToolTip(t('tooltips.freeze', 'Toggle freeze screen (Ctrl+F)'))
         self.input_btn.setToolTip(t('tooltips.input', 'Select input source (Ctrl+I)'))
         self.volume_btn.setToolTip(t('tooltips.volume', 'Adjust volume'))
+        self.mute_btn.setToolTip(t('tooltips.mute', 'Toggle mute'))
+
+    def update_dynamic_inputs(self, buttons_data: list) -> None:
+        """Update dynamic input buttons.
+        
+        Args:
+            buttons_data: List of dicts with keys: id, label, visible, icon (optional)
+        """
+        # Clear existing
+        while self.dynamic_inputs_layout.count():
+            item = self.dynamic_inputs_layout.takeAt(0)
+            if item.widget():
+                item.widget().deleteLater()
+        
+        # Add new buttons in 2 columns
+        row = 0
+        col = 0
+        for btn_data in buttons_data:
+            btn_id = btn_data.get('id', '')
+            if not btn_id.startswith('input_'):
+                continue
+                
+            if not btn_data.get('visible', True):
+                continue
+                
+            # Extract code (input_31 -> 31, input_hdmi_direct -> hdmi_direct)
+            code = btn_id.replace('input_', '')
+            label = btn_data.get('label', '') or f"Input {code}"
+            
+            # Determine icon based on label/id
+            icon_name = 'input' # Default
+            if 'hdmi' in btn_id.lower() or 'hdmi' in label.lower():
+                icon_name = 'input_hdmi'
+            elif 'vga' in btn_id.lower() or 'vga' in label.lower():
+                icon_name = 'input_vga'
+            
+            btn = ControlButton(label, icon_name)
+            btn.setAccessibleName(f"{label} button")
+            btn.setToolTip(f"Select {label}")
+            
+            # Use partial/lambda to capture code
+            btn.clicked.connect(lambda checked=False, c=code: self.input_code_clicked.emit(c))
+            
+            self.dynamic_inputs_layout.addWidget(btn, row, col)
+            
+            # Update grid position
+            col += 1
+            if col > 1:
+                col = 0
+                row += 1
+        
+        logger.debug(f"Updated dynamic inputs: {len(buttons_data)} buttons in {row+1} rows")

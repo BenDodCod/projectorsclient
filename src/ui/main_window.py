@@ -14,6 +14,7 @@ Version: 1.0.0
 """
 
 import logging
+import time
 from typing import Optional
 
 from PyQt6.QtWidgets import (
@@ -26,9 +27,12 @@ from PyQt6.QtGui import QAction, QIcon, QCloseEvent
 from src.resources.icons import IconLibrary
 from src.resources.qss import StyleManager
 from src.resources.translations import get_translation_manager, t
+from src.config.settings import SettingsManager
 from src.ui.widgets.status_panel import StatusPanel
 from src.ui.widgets.controls_panel import ControlsPanel
 from src.ui.widgets.history_panel import HistoryPanel
+from src.ui.dialogs.settings_dialog import SettingsDialog
+from src.core.projector_controller import ProjectorController
 
 logger = logging.getLogger(__name__)
 
@@ -58,6 +62,8 @@ class MainWindow(QMainWindow):
     freeze_toggled = pyqtSignal(bool)
     input_change_requested = pyqtSignal()
     volume_change_requested = pyqtSignal()
+    input_code_requested = pyqtSignal(str)  # New signal for dynamic inputs
+    mute_toggled = pyqtSignal(bool)
     settings_requested = pyqtSignal()
     language_changed = pyqtSignal(str)  # Emitted when language is changed
 
@@ -78,6 +84,7 @@ class MainWindow(QMainWindow):
         self._projector_name = "Projector"
         self._is_connected = False
         self._is_quitting = False
+        self._last_auth_time = 0.0
 
         # Initialize UI components
         self._init_ui()
@@ -87,9 +94,12 @@ class MainWindow(QMainWindow):
 
         # Connect settings signal to handler
         self.settings_requested.connect(self.open_settings)
-
+        
         # Apply saved language setting (ensures translations are correct)
         self._apply_saved_language()
+
+        # Apply saved button visibility
+        self._apply_saved_button_visibility()
 
         logger.info("Main window initialized")
 
@@ -212,8 +222,8 @@ class MainWindow(QMainWindow):
         self._update_connection_indicator()
         status_bar.addPermanentWidget(self.connection_label)
 
-        # IP address label
-        self.ip_label = QLabel("192.168.1.100")
+        # IP address label - will be updated from database config
+        self.ip_label = QLabel("")
         self.ip_label.setAccessibleName("Projector IP address")
         status_bar.addPermanentWidget(self.ip_label)
 
@@ -230,6 +240,8 @@ class MainWindow(QMainWindow):
         self.controls_panel.freeze_toggled.connect(self.freeze_toggled.emit)
         self.controls_panel.input_clicked.connect(self.input_change_requested.emit)
         self.controls_panel.volume_clicked.connect(self.volume_change_requested.emit)
+        self.controls_panel.input_code_clicked.connect(self.input_code_requested.emit)
+        self.controls_panel.mute_toggled.connect(self.mute_toggled.emit)
 
     def _setup_system_tray(self) -> None:
         """Setup system tray icon and menu."""
@@ -521,19 +533,164 @@ class MainWindow(QMainWindow):
 
     def open_settings(self) -> None:
         """
-        Open the settings dialog.
+        Open the settings dialog with password protection.
 
-        Currently shows a message that settings are not yet implemented.
-        Will be replaced with actual SettingsDialog in Phase 3.
+        Checks auto-lock timeout before prompting for password.
         """
-        from PyQt6.QtWidgets import QMessageBox
+        from PyQt6.QtWidgets import QDialog
+        from src.ui.dialogs.password_dialog import PasswordDialog
+        from src.ui.dialogs.settings_dialog import SettingsDialog
 
-        QMessageBox.information(
-            self,
-            t('settings.title', 'Settings'),
-            t('settings.not_implemented', 'Settings dialog will be available in a future update.'),
-            QMessageBox.StandardButton.Ok
-        )
+        # Check auto-lock timeout
+        settings_manager = SettingsManager(self.db)
+        lock_minutes = settings_manager.get_int("security.auto_lock_minutes", 0)
+        
+        is_locked = True
+        
+        # Check authentication state
+        if self._last_auth_time > 0:
+            if lock_minutes == 0:
+                # "Never" - stay unlocked if already authenticated
+                is_locked = False
+            else:
+                # Check timeout
+                elapsed = time.time() - self._last_auth_time
+                if elapsed < (lock_minutes * 60):
+                    is_locked = False
+                    logger.debug(f"Auto-lock skipped: {elapsed:.1f}s elapsed < {lock_minutes}m timeout")
+                else:
+                    logger.debug(f"Auto-lock enforced: {elapsed:.1f}s elapsed >= {lock_minutes}m timeout")
+
+        if is_locked:
+            # Show password dialog
+            password_dialog = PasswordDialog(self.db, parent=self)
+            
+            if password_dialog.exec() == QDialog.DialogCode.Accepted:
+                # Password verified - update timestamp
+                self._last_auth_time = time.time()
+            else:
+                # Auth cancelled or failed
+                return
+
+        # Open settings dialog (auth skipped or successful)
+        # Create a temporary controller for settings dialog if config available
+        controller = None
+        if hasattr(self, '_projector_config'):
+             try:
+                 controller = ProjectorController(
+                     host=self._projector_config.get('host', ''),
+                     port=self._projector_config.get('port', 4352),
+                     password=self._projector_config.get('password', ''),
+                     timeout=2.0
+                 )
+             except Exception as e:
+                 logger.warning(f"Failed to create temp controller for settings: {e}")
+
+        settings_dialog = SettingsDialog(self.db, parent=self, controller=controller)
+        settings_dialog.settings_applied.connect(self._on_settings_applied)
+        # Ensure settings dialog updates text when language changes
+        self.language_changed.connect(settings_dialog.retranslate)
+        settings_dialog.exec()
+        
+        # Cleanup controller
+        if controller:
+            controller.disconnect()
+
+    def _on_settings_applied(self, settings: dict) -> None:
+        """
+        Handle settings being applied from settings dialog.
+
+        Args:
+            settings: Dictionary of changed settings
+        """
+        logger.info(f"Settings applied: {list(settings.keys())}")
+
+        # Handle language change
+        if 'ui.language' in settings:
+            self.set_language(settings['ui.language'])
+
+        # Handle button visibility changes
+        if any(k.startswith('ui.button.') for k in settings):
+            self._apply_saved_button_visibility()
+
+        # Handle other settings that need immediate effect
+        if 'network.status_interval' in settings:
+            # Update status timer interval if running
+            logger.info(f"Status interval changed to {settings['network.status_interval']} seconds")
+
+    def _apply_button_visibility(self, settings: dict) -> None:
+        """
+        Apply button visibility changes to the controls panel.
+
+        Args:
+            settings: Dictionary containing button visibility settings
+        """
+        # Reload button visibility in controls panel
+        self._apply_saved_button_visibility()
+    def _apply_saved_button_visibility(self) -> None:
+        """Load and apply button visibility from database."""
+        try:
+            from src.config.settings import SettingsManager
+            settings_manager = SettingsManager(self.db)
+            self._refresh_buttons(settings_manager)
+        except Exception as e:
+            logger.warning(f"Could not apply button visibility: {e}")
+
+    def _refresh_buttons(self, settings_manager) -> None:
+        """Refresh all button states (static and dynamic) from settings.
+        
+        Args:
+            settings_manager: SettingsManager instance
+        """
+        try:
+             all_buttons = settings_manager.get_ui_buttons_full()
+             
+             # Split into static config map and dynamic list
+             static_config = {}
+             dynamic_list = []
+             
+             for btn in all_buttons:
+                 btn_id = btn['id']
+                 # input_selector is static, but other input_* are dynamic
+                 if btn_id.startswith('input_') and btn_id != 'input_selector':
+                     dynamic_list.append(btn)
+                 else:
+                     static_config[btn_id] = btn['visible']
+             
+             # Map static IDs to panel names if key matches mapping
+             # Legacy mapping for static buttons
+             visibility_map = {
+                'power_on': 'power_on',
+                'power_off': 'power_off',
+                'blank': 'blank',
+                'freeze': 'freeze',
+                'input_selector': 'input',
+                'volume_control': 'volume',
+                'mute': 'mute',
+             }
+             
+             final_static_config = {}
+             for db_id, visible in static_config.items():
+                 if db_id in visibility_map:
+                     final_static_config[visibility_map[db_id]] = visible
+                     
+             # Apply static visibility
+             if final_static_config:
+                 self.controls_panel.set_button_visibility(final_static_config)
+                 
+             # Update dynamic inputs
+             self.controls_panel.update_dynamic_inputs(dynamic_list)
+             
+             logger.info("Refreshed UI buttons")
+        except Exception as e:
+            logger.error(f"Error refreshing buttons: {e}")
+
+    def _apply_button_visibility(self, settings: dict) -> None:
+        """Apply button visibility from settings dict (Legacy/Fast path).
+        
+        Now delegates to full refresh for consistency.
+        """
+        self._apply_saved_button_visibility()
 
     def set_language(self, language: str) -> None:
         """
@@ -582,7 +739,8 @@ class MainWindow(QMainWindow):
         try:
             from src.config.settings import SettingsManager
             settings = SettingsManager(self.db)
-            saved_language = settings.get("app.language", "en")
+            # Use 'ui.language' as this is what SettingsDialog saves
+            saved_language = settings.get("ui.language", "en")
 
             # Only apply if different from current
             if saved_language != self._translation_manager.current_language:

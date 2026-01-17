@@ -65,6 +65,16 @@ class StyleManager:
             with open(theme_file, 'r', encoding='utf-8') as f:
                 content = f.read()
 
+            # Post-process content to replace :/icons/ with absolute paths
+            # This allows the app to load icons from filesystem without RCC
+            icon_dir = cls._themes_dir.parent / "icons"
+            # Normalize path for QSS (forward slashes needed even on Windows)
+            icon_path_str = str(icon_dir.absolute()).replace("\\", "/")
+            if not icon_path_str.endswith("/"):
+                icon_path_str += "/"
+            
+            content = content.replace("url(:/icons/", f"url({icon_path_str}")
+
             # Cache the loaded theme
             cls._cache[name] = content
             return content

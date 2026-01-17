@@ -236,8 +236,13 @@ class HistoryPanel(QWidget):
         # Remove all existing entry widgets
         while self.entries_layout.count() > 1:  # Keep the stretch
             item = self.entries_layout.takeAt(0)
-            if item.widget():
-                item.widget().deleteLater()
+            widget = item.widget()
+            if widget:
+                if widget == self.empty_label:
+                    widget.hide()
+                    widget.setParent(None)
+                else:
+                    widget.deleteLater()
 
         # Add entries from list
         for action, result, timestamp in self._entries:
@@ -246,6 +251,7 @@ class HistoryPanel(QWidget):
 
         # Show empty label if no entries
         if not self._entries:
+            self.entries_layout.insertWidget(0, self.empty_label)
             self.empty_label.show()
 
     def get_entries(self) -> List[Tuple[str, str, str]]:

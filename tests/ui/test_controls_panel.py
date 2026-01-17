@@ -666,3 +666,79 @@ class TestLocalization:
         # Verify panel was created successfully with translated strings
         assert panel is not None
         assert panel.layout() is not None
+
+class TestDynamicInputs:
+    """Tests for dynamic input button generation."""
+
+    def test_update_dynamic_inputs_creates_buttons(self, qapp, qtbot):
+        """Test that update_dynamic_inputs creates the correct number of buttons."""
+        from src.ui.widgets.controls_panel import ControlsPanel
+        
+        panel = ControlsPanel()
+        qtbot.addWidget(panel)
+        panel.show()
+        
+        # Define some dynamic inputs
+        inputs = [
+            {'id': 'input_hdmi_1', 'label': 'HDMI 1', 'visible': True},
+            {'id': 'input_vga_1', 'label': 'VGA 1', 'visible': True},
+            {'id': 'input_invalid', 'label': 'Hidden', 'visible': False}
+        ]
+        
+        panel.update_dynamic_inputs(inputs)
+        
+        # Check that container has 2 buttons
+        layout = panel.dynamic_inputs_container.layout()
+        assert layout is not None
+        
+        # Count buttons in layout
+        buttons = []
+        for i in range(layout.count()):
+            widget = layout.itemAt(i).widget()
+            if isinstance(widget, QPushButton):
+                buttons.append(widget)
+        
+        assert len(buttons) == 2
+        assert buttons[0].text() == "HDMI 1"
+        assert buttons[1].text() == "VGA 1"
+
+    def test_dynamic_input_grid_layout(self, qapp, qtbot):
+        """Test that dynamic inputs use a 2-column grid layout."""
+        from src.ui.widgets.controls_panel import ControlsPanel
+        from PyQt6.QtWidgets import QGridLayout
+        
+        panel = ControlsPanel()
+        qtbot.addWidget(panel)
+        panel.show()
+        
+        # Add 4 inputs (ID must start with 'input_')
+        inputs = [
+            {'id': 'input_1', 'label': 'L1', 'visible': True},
+            {'id': 'input_2', 'label': 'L2', 'visible': True},
+            {'id': 'input_3', 'label': 'L3', 'visible': True},
+            {'id': 'input_4', 'label': 'L4', 'visible': True},
+        ]
+        
+        panel.update_dynamic_inputs(inputs)
+        
+        # Check positions in grid
+        layout = panel.dynamic_inputs_container.layout()
+        assert isinstance(layout, QGridLayout)
+        
+        positions = {}
+        for i in range(layout.count()):
+            item = layout.itemAt(i)
+            widget = item.widget()
+            if widget:
+                # Get position from layout
+                # layout.getItemPosition(index) returns (row, col, rowSpan, colSpan)
+                row, col, _, _ = layout.getItemPosition(i)
+                positions[widget.text()] = (row, col)
+        
+        # If positions is empty, fail with info
+        assert positions, "No widgets found in dynamic_inputs_container layout"
+        
+        assert positions.get("L1") == (0, 0)
+        assert positions.get("L2") == (0, 1)
+        assert positions.get("L3") == (1, 0)
+        assert positions.get("L4") == (1, 1)
