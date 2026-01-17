@@ -7,28 +7,28 @@
 
 | Phase | Name | Status | Requirements |
 |-------|------|--------|--------------|
-| 0 | Foundation (Week 1-4) | ✓ Complete | SEC-01-04, PERF-01-03, DB-01-03, QA-01 |
-| 1 | DevOps & UI (Week 5-6) | ✓ Complete | I18N-01-02, UI-01-05, QA-02-03 |
-| 2 | Validation & i18n (Week 7-8) | ○ Ready | I18N-03-05, SEC-05-06, PERF-04-06, DB-04-05, QA-04-06, VAL-01 |
-| 3 | Polish & Release (Week 9-10) | ○ Pending | UI-06-07, DOC-01-04, VAL-02-03 |
+| 0 | Foundation (Week 1-4) | COMPLETE | SEC-01-04, PERF-01-03, DB-01-03, QA-01 |
+| 1 | DevOps & UI (Week 5-6) | COMPLETE | I18N-01-02, UI-01-05, QA-02-03 |
+| 2 | Validation & i18n (Week 7-8) | IN PROGRESS | I18N-03-05, SEC-05-06, PERF-04-06, DB-04-05, QA-04-06, VAL-01 |
+| 3 | Polish & Release (Week 9-10) | Pending | UI-06-07, DOC-01-04, VAL-02-03 |
 
 **Total:** 4 phases | 32 requirements | 56% complete
 
 ---
 
-## Phase 0: Foundation (Week 1-4) ✓ COMPLETE
+## Phase 0: Foundation (Week 1-4) COMPLETE
 
 **Goal:** Establish security, testing, and core infrastructure foundations.
 
 **Requirements:** SEC-01, SEC-02, SEC-03, SEC-04, PERF-01, PERF-02, PERF-03, DB-01, DB-02, DB-03, QA-01
 
 **Success Criteria:**
-1. ✓ 12/12 critical security vulnerabilities fixed
-2. ✓ pytest framework with 85%+ coverage (achieved: 93.99%)
-3. ✓ Mock PJLink server operational
-4. ✓ Database indexes delivering 50-85% query speedup
-5. ✓ Connection pooling handling 10+ concurrent connections
-6. ✓ Circuit breaker protecting against cascading failures
+1. 12/12 critical security vulnerabilities fixed
+2. pytest framework with 85%+ coverage (achieved: 93.99%)
+3. Mock PJLink server operational
+4. Database indexes delivering 50-85% query speedup
+5. Connection pooling handling 10+ concurrent connections
+6. Circuit breaker protecting against cascading failures
 
 **Evidence:**
 - docs/reviews/WEEK1_GATE_REVIEW.md (APPROVED)
@@ -37,18 +37,18 @@
 
 ---
 
-## Phase 1: DevOps & UI (Week 5-6) ✓ COMPLETE
+## Phase 1: DevOps & UI (Week 5-6) COMPLETE
 
 **Goal:** Build CI/CD pipeline and core UI components.
 
 **Requirements:** I18N-01, I18N-02, UI-01, UI-02, UI-03, UI-04, UI-05, QA-02, QA-03
 
 **Success Criteria:**
-1. ✓ CI/CD pipeline operational (GitHub Actions)
-2. ✓ PyInstaller builds producing working .exe
-3. ✓ First-run wizard guiding configuration
-4. ✓ Main window displaying projector status
-5. ✓ 90+ UI tests (target: 50, achieved: 90+)
+1. CI/CD pipeline operational (GitHub Actions)
+2. PyInstaller builds producing working .exe
+3. First-run wizard guiding configuration
+4. Main window displaying projector status
+5. 90+ UI tests (target: 50, achieved: 90+)
 
 **Evidence:**
 - .github/workflows/ci.yml
@@ -59,7 +59,7 @@
 
 ---
 
-## Phase 2: Validation & Internationalization (Week 7-8) ○ READY
+## Phase 2: Validation & Internationalization (Week 7-8) IN PROGRESS
 
 **Goal:** Complete Hebrew/RTL support, security validation, and performance benchmarking.
 
@@ -74,11 +74,26 @@
 6. SQL Server mode connects and operates successfully
 7. 3-5 pilot users complete UAT
 
-**Plans:** (to be created via /gsd:plan-phase 2)
+**Plans:** 7 plans in 3 waves
+
+| Wave | Plans | Autonomous |
+|------|-------|------------|
+| 1 | 02-01, 02-02, 02-03 | yes, yes, yes |
+| 2 | 02-04, 02-05, 02-06 | yes, no, no |
+| 3 | 02-07 | no |
+
+Plans:
+- [ ] 02-01-PLAN.md - Hebrew/RTL implementation (I18N-03, I18N-04, I18N-05)
+- [ ] 02-02-PLAN.md - Performance benchmarking (PERF-04, PERF-05, PERF-06)
+- [ ] 02-03-PLAN.md - SECURITY.md documentation (SEC-06)
+- [ ] 02-04-PLAN.md - SQL Server integration (DB-04, DB-05)
+- [ ] 02-05-PLAN.md - Compatibility matrix testing (QA-04, QA-05, QA-06)
+- [ ] 02-06-PLAN.md - Security penetration testing (SEC-05)
+- [ ] 02-07-PLAN.md - UAT execution (VAL-01)
 
 ---
 
-## Phase 3: Polish & Release (Week 9-10) ○ PENDING
+## Phase 3: Polish & Release (Week 9-10) Pending
 
 **Goal:** Final polish, documentation, and release preparation.
 
@@ -101,15 +116,15 @@
 
 ```
 Phase 0 (Foundation)
-    ↓
+    |
 Phase 1 (DevOps & UI)
-    ↓
-Phase 2 (Validation & i18n) ← Current focus
-    ↓
+    |
+Phase 2 (Validation & i18n) <- Current focus
+    |
 Phase 3 (Polish & Release)
 ```
 
 ---
 
 *Roadmap created: 2026-01-17*
-*Last updated: 2026-01-17 after GSD initialization*
+*Last updated: 2026-01-17 after Phase 2 planning*
