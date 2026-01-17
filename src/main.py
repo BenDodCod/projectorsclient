@@ -18,7 +18,7 @@ from PyQt6.QtWidgets import QApplication, QMessageBox
 from PyQt6.QtCore import Qt
 from PyQt6.QtGui import QIcon
 
-from src.resources.translations import get_translation_manager
+from src.resources.translations import get_translation_manager, t
 
 # Application information
 APP_NAME = "Projector Control"
@@ -213,8 +213,8 @@ def show_first_run_wizard(db: "DatabaseManager") -> bool:
             logger.error("Failed to save first-run configuration: %s", e)
             QMessageBox.critical(
                 None,
-                "Configuration Error",
-                f"Failed to save configuration: {e}\n\nPlease try again."
+                t('errors.configuration_error', 'Configuration Error'),
+                t('errors.save_config_failed', f'Failed to save configuration: {e}\n\nPlease try again.')
             )
 
     wizard.setup_completed.connect(on_wizard_completed)
@@ -284,9 +284,8 @@ def main() -> int:
     if not db:
         QMessageBox.critical(
             None,
-            "Database Error",
-            "Failed to initialize database.\n\n"
-            "The application cannot continue. Please check the logs for details."
+            t('errors.database_error', 'Database Error'),
+            t('errors.database_init_failed', 'Failed to initialize database.\n\nThe application cannot continue. Please check the logs for details.')
         )
         return 1
 
