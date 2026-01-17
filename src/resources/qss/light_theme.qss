@@ -529,3 +529,83 @@ QTreeWidget::branch:closed:has-children {
 QTreeWidget::branch:open:has-children {
     image: url(:/icons/arrow_down.svg);
 }
+
+/* ===== RTL (Right-to-Left) Layout Support ===== */
+
+/* RTL-aware margins for widgets that need directional spacing */
+QWidget:right-to-left {
+    /* Base RTL support - Qt handles most layout direction automatically */
+}
+
+/* Adjust padding/margins for RTL in form layouts */
+QFormLayout:right-to-left QLabel {
+    /* Labels align to the right in RTL */
+    padding-left: 8px;
+    padding-right: 0px;
+}
+
+/* GroupBox title positioning in RTL */
+QGroupBox:right-to-left::title {
+    subcontrol-position: top right;
+    right: 12px;
+    left: auto;
+}
+
+/* Tab bar RTL support */
+QTabBar:right-to-left::tab {
+    margin-left: 2px;
+    margin-right: 0px;
+}
+
+/* Menu item padding in RTL */
+QMenu:right-to-left::item {
+    padding: 6px 12px 6px 24px;
+}
+
+/* Scroll bar position in RTL (scrollbar on left side) */
+QScrollBar:vertical:right-to-left {
+    /* Scrollbar appears on left in RTL */
+}
+
+/* ComboBox dropdown arrow position in RTL */
+QComboBox:right-to-left::drop-down {
+    /* Dropdown arrow on left in RTL */
+    subcontrol-position: left center;
+}
+
+/* Button icon and text alignment for RTL */
+QPushButton:right-to-left {
+    text-align: right;
+    padding-right: 16px;
+    padding-left: 8px;
+}
+
+/* Tree branch indicators for RTL */
+QTreeWidget:right-to-left::branch:closed:has-children {
+    image: url(:/icons/arrow_left.svg);
+}
+
+QTreeWidget:right-to-left::branch:open:has-children {
+    image: url(:/icons/arrow_down.svg);
+}
+
+/* Header section border in RTL */
+QHeaderView:right-to-left::section {
+    border-right: none;
+    border-left: 1px solid #E0E0E0;
+}
+
+/* Status panel spacing for RTL */
+#status_panel:right-to-left {
+    /* Sections flow from right to left */
+}
+
+/* Controls panel grid alignment for RTL */
+#controls_panel:right-to-left {
+    /* Grid buttons reverse order automatically */
+}
+
+/* History panel entries for RTL */
+#history_panel:right-to-left #history_entry {
+    /* Indicator on right side in RTL */
+}

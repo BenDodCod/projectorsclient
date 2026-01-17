@@ -17,15 +17,25 @@ Example usage:
 """
 
 from pathlib import Path
-from typing import Optional, Dict
+from typing import Optional, Dict, List
 import logging
 
-from PyQt6.QtGui import QIcon, QPixmap, QPainter, QColor
+from PyQt6.QtGui import QIcon, QPixmap, QPainter, QColor, QTransform
 from PyQt6.QtCore import QSize, Qt
 from PyQt6.QtSvg import QSvgRenderer
 
 
 logger = logging.getLogger(__name__)
+
+
+# Directional icons that should be mirrored in RTL mode
+DIRECTIONAL_ICONS: List[str] = [
+    'arrow_left', 'arrow_right', 'arrow_forward', 'arrow_back',
+    'chevron_left', 'chevron_right',
+    'back', 'forward', 'next', 'previous',
+    # Mapped icon names that may be directional
+    'next', 'back',
+]
 
 
 class IconLibrary:
@@ -168,7 +178,7 @@ class IconLibrary:
 
     @classmethod
     def get_pixmap(cls, name: str, size: Optional[QSize] = None,
-                   color: Optional[QColor] = None) -> QPixmap:
+                   color: Optional[QColor] = None, is_rtl: bool = False) -> QPixmap:
         """
         Get a pixmap by name, optionally with custom size and color.
 
@@ -176,6 +186,7 @@ class IconLibrary:
             name: Icon name (from ICONS dictionary)
             size: Size for the pixmap (default: DEFAULT_SIZE)
             color: Optional color to tint the icon
+            is_rtl: If True and icon is directional, flip horizontally for RTL
 
         Returns:
             QPixmap: The icon as a pixmap
@@ -186,10 +197,26 @@ class IconLibrary:
         icon = cls.get_icon(name, size)
         pixmap = icon.pixmap(size)
 
+        # Mirror directional icons for RTL mode
+        if is_rtl and cls._is_directional_icon(name):
+            pixmap = cls._mirror_pixmap(pixmap)
+
         if color is not None:
             pixmap = cls._colorize_pixmap(pixmap, color)
 
         return pixmap
+
+    @classmethod
+    def _is_directional_icon(cls, name: str) -> bool:
+        """Check if an icon is directional and should be mirrored in RTL."""
+        return name.lower() in [d.lower() for d in DIRECTIONAL_ICONS]
+
+    @classmethod
+    def _mirror_pixmap(cls, pixmap: QPixmap) -> QPixmap:
+        """Mirror a pixmap horizontally for RTL mode."""
+        transform = QTransform()
+        transform.scale(-1, 1)
+        return pixmap.transformed(transform)
 
     @classmethod
     def _load_icon(cls, name: str, size: QSize) -> QIcon:
@@ -293,6 +320,57 @@ class IconLibrary:
             return False
         filepath = cls.ICON_DIR / cls.ICONS[name]
         return filepath.exists()
+
+    @classmethod
+    def get_icon_rtl_aware(cls, name: str, size: Optional[QSize] = None) -> QIcon:
+        """
+        Get an icon with automatic RTL awareness.
+
+        Automatically detects RTL mode from TranslationManager and flips
+        directional icons accordingly.
+
+        Args:
+            name: Icon name (from ICONS dictionary)
+            size: Optional size for the icon
+
+        Returns:
+            QIcon: The requested icon, mirrored if RTL and directional
+        """
+        from src.resources.translations import get_translation_manager
+
+        if size is None:
+            size = cls.DEFAULT_SIZE
+
+        is_rtl = get_translation_manager().is_rtl()
+
+        if is_rtl and cls._is_directional_icon(name):
+            # Return mirrored icon
+            pixmap = cls.get_pixmap(name, size, is_rtl=True)
+            return QIcon(pixmap)
+        else:
+            return cls.get_icon(name, size)
+
+    @classmethod
+    def get_pixmap_rtl_aware(cls, name: str, size: Optional[QSize] = None,
+                              color: Optional[QColor] = None) -> QPixmap:
+        """
+        Get a pixmap with automatic RTL awareness.
+
+        Automatically detects RTL mode from TranslationManager and flips
+        directional icons accordingly.
+
+        Args:
+            name: Icon name (from ICONS dictionary)
+            size: Size for the pixmap (default: DEFAULT_SIZE)
+            color: Optional color to tint the icon
+
+        Returns:
+            QPixmap: The icon as a pixmap, mirrored if RTL and directional
+        """
+        from src.resources.translations import get_translation_manager
+
+        is_rtl = get_translation_manager().is_rtl()
+        return cls.get_pixmap(name, size, color, is_rtl=is_rtl)
 
 
 # Convenience functions for common icons
