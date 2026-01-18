@@ -178,10 +178,10 @@ class TestConnectionStringBuilder:
             trusted_connection=False,
         )
 
-        assert "SERVER=192.168.1.100:1433" in conn_str
+        assert "SERVER=192.168.1.100,1433" in conn_str
         assert "DATABASE=ProjectorDB" in conn_str
         assert "UID=sa" in conn_str
-        assert "PWD=SecretPass123!" in conn_str
+        assert "PWD={SecretPass123!}" in conn_str
         assert "Trusted_Connection" not in conn_str
 
     @requires_pyodbc

@@ -752,6 +752,7 @@ class TestProjectorControllerEdgeCases:
         controller.connect()
 
         # Create a wrapper that will raise on close
+        original_socket = None
         if controller._socket:
             original_socket = controller._socket
 
@@ -765,9 +766,17 @@ class TestProjectorControllerEdgeCases:
 
             controller._socket = MockSocket()
 
-        # Should not raise - cleanup handles exception
-        controller.disconnect()
-        assert controller.is_connected is False
+        try:
+            # Should not raise - cleanup handles exception
+            controller.disconnect()
+            assert controller.is_connected is False
+        finally:
+            # Cleanup: close the original socket that was replaced
+            if original_socket:
+                try:
+                    original_socket.close()
+                except Exception:
+                    pass
 
     def test_query_pjlink_class_invalid_response(self, mock_pjlink_server):
         """Test PJLink class query with invalid response (lines 482-483)."""

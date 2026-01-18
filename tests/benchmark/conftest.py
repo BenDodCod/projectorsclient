@@ -149,12 +149,15 @@ def mock_database_manager(mock_database):
     Create a mock DatabaseManager wrapping the in-memory database.
 
     This allows benchmarks to use the same interface as production code.
+
+    Note:
+        - fetchone() returns None for settings queries to trigger defaults
+        - This prevents SettingsManager from accessing dictionary keys on MagicMock
     """
     from unittest.mock import MagicMock
 
     manager = MagicMock()
     manager.connection = mock_database
-    manager.cursor = mock_database.cursor
 
     def execute_query(query, params=None):
         cursor = mock_database.cursor()
@@ -166,6 +169,20 @@ def mock_database_manager(mock_database):
 
     manager.execute = execute_query
     manager.get_connection.return_value = mock_database
+
+    # Critical: fetchone must return None for SettingsManager compatibility
+    manager.fetchone.return_value = None
+    manager.fetchall.return_value = []
+
+    # For tests that use cursor() directly, return a MagicMock that also has fetchone=None
+    # (but don't interfere with execute_query which uses the real database cursor)
+    def mock_cursor_factory():
+        cursor = MagicMock()
+        cursor.fetchone.return_value = None
+        cursor.fetchall.return_value = []
+        return cursor
+
+    manager.cursor = mock_cursor_factory
 
     return manager
 

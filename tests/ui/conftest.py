@@ -195,13 +195,32 @@ def mock_projector_controller():
 
 @pytest.fixture
 def mock_db_manager():
-    """Mock database manager for UI tests."""
+    """
+    Mock database manager for UI tests.
+
+    Note:
+        - fetchone() returns None to trigger default value paths in SettingsManager
+        - This prevents SettingsManager from trying to access dictionary keys on MagicMock
+    """
     db = MagicMock()
     db.get_setting.return_value = None
     db.set_setting.return_value = True
     db.get_projectors.return_value = []
     db.get_operation_history.return_value = []
     db.get_audit_log.return_value = []
+
+    # Critical: fetchone must return None for SettingsManager compatibility
+    db.fetchone.return_value = None
+    db.fetchall.return_value = []
+    db.execute.return_value = None
+    db.table_exists.return_value = True
+
+    # Ensure cursor also returns None for fetchone()
+    mock_cursor = MagicMock()
+    mock_cursor.fetchone.return_value = None
+    mock_cursor.fetchall.return_value = []
+    db.cursor.return_value = mock_cursor
+
     return db
 
 

@@ -27,7 +27,28 @@ class StyleManager:
     """
 
     _cache: Dict[str, str] = {}
-    _themes_dir: Path = Path(__file__).parent
+    _themes_dir: Optional[Path] = None
+
+    @classmethod
+    def _get_themes_dir(cls) -> Path:
+        """Get the themes directory, handling both development and PyInstaller modes."""
+        if cls._themes_dir is not None:
+            return cls._themes_dir
+
+        import sys
+        import logging
+        logger = logging.getLogger(__name__)
+
+        if getattr(sys, 'frozen', False) and hasattr(sys, '_MEIPASS'):
+            # Running as PyInstaller bundle
+            cls._themes_dir = Path(sys._MEIPASS) / 'resources' / 'qss'
+            logger.info(f"Running as frozen app, QSS dir: {cls._themes_dir}")
+        else:
+            # Running in development
+            cls._themes_dir = Path(__file__).parent
+            logger.info(f"Running in development, QSS dir: {cls._themes_dir}")
+
+        return cls._themes_dir
 
     @classmethod
     def get_theme(cls, name: str) -> str:
@@ -52,7 +73,7 @@ class StyleManager:
             return cls._cache[name]
 
         # Construct theme file path
-        theme_file = cls._themes_dir / f"{name}_theme.qss"
+        theme_file = cls._get_themes_dir() / f"{name}_theme.qss"
 
         if not theme_file.exists():
             raise FileNotFoundError(
@@ -67,7 +88,7 @@ class StyleManager:
 
             # Post-process content to replace :/icons/ with absolute paths
             # This allows the app to load icons from filesystem without RCC
-            icon_dir = cls._themes_dir.parent / "icons"
+            icon_dir = cls._get_themes_dir().parent / "icons"
             # Normalize path for QSS (forward slashes needed even on Windows)
             icon_path_str = str(icon_dir.absolute()).replace("\\", "/")
             if not icon_path_str.endswith("/"):
@@ -115,7 +136,7 @@ class StyleManager:
         themes = []
 
         # Scan directory for *_theme.qss files
-        for file_path in cls._themes_dir.glob("*_theme.qss"):
+        for file_path in cls._get_themes_dir().glob("*_theme.qss"):
             # Extract theme name (remove "_theme.qss")
             theme_name = file_path.stem.replace("_theme", "")
             themes.append(theme_name)

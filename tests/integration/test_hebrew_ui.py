@@ -56,6 +56,15 @@ def mock_db():
     db.set_setting.return_value = True
     db.get_projectors.return_value = []
     db.get_operation_history.return_value = []
+    # Configure cursor mock for SettingsManager compatibility
+    cursor_mock = MagicMock()
+    cursor_mock.fetchone.return_value = None
+    cursor_mock.fetchall.return_value = []
+    db.cursor.return_value.__enter__ = MagicMock(return_value=cursor_mock)
+    db.cursor.return_value.__exit__ = MagicMock(return_value=False)
+    db.fetchone = MagicMock(return_value=None)
+    db.fetchall = MagicMock(return_value=[])
+    db.execute = MagicMock()
     return db
 
 

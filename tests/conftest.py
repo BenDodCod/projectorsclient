@@ -304,15 +304,26 @@ def mock_db_manager(temp_db_path: Path) -> MagicMock:
 
     Returns:
         Mock DatabaseManager with common methods mocked.
+
+    Note:
+        - fetchone() returns None consistently to trigger default value paths
+        - This prevents SettingsManager from trying to access dictionary keys on MagicMock
     """
     mock = MagicMock()
     mock.db_path = temp_db_path
     mock.fetchall.return_value = []
-    mock.fetchone.return_value = None
+    mock.fetchone.return_value = None  # Critical: Must return None, not MagicMock
     mock.execute.return_value = None
     mock.get_connection.return_value = MagicMock()
     mock.table_exists.return_value = True
     mock.integrity_check.return_value = (True, "ok")
+
+    # Ensure cursor also returns None for fetchone()
+    mock_cursor = MagicMock()
+    mock_cursor.fetchone.return_value = None
+    mock_cursor.fetchall.return_value = []
+    mock.cursor.return_value = mock_cursor
+
     return mock
 
 
