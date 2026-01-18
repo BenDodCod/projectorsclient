@@ -244,6 +244,7 @@ def show_main_window(db: "DatabaseManager") -> "QMainWindow":
     from src.ui.main_window import MainWindow
     from src.config.settings import SettingsManager
     from src.core.projector_controller import ProjectorController
+    from src.network.pjlink_protocol import PowerState
 
     logger = logging.getLogger(__name__)
     logger.info("Creating main window")
@@ -373,10 +374,17 @@ def show_main_window(db: "DatabaseManager") -> "QMainWindow":
                     
                     def on_blank_toggled(active):
                         def cmd(ctrl):
+                            # Check if projector is ON first - AVMT only works when powered on
+                            power_state = ctrl.get_power_state()
+                            if power_state != PowerState.ON:
+                                from src.core.projector_controller import CommandResult
+                                return CommandResult.failure(
+                                    f"Blank requires projector to be ON (current: {power_state.name})"
+                                )
                             if active:
-                                return ctrl.mute_on("21")  # Video mute
+                                return ctrl.mute_on("31")  # Video+Audio mute on (blank)
                             else:
-                                return ctrl.mute_off()
+                                return ctrl.mute_off()  # Video+Audio mute off (unblank)
                         def on_success():
                             window.controls_panel.set_blank_state(active)
                         execute_command(f"Blank {'On' if active else 'Off'}", cmd, on_success)
@@ -477,11 +485,11 @@ def show_main_window(db: "DatabaseManager") -> "QMainWindow":
                     def on_mute_toggled(checked):
                         def cmd(c):
                             if checked:
-                                # 20 = Audio Mute ON
-                                return c.mute_on("20")
-                            else:
-                                # 21 = Audio Mute OFF
+                                # 21 = Audio Mute ON
                                 return c.mute_on("21")
+                            else:
+                                # 20 = Audio Mute OFF
+                                return c.mute_on("20")
                         
                         action = "Mute" if checked else "Unmute"
                         execute_command(f"Audio → {action}", cmd)
