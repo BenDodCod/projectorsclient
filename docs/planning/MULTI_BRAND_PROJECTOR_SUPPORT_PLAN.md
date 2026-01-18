@@ -1,5 +1,88 @@
 # Plan: Multi-Brand Projector Support Expansion
 
+---
+
+## ROADMAP & PROGRESS TRACKER
+
+> **IMPORTANT:** Anyone working on this plan MUST update this section after completing tasks.
+> Update the status, add dates, and log any changes or deviations in the Change Log below.
+
+### Current Status: NOT STARTED
+**Last Updated:** 2026-01-18
+**Updated By:** Claude (initial creation)
+
+### Phase Progress
+
+| Phase | Description | Status | Started | Completed | Owner |
+|-------|-------------|--------|---------|-----------|-------|
+| 1 | Protocol Abstraction Layer | NOT STARTED | - | - | - |
+| 2 | Hitachi Protocol Implementation | NOT STARTED | - | - | - |
+| 3 | Database & UI Updates | NOT STARTED | - | - | - |
+| 4 | Controller Abstraction | NOT STARTED | - | - | - |
+| 5 | Additional Protocol Stubs | NOT STARTED | - | - | - |
+
+**Status Values:** `NOT STARTED` | `IN PROGRESS` | `BLOCKED` | `COMPLETED` | `SKIPPED`
+
+### Task Checklist
+
+#### Phase 1: Protocol Abstraction Layer
+- [ ] 1.1 Create `src/network/base_protocol.py` - Base protocol interface
+- [ ] 1.2 Create `src/network/protocol_factory.py` - Factory pattern
+- [ ] 1.3 Refactor PJLink to `src/network/protocols/pjlink.py`
+- [ ] 1.4 Unit tests for base protocol
+- [ ] 1.5 Verify backward compatibility
+
+#### Phase 2: Hitachi Protocol Implementation
+- [ ] 2.1 Create `src/network/protocols/hitachi.py` - Protocol module
+- [ ] 2.2 Create `src/core/controllers/hitachi_controller.py` - Controller
+- [ ] 2.3 Implement TCP Port 23 communication
+- [ ] 2.4 Implement TCP Port 9715 with framing
+- [ ] 2.5 Implement MD5 authentication
+- [ ] 2.6 Implement full command set (power, input, mute, freeze, blank, image)
+- [ ] 2.7 Unit tests for Hitachi protocol
+- [ ] 2.8 Test with physical Hitachi projector
+
+#### Phase 3: Database & UI Updates
+- [ ] 3.1 Create migration `v3_multi_protocol.py`
+- [ ] 3.2 Add `proj_type` enum values
+- [ ] 3.3 Add `protocol_settings` JSON field
+- [ ] 3.4 Update `projector_dialog.py` - brand dropdown
+- [ ] 3.5 Add protocol auto-detection UI
+- [ ] 3.6 Migration tests
+
+#### Phase 4: Controller Abstraction
+- [ ] 4.1 Create `src/core/controller_factory.py`
+- [ ] 4.2 Update `resilient_controller.py` for multi-protocol
+- [ ] 4.3 Integration tests
+
+#### Phase 5: Additional Protocol Stubs
+- [ ] 5.1 Create `src/network/protocols/sony.py` stub
+- [ ] 5.2 Create `src/network/protocols/benq.py` stub
+- [ ] 5.3 Create `src/network/protocols/nec.py` stub
+- [ ] 5.4 Create `src/network/protocols/jvc.py` stub
+
+### Change Log
+
+| Date | Author | Change Description |
+|------|--------|-------------------|
+| 2026-01-18 | Claude | Initial plan created |
+| | | |
+| | | |
+
+### Blockers & Issues
+
+| ID | Description | Status | Raised | Resolved |
+|----|-------------|--------|--------|----------|
+| - | None yet | - | - | - |
+
+### Notes & Decisions
+
+- **2026-01-18:** Physical Hitachi projector available for testing
+- **2026-01-18:** Network-only implementation (no RS-232 serial)
+- **2026-01-18:** Full feature set required (freeze, blank, image adjustments)
+
+---
+
 ## Executive Summary
 
 Expand the Projector Control Application to support multiple projector brands beyond Epson, starting with Hitachi and preparing architecture for Sony, BenQ, NEC, JVC, Panasonic, and others.
