@@ -61,8 +61,11 @@
     "projector_name_label": "שם מקרן",
     "projector_ip_label": "כתובת IP",
     "projector_port_label": "פורט",
+    "projector_port_custom": "מותאם אישית...",
+    "port_custom": "מותאם אישית...",
     "projector_brand_label": "יצרן",
     "projector_model_label": "דגם",
+    "projector_pjlink_class_label": "מחלקת PJLink",
     "projector_test": "בדוק חיבור",
     "projector_no_projectors": "לא הוגדרו מקרנים. לחץ על 'הוסף מקרן' כדי להתחיל.",
     "ui_title": "העדפות ממשק משתמש",
@@ -129,7 +132,15 @@
     "ui_info": "מידע",
     "ui_lamp_hours": "תצוגת שעות מנורה",
     "ui_status_panel": "לוח מצב",
-    "complete_subtitle": "התצורה שלך נשמרה בהצלחה."
+    "complete_subtitle": "התצורה שלך נשמרה בהצלחה.",
+    "select_proj_title": "בחר מקרן",
+    "select_proj_subtitle": "בחר את המקרן שלך מהרשימה.",
+    "select_proj_info": "המקרנים הבאים נמצאו במסד הנתונים. בחר את זה המתאים למחשב/מיקום זה.",
+    "proj_name": "שם",
+    "proj_ip": "כתובת IP",
+    "proj_location": "מיקום",
+    "refresh_list": "רענן רשימה",
+    "or_label": "או"
   },
   "buttons": {
     "next": "הבא",
@@ -158,7 +169,8 @@
     "input": "קלט",
     "volume": "עוצמה",
     "settings": "הגדרות",
-    "minimize": "מזער למגש"
+    "minimize": "מזער למגש",
+    "toggle_theme": "החלף ערכת נושא בהיר/כהה"
   },
   "tooltips": {
     "power_on": "הפעל מקרן (Ctrl+P)",
@@ -433,7 +445,10 @@
     "validation_error": "שגיאת אימות",
     "fix_errors": "אנא תקן את השגיאות הבאות:",
     "save_error": "שגיאת שמירה",
-    "test_connection_success": "החיבור נבדק בהצלחה."
+    "test_connection_success": "החיבור נבדק בהצלחה.",
+    "testing": "בודק...",
+    "test_failed": "החיבור נכשל",
+    "connection_failed": "החיבור למקרן נכשל. אנא בדוק את כתובת ה-IP, ודא שהמקרן מופעל ומחובר לרשת, אמת את הסיסמה (אם נדרשת), וודא שאין חומת אש שחוסמת את הפורט."
   },
   "notifications": {
     "projector_on": "המקרן הופעל",
@@ -487,7 +502,10 @@
     "error_ip_required": "כתובת IP נדרשת",
     "error_ip_invalid": "פורמט כתובת IP לא תקין (השתמש ב-xxx.xxx.xxx.xxx)",
     "error_port_invalid": "הפורט חייב להיות בין 1 ל-65535",
-    "error_username_too_long": "שם המשתמש חייב להיות 64 תווים או פחות"
+    "error_username_too_long": "שם המשתמש חייב להיות 64 תווים או פחות",
+    "suggested_ports": "פורטים מוצעים",
+    "or_label": "או",
+    "port_custom": "מותאם אישית..."
   },
   "diagnostics": {
     "title": "אבחון חיבור",

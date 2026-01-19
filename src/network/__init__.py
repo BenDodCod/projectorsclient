@@ -1,10 +1,10 @@
 """
-PJLink network communication.
+Network communication layer for projector control.
 
-Handles projector communication via PJLink protocol with retry logic,
-connection pooling, circuit breaker pattern, and connection resilience.
+This package provides protocol implementations and network infrastructure
+for communicating with projectors over TCP/IP.
 
-Exports:
+Infrastructure:
     Connection Pool:
         - ConnectionPool: Thread-safe connection pool
         - PoolConfig: Pool configuration
@@ -28,15 +28,43 @@ Exports:
         - get_circuit_breaker_registry: Get global registry
         - get_circuit_breaker: Get/create breaker by name
 
-    PJLink Protocol:
-        - PJLinkCommand: Command representation
-        - PJLinkResponse: Response representation
-        - PJLinkError: Error codes
-        - PJLinkCommands: Command factory
-        - PowerState: Power states
-        - InputSource: Input sources
-        - AuthChallenge: Authentication challenge
-        - calculate_auth_hash: Auth hash calculation
+Protocol Abstraction (Multi-Brand Support):
+    Base Protocol:
+        - ProjectorProtocol: Abstract base class for all protocols
+        - ProtocolType: Enum of supported protocol types
+        - ProtocolCapabilities: Protocol feature flags
+        - ProtocolCommand: Generic command container
+        - ProtocolResponse: Generic response container
+        - UnifiedPowerState: Protocol-agnostic power states
+        - UnifiedMuteState: Protocol-agnostic mute states
+        - UnifiedInputType: Protocol-agnostic input types
+        - InputSourceInfo: Input source information
+        - ProjectorStatus: Comprehensive projector status
+
+    Protocol Factory:
+        - ProtocolFactory: Factory for creating protocol instances
+        - ProtocolRegistry: Registry of available protocols
+        - register_protocol: Decorator for auto-registration
+
+    Protocol Implementations:
+        - PJLinkProtocol: PJLink Class 1 & 2 protocol
+
+Legacy PJLink Exports (Backward Compatibility):
+    - PJLinkCommand: Command representation
+    - PJLinkResponse: Response representation
+    - PJLinkError: Error codes
+    - PJLinkCommands: Command factory
+    - PowerState: Power states
+    - InputSource: Input sources
+    - InputType: Input types
+    - AuthChallenge: Authentication challenge
+    - calculate_auth_hash: Auth hash calculation
+    - parse_lamp_data: Lamp data parser
+    - parse_error_status: Error status parser
+    - parse_input_list: Input list parser
+    - resolve_input_name: Input name resolver
+    - validate_command: Command validator
+    - validate_input_code: Input code validator
 """
 
 # Connection Pool exports
@@ -67,8 +95,33 @@ from src.network.circuit_breaker import (
     get_circuit_breaker_registry,
 )
 
-# PJLink Protocol exports
-from src.network.pjlink_protocol import (
+# Base Protocol exports (Multi-Brand Support)
+from src.network.base_protocol import (
+    InputSourceInfo,
+    ProjectorProtocol,
+    ProjectorStatus,
+    ProtocolCapabilities,
+    ProtocolCommand,
+    ProtocolResponse,
+    ProtocolType,
+    UnifiedInputType,
+    UnifiedMuteState,
+    UnifiedPowerState,
+)
+
+# Protocol Factory exports
+from src.network.protocol_factory import (
+    ProtocolFactory,
+    ProtocolRegistry,
+    register_protocol,
+)
+
+# Protocol implementations
+from src.network.protocols import PJLinkProtocol
+
+# Legacy PJLink Protocol exports (backward compatibility)
+# These import from the new location but maintain the same API
+from src.network.protocols.pjlink import (
     AuthChallenge,
     InputSource,
     InputType,
@@ -109,7 +162,24 @@ __all__ = [
     "circuit_breaker",
     "get_circuit_breaker",
     "get_circuit_breaker_registry",
-    # PJLink Protocol
+    # Base Protocol (Multi-Brand Support)
+    "InputSourceInfo",
+    "ProjectorProtocol",
+    "ProjectorStatus",
+    "ProtocolCapabilities",
+    "ProtocolCommand",
+    "ProtocolResponse",
+    "ProtocolType",
+    "UnifiedInputType",
+    "UnifiedMuteState",
+    "UnifiedPowerState",
+    # Protocol Factory
+    "ProtocolFactory",
+    "ProtocolRegistry",
+    "register_protocol",
+    # Protocol Implementations
+    "PJLinkProtocol",
+    # Legacy PJLink (backward compatibility)
     "AuthChallenge",
     "InputSource",
     "InputType",

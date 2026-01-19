@@ -1,9 +1,24 @@
 # Enhanced Projector Control Application - Project Roadmap
 
 **Version:** 2.0.0-rc1
-**Last Updated:** 2026-01-17 (Session 11 - Full Documentation Update)
+**Last Updated:** 2026-01-18 (Session 12 - Multi-Brand Protocol Fixes)
 **Status:** PRODUCTION READY - All Features Complete, 94%+ Coverage, 1542 Tests
 **Timeline:** 14+ days ahead of schedule (Ready for Pilot Deployment)
+
+---
+
+## Multi-Brand Projector Support
+
+> **IMPORTANT:** See [docs/planning/MULTI_BRAND_PROJECTOR_SUPPORT_PLAN.md](docs/planning/MULTI_BRAND_PROJECTOR_SUPPORT_PLAN.md) for the complete multi-brand implementation plan, including protocol specifications, implementation status, and testing requirements.
+
+**Status:** Phase 1-5 COMPLETED (2026-01-18)
+- Protocol abstraction layer with factory pattern
+- Hitachi native protocol (TCP ports 23/9715/4352)
+- Database migration v002→v003 with `protocol_settings` field
+- Controller factory for multi-protocol support
+- Protocol stubs for Sony, BenQ, NEC, JVC
+
+**Known Issue (Session 12):** Hitachi commands timeout on all ports despite successful TCP connection. Physical projector testing needed to verify command format matches specific model requirements.
 
 ---
 
@@ -728,7 +743,44 @@ Use this index to navigate directly to relevant sections in IMPLEMENTATION_PLAN.
 
 ## Change Log (Recent Sessions)
 
-### 2026-01-17 (Session 11) - LATEST
+### 2026-01-18 (Session 12) - LATEST
+**Work Order:** MULTI-BRAND-PROTOCOL-FIXES
+**Phase:** Multi-Brand Projector Support - Integration Fixes
+**Duration:** Full session
+**Status:** PARTIAL - Hitachi Protocol Commands Timeout
+
+**Work Completed:**
+- Fixed main.py to use ControllerFactory instead of hardcoded ProjectorController
+- Fixed connection_tab.py test connection to use ControllerFactory
+- Added port dropdown to projector_dialog.py with manufacturer-suggested ports
+- Fixed wizard to save projector to projector_config table (was only saving to settings)
+- Added normalize_power_state() helper for different controller return types
+- Reduced timeouts (2-3s) to prevent UI freezing during command failures
+- Added duplicate prevention when saving projector from wizard
+
+**Known Issue - Hitachi Commands Timeout:**
+```
+TCP connection succeeds on all ports (23, 9715, 4352)
+But ALL commands timeout - no response received from projector
+Needs: Physical projector model documentation to verify command format
+```
+
+**Files Modified:**
+- src/main.py (ControllerFactory integration, normalize_power_state helper)
+- src/ui/dialogs/projector_dialog.py (port dropdown, tuple handling)
+- src/ui/dialogs/settings_tabs/connection_tab.py (ControllerFactory)
+- docs/planning/MULTI_BRAND_PROJECTOR_SUPPORT_PLAN.md (blocker documented)
+- ROADMAP.md (multi-brand reference added)
+- IMPLEMENTATION_PLAN.md (multi-brand reference added)
+
+**Next Steps:**
+- Obtain Hitachi projector model documentation
+- Verify binary command format matches specific model
+- Test with packet capture to debug protocol
+
+---
+
+### 2026-01-17 (Session 11)
 **Work Order:** FULL-DOCUMENTATION-UPDATE
 **Phase:** All Phases Complete - Production Ready
 **Duration:** Full session

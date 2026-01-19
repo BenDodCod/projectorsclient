@@ -22,11 +22,13 @@ from dataclasses import dataclass, field
 from enum import Enum
 from typing import Any, Callable, Dict, List, Optional, Tuple, TypeVar
 
+from src.core.controller_factory import ControllerFactory
 from src.core.projector_controller import (
     CommandResult,
     ProjectorController,
     ProjectorInfo,
 )
+from src.network.base_protocol import ProtocolType
 from src.network.circuit_breaker import (
     CircuitBreaker,
     CircuitBreakerConfig,
@@ -151,21 +153,27 @@ class ResilientController:
         config: Optional[ResilientControllerConfig] = None,
         pool: Optional[ConnectionPool] = None,
         circuit_breaker: Optional[CircuitBreaker] = None,
+        protocol_type: ProtocolType = ProtocolType.PJLINK,
+        protocol_settings: Optional[Dict[str, Any]] = None,
     ):
         """Initialize the resilient controller.
 
         Args:
             host: Projector IP address or hostname.
-            port: Projector port (default 4352).
-            password: Optional PJLink password.
+            port: Projector port (default 4352 for PJLink, varies by protocol).
+            password: Optional password.
             config: Controller configuration.
             pool: Optional external connection pool.
             circuit_breaker: Optional external circuit breaker.
+            protocol_type: Protocol type (PJLink, Hitachi, etc.).
+            protocol_settings: Protocol-specific settings dict.
         """
         self._host = host
         self._port = port
         self._password = password
         self._config = config or ResilientControllerConfig()
+        self._protocol_type = protocol_type
+        self._protocol_settings = protocol_settings or {}
 
         # Connection pool
         if pool is not None:
@@ -202,16 +210,21 @@ class ResilientController:
     def _get_controller(self) -> ProjectorController:
         """Get or create the underlying controller.
 
+        Uses ControllerFactory to create the appropriate controller type
+        based on the configured protocol_type.
+
         Returns:
-            ProjectorController instance.
+            Controller instance (ProjectorController or protocol-specific).
         """
         with self._lock:
             if self._controller is None:
-                self._controller = ProjectorController(
+                self._controller = ControllerFactory.create(
+                    protocol_type=self._protocol_type,
                     host=self._host,
                     port=self._port,
                     password=self._password,
                     timeout=self._config.operation_timeout,
+                    **self._protocol_settings,
                 )
             return self._controller
 

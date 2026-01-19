@@ -1,10 +1,26 @@
 # Enhanced Projector Control Application - Implementation Plan
 
+---
+
+## Multi-Brand Projector Support Reference
+
+> **For multi-brand projector implementation details, see:** [docs/planning/MULTI_BRAND_PROJECTOR_SUPPORT_PLAN.md](docs/planning/MULTI_BRAND_PROJECTOR_SUPPORT_PLAN.md)
+>
+> This plan covers:
+> - Protocol abstraction layer architecture
+> - Hitachi native protocol implementation (ports 23/9715/4352, MD5 auth, BE EF framing)
+> - Controller factory pattern for multi-protocol support
+> - Database schema v003 with `protocol_settings` field
+> - Protocol stubs for Sony (ADCP), BenQ, NEC, JVC
+> - Testing strategy and verification plan
+
+---
+
 ## Project Overview
 
 **Goal:** Create a robust, modern Python-based projector control application that replaces the existing simple Tkinter app with a professional PyQt6 interface, supporting multiple projector brands, dual operation modes (standalone/SQL), multi-language support, and customizable features.
 
-**Implementation Status (2026-01-17):** PRODUCTION READY - Release Candidate v2.0.0-rc1
+**Implementation Status (2026-01-18):** PRODUCTION READY - Release Candidate v2.0.0-rc1
 - **Codebase:** 51 source files (21,319 LOC), 71 test files (31,290 LOC), 151 classes
 - **Tests:** 1,542 passing (94%+ coverage, target 85% exceeded)
 - **Performance:** Startup 0.9s (<2s), Commands 18ms (<5s), Memory 134MB (<150MB)

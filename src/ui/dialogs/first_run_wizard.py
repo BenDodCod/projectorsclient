@@ -917,7 +917,97 @@ class ProjectorSelectionPage(QWizardPage):
 
 
 class ProjectorConfigPage(QWizardPage):
-    """Projector configuration page with i18n support."""
+    """Projector configuration page with multi-brand support and i18n."""
+
+    # Protocol configuration - brands and their settings with manufacturer-documented ports
+    PROTOCOL_CONFIGS = {
+        "pjlink": {
+            "display_name": "PJLink (Epson, Panasonic, NEC, etc.)",
+            "default_port": 4352,
+            "ports": [
+                (4352, "PJLink Standard"),
+            ],
+            "enabled": True,
+            "description": "Standard protocol - works with most projector brands",
+            "supports_class": True,  # Has PJLink Class 1/2 option
+        },
+        "hitachi": {
+            "display_name": "Hitachi (Native Protocol)",
+            "default_port": 23,
+            "ports": [
+                (23, "Port 23 (Primary/Legacy)"),
+                (9715, "Port 9715 (Enhanced)"),
+                (4352, "Port 4352 (PJLink)"),
+            ],
+            "enabled": True,
+            "description": "Hitachi native protocol - Port 23 (legacy) or 9715 (enhanced)",
+            "supports_class": False,
+        },
+        "sony": {
+            "display_name": "Sony ADCP",
+            "default_port": 53595,
+            "ports": [
+                (53595, "Port 53595 (ADCP)"),
+            ],
+            "enabled": False,
+            "description": "Sony ADCP protocol (coming soon)",
+            "supports_class": False,
+        },
+        "benq": {
+            "display_name": "BenQ",
+            "default_port": 4352,
+            "ports": [
+                (4352, "Port 4352 (PJLink)"),
+                (8000, "Port 8000 (RS232 via LAN)"),
+            ],
+            "enabled": False,
+            "description": "BenQ protocol - PJLink or RS232 bridge (coming soon)",
+            "supports_class": False,
+        },
+        "nec": {
+            "display_name": "NEC (Native)",
+            "default_port": 7142,
+            "ports": [
+                (7142, "Port 7142 (Native)"),
+                (4352, "Port 4352 (PJLink)"),
+            ],
+            "enabled": False,
+            "description": "NEC binary protocol (coming soon)",
+            "supports_class": False,
+        },
+        "jvc": {
+            "display_name": "JVC D-ILA",
+            "default_port": 20554,
+            "ports": [
+                (20554, "Port 20554 (Native)"),
+            ],
+            "enabled": False,
+            "description": "JVC D-ILA protocol (coming soon)",
+            "supports_class": False,
+        },
+        "epson": {
+            "display_name": "Epson (ESC/VP.net)",
+            "default_port": 3629,
+            "ports": [
+                (3629, "Port 3629 (ESC/VP.net)"),
+                (4352, "Port 4352 (PJLink)"),
+            ],
+            "enabled": False,
+            "description": "Epson ESC/VP.net protocol (coming soon)",
+            "supports_class": False,
+        },
+        "panasonic": {
+            "display_name": "Panasonic (Native)",
+            "default_port": 1024,
+            "ports": [
+                (1024, "Port 1024 (Serial Command)"),
+                (4352, "Port 4352 (PJLink)"),
+            ],
+            "enabled": False,
+            "description": "Panasonic native protocol (coming soon)",
+            "supports_class": False,
+        },
+    }
 
     def __init__(self, parent: Optional[QWizard] = None):
         super().__init__(parent)
@@ -936,6 +1026,29 @@ class ProjectorConfigPage(QWizardPage):
         self.form_group = QGroupBox()
         form_layout = QFormLayout(self.form_group)
 
+        # Projector Brand/Protocol selection (NEW - prominent at top)
+        self.brand_label = QLabel()
+        self.brand_combo = QComboBox()
+        self._setup_brand_combo()
+        self.brand_combo.setAccessibleName("Projector brand/protocol")
+        self.brand_combo.setAccessibleDescription("Select your projector brand or protocol type")
+        self.brand_combo.currentIndexChanged.connect(self._on_brand_changed)
+        form_layout.addRow(self.brand_label, self.brand_combo)
+
+        # Protocol description label (shows helpful info about selected protocol)
+        self.protocol_desc_label = QLabel()
+        self.protocol_desc_label.setWordWrap(True)
+        self.protocol_desc_label.setStyleSheet("color: gray; font-style: italic;")
+        form_layout.addRow("", self.protocol_desc_label)
+
+        # PJLink Class selector (only shown for PJLink)
+        self.pjlink_class_label = QLabel()
+        self.pjlink_class_combo = QComboBox()
+        self.pjlink_class_combo.addItems(["Class 1 (Basic)", "Class 2 (Extended)"])
+        self.pjlink_class_combo.setAccessibleName("PJLink class version")
+        self.pjlink_class_combo.setAccessibleDescription("Select PJLink Class 1 or Class 2 based on your projector")
+        form_layout.addRow(self.pjlink_class_label, self.pjlink_class_combo)
+
         self.name_edit = QLineEdit()
         self.name_edit.setPlaceholderText("e.g., Room 204 Projector")
         self.name_edit.setAccessibleName("Projector name")
@@ -951,20 +1064,37 @@ class ProjectorConfigPage(QWizardPage):
         self.ip_label = QLabel()
         form_layout.addRow(self.ip_label, self.ip_edit)
 
+        # Port selection - dropdown for suggested ports + spinbox for manual entry
+        self.port_label = QLabel()
+        port_widget = QFrame()
+        port_layout = QHBoxLayout(port_widget)
+        port_layout.setContentsMargins(0, 0, 0, 0)
+        port_layout.setSpacing(8)
+
+        # Dropdown for manufacturer-suggested ports
+        self.port_combo = QComboBox()
+        self.port_combo.setMinimumWidth(180)
+        self.port_combo.setAccessibleName("Suggested ports")
+        self.port_combo.setAccessibleDescription("Select from manufacturer-recommended ports")
+        self.port_combo.currentIndexChanged.connect(self._on_port_combo_changed)
+        port_layout.addWidget(self.port_combo)
+
+        # "or" label
+        or_label = QLabel(t('wizard.or_label', 'or'))
+        or_label.setStyleSheet("color: gray;")
+        port_layout.addWidget(or_label)
+
+        # Manual port entry spinbox
         self.port_spin = QSpinBox()
         self.port_spin.setRange(1, 65535)
         self.port_spin.setValue(4352)  # Default PJLink port
-        self.port_spin.setAccessibleName("Projector port number")
-        self.port_spin.setAccessibleDescription("Enter the port number, default is 4352 for PJLink")
-        self.port_label = QLabel()
-        form_layout.addRow(self.port_label, self.port_spin)
+        self.port_spin.setAccessibleName("Custom port number")
+        self.port_spin.setAccessibleDescription("Enter a custom port number manually")
+        self.port_spin.valueChanged.connect(self._on_port_spin_changed)
+        port_layout.addWidget(self.port_spin)
 
-        self.type_combo = QComboBox()
-        self.type_combo.addItems(["PJLink Class 1", "PJLink Class 2"])
-        self.type_combo.setAccessibleName("Projector protocol")
-        self.type_combo.setAccessibleDescription("Select PJLink Class 1 or Class 2 based on your projector model")
-        self.protocol_label = QLabel()
-        form_layout.addRow(self.protocol_label, self.type_combo)
+        port_layout.addStretch()
+        form_layout.addRow(self.port_label, port_widget)
 
         self.auth_user_edit = QLineEdit()
         self.auth_user_edit.setPlaceholderText("Projector username (if required)")
@@ -1009,15 +1139,114 @@ class ProjectorConfigPage(QWizardPage):
         self.registerField("projector_name", self.name_edit)
         self.registerField("projector_ip*", self.ip_edit)
         self.registerField("projector_port", self.port_spin)
-        self.registerField("projector_type", self.type_combo)
+        self.registerField("projector_type", self.brand_combo, "currentData")
         self.registerField("projector_username", self.auth_user_edit)
         self.registerField("projector_auth", self.auth_pass_edit)
         self.registerField("projector_location", self.location_edit)
 
+        # Initialize protocol description and PJLink class visibility
+        self._on_brand_changed()
         self.retranslate()
 
+    def _setup_brand_combo(self) -> None:
+        """Populate the brand/protocol combo box with available protocols."""
+        self.brand_combo.clear()
+        for protocol_id, config in self.PROTOCOL_CONFIGS.items():
+            display_name = config["display_name"]
+            if not config["enabled"]:
+                display_name += " (Coming Soon)"
+            self.brand_combo.addItem(display_name, protocol_id)
+            # Disable items that are not yet implemented
+            if not config["enabled"]:
+                index = self.brand_combo.count() - 1
+                model = self.brand_combo.model()
+                item = model.item(index)
+                item.setEnabled(False)
+
+    def _on_brand_changed(self) -> None:
+        """Handle brand/protocol selection change."""
+        protocol_id = self.brand_combo.currentData()
+        if not protocol_id:
+            return
+
+        config = self.PROTOCOL_CONFIGS.get(protocol_id, {})
+
+        # Update port combo with available ports for this protocol
+        self._updating_ports = True  # Flag to prevent recursive updates
+        self.port_combo.clear()
+        ports = config.get("ports", [(4352, "Default")])
+        for port_num, port_desc in ports:
+            self.port_combo.addItem(port_desc, port_num)
+
+        # Add "Custom..." option at the end
+        self.port_combo.addItem(t('wizard.port_custom', 'Custom...'), -1)
+
+        # Set default port
+        default_port = config.get("default_port", 4352)
+        self.port_spin.setValue(default_port)
+
+        # Select the default port in combo
+        for i in range(self.port_combo.count()):
+            if self.port_combo.itemData(i) == default_port:
+                self.port_combo.setCurrentIndex(i)
+                break
+        self._updating_ports = False
+
+        # Update description
+        description = config.get("description", "")
+        self.protocol_desc_label.setText(description)
+
+        # Show/hide PJLink class selector
+        supports_class = config.get("supports_class", False)
+        self.pjlink_class_label.setVisible(supports_class)
+        self.pjlink_class_combo.setVisible(supports_class)
+
+    def _on_port_combo_changed(self) -> None:
+        """Handle port dropdown selection change."""
+        if getattr(self, '_updating_ports', False):
+            return
+
+        port_value = self.port_combo.currentData()
+        if port_value is None:
+            return
+
+        if port_value == -1:
+            # "Custom..." selected - focus on spinbox for manual entry
+            self.port_spin.setFocus()
+            self.port_spin.selectAll()
+        else:
+            # Update spinbox to match selected port
+            self._updating_ports = True
+            self.port_spin.setValue(port_value)
+            self._updating_ports = False
+
+    def _on_port_spin_changed(self) -> None:
+        """Handle manual port entry change - update combo if it matches a suggested port."""
+        if getattr(self, '_updating_ports', False):
+            return
+
+        port_value = self.port_spin.value()
+        self._updating_ports = True
+
+        # Check if this port matches any suggested port
+        found = False
+        for i in range(self.port_combo.count()):
+            if self.port_combo.itemData(i) == port_value:
+                self.port_combo.setCurrentIndex(i)
+                found = True
+                break
+
+        # If not found, select "Custom..."
+        if not found:
+            for i in range(self.port_combo.count()):
+                if self.port_combo.itemData(i) == -1:
+                    self.port_combo.setCurrentIndex(i)
+                    break
+
+        self._updating_ports = False
+
     def _test_projector(self) -> None:
-        """Test the projector connection using PJLink with full authentication."""
+        """Test the projector connection using the selected protocol."""
         ip = self.ip_edit.text().strip()
         if not ip:
             self.proj_status_label.setText(t('wizard.projector_enter_ip', "Please enter an IP address first."))
@@ -1026,6 +1255,7 @@ class ProjectorConfigPage(QWizardPage):
 
         port = self.port_spin.value()
         password = self.auth_pass_edit.text()
+        protocol_type = self.brand_combo.currentData() or "pjlink"
 
         # Show testing message
         self.test_proj_btn.setEnabled(False)
@@ -1036,30 +1266,30 @@ class ProjectorConfigPage(QWizardPage):
         QApplication.processEvents()
 
         try:
-            from src.core.projector_controller import ProjectorController
-            from src.network.pjlink_protocol import PowerState
-            
-            # Create controller with all connection parameters
-            controller = ProjectorController(
+            from src.core.controller_factory import ControllerFactory
+
+            # Create controller using factory for multi-protocol support
+            controller = ControllerFactory.create(
+                protocol_type=protocol_type,
                 host=ip,
                 port=port,
                 password=password if password else None,
                 timeout=5.0
             )
-            
-            # Attempt full PJLink connection with authentication
+
+            # Attempt connection with authentication
             if controller.connect():
                 # Connection successful - try to query power state to verify full communication
                 power_state = controller.get_power_state()
                 last_error = getattr(controller, '_last_error', '')
-                
+
                 # Check if auth failed during the command
-                if 'auth' in last_error.lower() or 'password' in last_error.lower():
+                if last_error and ('auth' in last_error.lower() or 'password' in last_error.lower()):
                     self.proj_status_label.setText(
                         t('wizard.auth_failed', 'Authentication failed') + f" - {last_error}"
                     )
                     self.proj_status_label.setStyleSheet("color: red;")
-                elif power_state == PowerState.UNKNOWN and last_error:
+                elif power_state is None and last_error:
                     # Command failed for some reason
                     self.proj_status_label.setText(
                         t('wizard.connection_failed', 'Connection failed') + f" - {last_error}"
@@ -1071,7 +1301,7 @@ class ProjectorConfigPage(QWizardPage):
                         t('wizard.connection_success', 'Connection successful!')
                     )
                     self.proj_status_label.setStyleSheet("color: green;")
-                
+
                 controller.disconnect()
             else:
                 # Connection failed - show the specific error
@@ -1085,7 +1315,7 @@ class ProjectorConfigPage(QWizardPage):
                         t('wizard.connection_failed', 'Connection failed') + f" - {error_msg}"
                     )
                 self.proj_status_label.setStyleSheet("color: red;")
-                
+
         except Exception as e:
             self.proj_status_label.setText(
                 t('wizard.connection_failed', 'Connection failed') + f" ({e})"
@@ -1103,14 +1333,18 @@ class ProjectorConfigPage(QWizardPage):
         self.setTitle(t('wizard.projector_title', 'Projector Configuration'))
         self.setSubTitle(t('wizard.projector_subtitle', 'Configure your projector connection settings.'))
         self.form_group.setTitle(t('wizard.projector_settings', 'Projector Settings'))
+        self.brand_label.setText(f"{t('wizard.projector_brand_label', 'Brand/Protocol')}:")
+        self.pjlink_class_label.setText(f"{t('wizard.projector_pjlink_class_label', 'PJLink Class')}:")
         self.name_label.setText(f"{t('wizard.projector_name_label', 'Name')}:")
         self.ip_label.setText(f"{t('wizard.projector_ip_label', 'IP Address')}:")
         self.port_label.setText(f"{t('wizard.projector_port_label', 'Port')}:")
-        self.protocol_label.setText(f"{t('wizard.projector_protocol_label', 'Protocol')}:")
         self.auth_user_label.setText(f"{t('wizard.projector_username_label', 'Username')}:")
         self.auth_pass_label.setText(f"{t('wizard.projector_auth_label', 'Password')}:")
         self.location_label.setText(f"{t('wizard.projector_location_label', 'Location')}:")
         self.test_proj_btn.setText(t('wizard.projector_test', 'Test Projector Connection'))
+
+        # Update protocol description for current selection
+        self._on_brand_changed()
 
 
 class UICustomizationPage(QWizardPage):

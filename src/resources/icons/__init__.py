@@ -143,6 +143,7 @@ class IconLibrary:
         'light_mode': 'light_mode.svg',
         'dark_mode': 'dark_mode.svg',
         'check': 'check.svg',
+        'check_circle': 'check_circle.svg',
         'arrow_down': 'arrow_down.svg',
         'arrow_up': 'arrow_up.svg',
         'arrow_left': 'arrow_left.svg',

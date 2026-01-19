@@ -402,12 +402,14 @@ class ConnectionTab(BaseSettingsTab):
         projector_name = self._projector_table.item(row, 0).text()
         projector_ip = self._projector_table.item(row, 1).text()
         projector_port_str = self._projector_table.item(row, 2).text()
+        projector_type = self._projector_table.item(row, 3).text() or "pjlink"
 
-        # Parse port with fallback to default
+        # Parse port with fallback to default based on protocol type
+        from src.core.controller_factory import ControllerFactory
         try:
             projector_port = int(projector_port_str)
         except (ValueError, TypeError):
-            projector_port = 4352  # Default PJLink port
+            projector_port = ControllerFactory.get_default_port(projector_type)
 
         # Get projector password from database (if exists)
         projector_password = None
@@ -442,10 +444,9 @@ class ConnectionTab(BaseSettingsTab):
         self._test_projector_btn.setText(t("settings.testing", "Testing..."))
 
         try:
-            # Create controller and test connection
-            from src.core.projector_controller import ProjectorController
-
-            controller = ProjectorController(
+            # Create controller and test connection using factory for multi-protocol support
+            controller = ControllerFactory.create(
+                protocol_type=projector_type,
                 host=projector_ip,
                 port=projector_port,
                 password=projector_password,

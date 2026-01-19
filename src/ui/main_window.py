@@ -504,6 +504,8 @@ class MainWindow(QMainWindow):
 
         # Minimize to tray instead of closing (unless quitting)
         if hasattr(self, '_is_quitting') and self._is_quitting:
+            # Clean up workers before accepting close
+            self._cleanup_background_workers()
             event.accept()
         elif hasattr(self, 'tray_icon') and self.tray_icon.isVisible():
             event.ignore()
@@ -514,6 +516,8 @@ class MainWindow(QMainWindow):
                 'info'
             )
         else:
+            # Actually closing without tray - clean up workers
+            self._cleanup_background_workers()
             event.accept()
 
     def quit_application(self) -> None:
@@ -533,12 +537,59 @@ class MainWindow(QMainWindow):
         # Mark that we're quitting to bypass minimize-to-tray
         self._is_quitting = True
 
+        # Stop status polling timer if running
+        if hasattr(self, '_status_timer') and self._status_timer is not None:
+            self._status_timer.stop()
+            self._status_timer = None
+
+        # Stop and wait for background workers to finish
+        self._cleanup_background_workers()
+
         # Hide tray icon
         if hasattr(self, 'tray_icon'):
             self.tray_icon.hide()
 
         # Quit the application
         QApplication.quit()
+
+    def _cleanup_background_workers(self) -> None:
+        """Stop all background workers gracefully."""
+        # Stop status worker
+        if hasattr(self, '_status_worker') and self._status_worker is not None:
+            try:
+                if self._status_worker.isRunning():
+                    self._status_worker.quit()
+                    self._status_worker.wait(1000)  # Wait up to 1 second
+                    if self._status_worker.isRunning():
+                        self._status_worker.terminate()
+            except RuntimeError:
+                pass  # Worker already deleted
+            self._status_worker = None
+
+        # Stop input query worker
+        if hasattr(self, '_input_query_worker') and self._input_query_worker is not None:
+            try:
+                if self._input_query_worker.isRunning():
+                    self._input_query_worker.quit()
+                    self._input_query_worker.wait(1000)
+                    if self._input_query_worker.isRunning():
+                        self._input_query_worker.terminate()
+            except RuntimeError:
+                pass
+            self._input_query_worker = None
+
+        # Stop command workers
+        if hasattr(self, '_command_workers'):
+            for worker in list(self._command_workers):
+                try:
+                    if worker.isRunning():
+                        worker.quit()
+                        worker.wait(1000)
+                        if worker.isRunning():
+                            worker.terminate()
+                except RuntimeError:
+                    pass
+            self._command_workers = []
 
     def open_settings(self) -> None:
         """

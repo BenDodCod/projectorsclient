@@ -61,8 +61,11 @@
     "projector_name_label": "Projector Name",
     "projector_ip_label": "IP Address",
     "projector_port_label": "Port",
+    "projector_port_custom": "Custom...",
+    "port_custom": "Custom...",
     "projector_brand_label": "Brand",
     "projector_model_label": "Model",
+    "projector_pjlink_class_label": "PJLink Class",
     "projector_test": "Test Connection",
     "projector_no_projectors": "No projectors configured. Click 'Add Projector' to begin.",
     "ui_title": "User Interface Preferences",
@@ -129,7 +132,15 @@
     "ui_info": "Information",
     "ui_lamp_hours": "Lamp Hours Display",
     "ui_status_panel": "Status Panel",
-    "complete_subtitle": "Your configuration has been saved successfully."
+    "complete_subtitle": "Your configuration has been saved successfully.",
+    "select_proj_title": "Select Projector",
+    "select_proj_subtitle": "Choose your projector from the list.",
+    "select_proj_info": "The following projectors were found in the database. Select the one corresponding to this computer/location.",
+    "proj_name": "Name",
+    "proj_ip": "IP Address",
+    "proj_location": "Location",
+    "refresh_list": "Refresh List",
+    "or_label": "or"
   },
   "buttons": {
     "next": "Next",
@@ -162,7 +173,8 @@
     "hdmi": "HDMI",
     "vga": "VGA",
     "mute": "Mute",
-    "unmute": "Unmute"
+    "unmute": "Unmute",
+    "toggle_theme": "Toggle Light/Dark Theme"
   },
   "tooltips": {
     "power_on": "Turn projector on (Ctrl+P)",
@@ -440,7 +452,10 @@
     "validation_error": "Validation Error",
     "fix_errors": "Please fix the following errors:",
     "save_error": "Save Error",
-    "test_connection_success": "Connection tested successfully."
+    "test_connection_success": "Connection tested successfully.",
+    "testing": "Testing...",
+    "test_failed": "Connection Failed",
+    "connection_failed": "Failed to connect to projector. Please check the IP address, ensure the projector is powered on and connected to the network, verify the password (if required), and confirm no firewall is blocking the port."
   },
   "notifications": {
     "projector_on": "Projector turned on",
@@ -494,7 +509,10 @@
     "error_ip_required": "IP address is required",
     "error_ip_invalid": "Invalid IP address format (use xxx.xxx.xxx.xxx)",
     "error_port_invalid": "Port must be between 1 and 65535",
-    "error_username_too_long": "Username must be 64 characters or less"
+    "error_username_too_long": "Username must be 64 characters or less",
+    "suggested_ports": "Suggested ports",
+    "or_label": "or",
+    "port_custom": "Custom..."
   },
   "diagnostics": {
     "title": "Connection Diagnostics",
