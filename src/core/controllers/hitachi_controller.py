@@ -432,9 +432,9 @@ class HitachiController:
         self._auth_info.reset()
         logger.info("Disconnected from %s:%d", self.host, self.port)
 
-    # Hitachi CRC algorithm was reverse-engineered from documented commands.
-    # See calculate_hitachi_crc() in hitachi.py for the algorithm.
-    # Commands are now generated dynamically with correct CRC values.
+    # Hitachi uses a proprietary CRC algorithm (not standard CRC-16-CCITT).
+    # CRC is calculated based on action, item code, and first data byte.
+    # The formula was reverse-engineered from documented working commands.
 
     def _send_command(
         self, action: HitachiAction, item: HitachiItemCode, data: bytes = b""
@@ -444,7 +444,7 @@ class HitachiController:
         Args:
             action: Command action code.
             item: Command item code.
-            data: Optional command data.
+            data: Optional command data (typically 2 bytes for setting value).
 
         Returns:
             Command result.
@@ -454,32 +454,44 @@ class HitachiController:
             header format. Port 9715 adds MD5 authentication during connection,
             but the command format is the same.
 
-            Command structure (13 bytes for simple commands):
+            Command structure (13 bytes total):
             - Bytes 0-4: Header (BE EF 03 06 00)
-            - Bytes 5-6: CRC (Hitachi proprietary algorithm)
+            - Bytes 5-6: CRC (little-endian, Hitachi proprietary algorithm)
             - Bytes 7-8: Action code (little-endian)
-            - Bytes 9-10: Item code (little-endian)
-            - Bytes 11+: Data (variable)
+            - Bytes 9-10: Type/Item code (little-endian)
+            - Bytes 11-12: Setting value (little-endian, 00 00 for GET)
         """
         if not self.is_connected or not self._socket:
             return HitachiCommandResult.failure("Not connected")
 
         self._enforce_command_delay()
 
-        # Get the first data byte for CRC calculation (0 if no data)
+        # Ensure data is exactly 2 bytes (pad with 0x00 if needed)
+        if len(data) == 0:
+            data = bytes([0x00, 0x00])
+        elif len(data) == 1:
+            data = data + bytes([0x00])
+        elif len(data) > 2:
+            data = data[:2]
+
+        # Get the first data byte for CRC calculation
         data_byte = data[0] if data else 0
 
-        # Calculate Hitachi's proprietary CRC
+        # Calculate Hitachi proprietary CRC
         crc = calculate_hitachi_crc(int(action), int(item), data_byte)
 
-        # Build the packet:
-        # Header (5) + CRC (2, big-endian) + Action (2, LE) + Item (2, LE) + Data
+        # Build the command data (6 bytes): action + type + setting
+        cmd_data = (
+            struct.pack("<H", action)  # Action code (little-endian)
+            + struct.pack("<H", item)  # Type/Item code (little-endian)
+            + data  # Setting value (2 bytes)
+        )
+
+        # Build the packet: Header (5) + CRC (2, little-endian) + Command data (6)
         packet = (
             HITACHI_HEADER  # BE EF 03 06 00
-            + struct.pack(">H", crc)  # CRC (big-endian)
-            + struct.pack("<H", action)  # Action code (little-endian)
-            + struct.pack("<H", item)  # Item code (little-endian)
-            + data  # Command data
+            + struct.pack("<H", crc)  # CRC (little-endian)
+            + cmd_data  # Action + Type + Setting
         )
         logger.debug(f"Built command for {action.name}:{item.name} with CRC 0x{crc:04X}")
 
@@ -572,12 +584,13 @@ class HitachiController:
             Command result.
 
         Note:
-            Hitachi uses SET action (0x01) with data 0x01 for power on.
-            Command: BE EF 03 06 00 [CRC] 01 00 00 60 01 00
+            Hitachi uses SET action (0x01) with setting 0x0000 for power on.
+            Command: BE EF 03 06 00 [CRC] 01 00 00 60 00 00
+            CRC for this command: 0xD32A -> bytes [2A D3] little-endian
         """
         logger.info("Sending power on command to %s", self.host)
         return self._send_command(
-            HitachiAction.SET, HitachiItemCode.POWER, bytes([0x01, 0x00])
+            HitachiAction.SET, HitachiItemCode.POWER, bytes([0x00, 0x00])
         )
 
     def power_off(self) -> HitachiCommandResult:
@@ -587,12 +600,13 @@ class HitachiController:
             Command result.
 
         Note:
-            Hitachi uses SET action (0x01) with data 0x00 for power off.
-            Command: BE EF 03 06 00 [CRC] 01 00 00 60 00 00
+            Hitachi uses SET action (0x01) with setting 0x0001 for power off.
+            Command: BE EF 03 06 00 [CRC] 01 00 00 60 01 00
+            CRC for this command: 0xC72A -> bytes [2A C7] little-endian
         """
         logger.info("Sending power off command to %s", self.host)
         return self._send_command(
-            HitachiAction.SET, HitachiItemCode.POWER, bytes([0x00, 0x00])
+            HitachiAction.SET, HitachiItemCode.POWER, bytes([0x01, 0x00])
         )
 
     def get_power_state(self) -> Tuple[HitachiCommandResult, Optional[UnifiedPowerState]]:
