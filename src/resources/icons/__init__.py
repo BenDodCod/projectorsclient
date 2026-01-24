@@ -139,6 +139,7 @@ class IconLibrary:
         'sync': 'sync.svg',
         'close': 'close.svg',
         'minimize': 'minimize.svg',
+        'menu': 'menu.svg',
         'maximize': 'maximize.svg',
         'light_mode': 'light_mode.svg',
         'dark_mode': 'dark_mode.svg',

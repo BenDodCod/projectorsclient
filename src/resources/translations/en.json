@@ -176,7 +176,8 @@
     "unmute": "Unmute",
     "toggle_theme": "Toggle Light/Dark Theme",
     "compact_view": "Compact view",
-    "expand_view": "Expand view"
+    "expand_view": "Expand view",
+    "more": "More options"
   },
   "tooltips": {
     "power_on": "Turn projector on (Ctrl+P)",
@@ -210,7 +211,8 @@
     "checking": "Checking...",
     "power_on": "On",
     "power_off": "Off",
-    "compact_warning": "Entering compact mode in 60 seconds..."
+    "compact_warning": "Entering compact mode in 60 seconds...",
+    "heartbeat": "Heartbeat"
   },
   "history": {
     "title": "Recent Operations",
@@ -247,7 +249,8 @@
     "brightness": "Brightness",
     "contrast": "Contrast",
     "aspect_ratio": "Aspect Ratio",
-    "picture_mode": "Picture Mode"
+    "picture_mode": "Picture Mode",
+    "quick_actions": "Quick Actions"
   },
   "errors": {
     "connection_failed": "Failed to connect to projector",
@@ -279,7 +282,9 @@
     "tools_logs": "View Logs",
     "help": "Help",
     "help_documentation": "Documentation",
-    "help_about": "About"
+    "help_about": "About",
+    "language": "Language",
+    "about": "About"
   },
   "settings": {
     "title": "Settings",

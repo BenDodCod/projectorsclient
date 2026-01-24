@@ -172,7 +172,8 @@
     "minimize": "מזער למגש",
     "toggle_theme": "החלף ערכת נושא בהיר/כהה",
     "compact_view": "תצוגה מצומצמת",
-    "expand_view": "הרחב תצוגה"
+    "expand_view": "הרחב תצוגה",
+    "more": "אפשרויות נוספות"
   },
   "tooltips": {
     "power_on": "הפעל מקרן (Ctrl+P)",
@@ -203,7 +204,8 @@
     "checking": "בודק...",
     "power_on": "פועל",
     "power_off": "כבוי",
-    "compact_warning": "עובר לתצוגה מצומצמת בעוד 60 שניות..."
+    "compact_warning": "עובר לתצוגה מצומצמת בעוד 60 שניות...",
+    "heartbeat": "פעימות"
   },
   "history": {
     "title": "פעולות אחרונות",
@@ -240,7 +242,8 @@
     "brightness": "בהירות",
     "contrast": "ניגודיות",
     "aspect_ratio": "יחס גובה-רוחב",
-    "picture_mode": "מצב תמונה"
+    "picture_mode": "מצב תמונה",
+    "quick_actions": "פעולות מהירות"
   },
   "errors": {
     "connection_failed": "כשל בחיבור למקרן",
@@ -272,7 +275,9 @@
     "tools_logs": "הצג יומנים",
     "help": "עזרה",
     "help_documentation": "תיעוד",
-    "help_about": "אודות"
+    "help_about": "אודות",
+    "language": "שפה",
+    "about": "אודות"
   },
   "settings": {
     "title": "הגדרות",

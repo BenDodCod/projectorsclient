@@ -52,7 +52,7 @@ class StatusPanel(QWidget):
     def _init_ui(self) -> None:
         """Initialize the user interface."""
         self.setObjectName("status_panel")
-        self.setFixedHeight(100)
+        self.setFixedHeight(90)
 
         # Main layout
         main_layout = QHBoxLayout(self)
@@ -303,3 +303,158 @@ class StatusPanel(QWidget):
             label_widget = label_item.widget()
             if isinstance(label_widget, QLabel):
                 label_widget.setText(new_text)
+
+    def create_compact_status(self) -> QWidget:
+        """Create compact status display matching mockup - 2 large cards + 3 small icon cards."""
+        compact_widget = QWidget()
+        compact_widget.setObjectName("compact_status")
+        compact_widget.setFixedSize(350, 100)
+
+        layout = QVBoxLayout(compact_widget)
+        layout.setContentsMargins(0, 8, 0, 8)
+        layout.setSpacing(8)
+
+        # Row 1: Large cards - Connection + Power
+        row1 = QHBoxLayout()
+        row1.setSpacing(8)
+
+        # Connection card (large)
+        self.compact_conn_card = self._create_compact_large_card(
+            'status', 'Connection', 'Connected', 'compact_conn_value'
+        )
+        row1.addWidget(self.compact_conn_card)
+
+        # Power card (large)
+        self.compact_power_card = self._create_compact_large_card(
+            'power', 'Power', 'Unknown', 'compact_power_value'
+        )
+        row1.addWidget(self.compact_power_card)
+
+        layout.addLayout(row1)
+
+        # Row 2: Small icon cards - Input + Volume + Lamp (total width 350px)
+        row2 = QHBoxLayout()
+        row2.setSpacing(10)  # Increased to 10px for better distribution
+
+        # Input icon card (small)
+        self.compact_input_card = self._create_compact_icon_card(
+            'input', 'N/A', 'compact_input_value'
+        )
+        row2.addWidget(self.compact_input_card)
+
+        # Volume icon card (small) - placeholder, shows N/A
+        self.compact_volume_card = self._create_compact_icon_card(
+            'volume', 'N/A', 'compact_volume_value'
+        )
+        row2.addWidget(self.compact_volume_card)
+
+        # Lamp icon card (small)
+        self.compact_lamp_card = self._create_compact_icon_card(
+            'lamp', '0 hrs', 'compact_lamp_value'
+        )
+        row2.addWidget(self.compact_lamp_card)
+
+        layout.addLayout(row2)
+
+        return compact_widget
+
+    def _create_compact_large_card(
+        self, icon_name: str, label: str, value: str, value_obj_name: str
+    ) -> QFrame:
+        """Create large status card for compact mode (Connection/Power)."""
+        card = QFrame()
+        card.setObjectName("compact_large_card")
+        card.setFixedSize(171, 40)  # Width 171px to fit 2 cards + 8px spacing in 350px
+
+        layout = QHBoxLayout(card)
+        layout.setContentsMargins(8, 6, 8, 6)
+        layout.setSpacing(6)
+
+        # Icon
+        icon_label = QLabel()
+        icon_label.setPixmap(IconLibrary.get_pixmap(icon_name, QSize(20, 20)))
+        icon_label.setFixedSize(20, 20)
+        layout.addWidget(icon_label)
+
+        # Text column
+        text_layout = QVBoxLayout()
+        text_layout.setSpacing(0)
+
+        # Label (small gray text)
+        label_widget = QLabel(label)
+        label_widget.setStyleSheet("color: #9ca3af; font-size: 8pt; border: none;")
+        text_layout.addWidget(label_widget)
+
+        # Value (larger bold text)
+        value_label = QLabel(value)
+        value_label.setObjectName(value_obj_name)
+        value_label.setStyleSheet("font-size: 11pt; font-weight: bold; border: none;")
+        text_layout.addWidget(value_label)
+
+        layout.addLayout(text_layout)
+        layout.addStretch()
+
+        # Store reference
+        setattr(self, value_obj_name, value_label)
+
+        return card
+
+    def _create_compact_icon_card(
+        self, icon_name: str, value: str, value_obj_name: str
+    ) -> QFrame:
+        """Create small icon card for compact mode (Input/Volume/Lamp)."""
+        card = QFrame()
+        card.setObjectName("compact_small_card")
+        card.setFixedSize(110, 35)  # Width 110px to fit 3 cards + 10px spacing in 350px
+
+        layout = QVBoxLayout(card)
+        layout.setContentsMargins(4, 4, 4, 4)
+        layout.setSpacing(2)
+        layout.setAlignment(Qt.AlignmentFlag.AlignCenter)
+
+        # Icon
+        icon_label = QLabel()
+        icon_label.setPixmap(IconLibrary.get_pixmap(icon_name, QSize(16, 16)))
+        icon_label.setFixedSize(16, 16)
+        icon_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        layout.addWidget(icon_label)
+
+        # Value
+        value_label = QLabel(value)
+        value_label.setObjectName(value_obj_name)
+        value_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        value_label.setStyleSheet("font-size: 8pt; border: none;")
+        layout.addWidget(value_label)
+
+        # Store reference
+        setattr(self, value_obj_name, value_label)
+
+        return card
+
+    def update_compact_status(
+        self,
+        power: str,
+        input_source: str,
+        lamp_hours: int,
+        connected: bool
+    ) -> None:
+        """Update compact status card values."""
+        # Update connection card value
+        if hasattr(self, 'compact_conn_value'):
+            status_text = "Connected" if connected else "Disconnected"
+            color = "#10B981" if connected else "#EF4444"
+            self.compact_conn_value.setText(status_text)
+            self.compact_conn_value.setStyleSheet(f"font-size: 11pt; font-weight: bold; color: {color}; border: none;")
+
+        # Update power card value
+        if hasattr(self, 'compact_power_value'):
+            power_text = self._get_power_text(power)
+            self.compact_power_value.setText(power_text)
+
+        # Update input card value
+        if hasattr(self, 'compact_input_value'):
+            self.compact_input_value.setText(input_source or 'N/A')
+
+        # Update lamp card value
+        if hasattr(self, 'compact_lamp_value'):
+            self.compact_lamp_value.setText(f"{lamp_hours} hrs")
