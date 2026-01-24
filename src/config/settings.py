@@ -134,6 +134,18 @@ DEFAULT_SETTINGS: Dict[str, SettingDefinition] = {
         setting_type=SettingType.BOOLEAN,
         description="Show status bar"
     ),
+    "ui.compact_mode": SettingDefinition(
+        key="ui.compact_mode",
+        default=False,
+        setting_type=SettingType.BOOLEAN,
+        description="Compact mode enabled (minimal UI)"
+    ),
+    "ui.auto_compact_timer": SettingDefinition(
+        key="ui.auto_compact_timer",
+        default=0,
+        setting_type=SettingType.INTEGER,
+        description="Auto-compact timer in minutes (0 = disabled)"
+    ),
 
     # Network settings
     "network.timeout": SettingDefinition(

@@ -174,7 +174,9 @@
     "vga": "VGA",
     "mute": "Mute",
     "unmute": "Unmute",
-    "toggle_theme": "Toggle Light/Dark Theme"
+    "toggle_theme": "Toggle Light/Dark Theme",
+    "compact_view": "Compact view",
+    "expand_view": "Expand view"
   },
   "tooltips": {
     "power_on": "Turn projector on (Ctrl+P)",
@@ -207,7 +209,8 @@
     "warning": "Warning",
     "checking": "Checking...",
     "power_on": "On",
-    "power_off": "Off"
+    "power_off": "Off",
+    "compact_warning": "Entering compact mode in 60 seconds..."
   },
   "history": {
     "title": "Recent Operations",
@@ -326,6 +329,13 @@
     "theme_dark": "Dark",
     "theme_section": "Theme",
     "theme_tooltip": "Select UI theme",
+    "compact_section": "Compact Mode",
+    "auto_compact_timer": "Auto-compact timer:",
+    "compact_disabled": "Disabled",
+    "compact_3min": "3 minutes",
+    "compact_5min": "5 minutes",
+    "compact_10min": "10 minutes",
+    "compact_timer_desc": "Automatically minimize to compact view after inactivity (power actions reset timer)",
     "operation_mode": "Operation Mode",
     "current_mode": "Current mode:",
     "mode_note": "Operation mode is set during initial setup and cannot be changed here.",

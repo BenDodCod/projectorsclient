@@ -117,6 +117,28 @@ class GeneralTab(BaseSettingsTab):
         theme_layout.addRow(self._theme_label, self._theme_combo)
         layout.addWidget(self._theme_group)
 
+        # Compact mode group
+        self._compact_group = QGroupBox()
+        compact_layout = QFormLayout(self._compact_group)
+        compact_layout.setSpacing(10)
+
+        self._auto_compact_combo = QComboBox()
+        self._auto_compact_combo.addItem(t("settings.compact_disabled", "Disabled"), 0)
+        self._auto_compact_combo.addItem(t("settings.compact_3min", "3 minutes"), 3)
+        self._auto_compact_combo.addItem(t("settings.compact_5min", "5 minutes"), 5)
+        self._auto_compact_combo.addItem(t("settings.compact_10min", "10 minutes"), 10)
+        self._auto_compact_combo.setAccessibleName(t("settings.auto_compact_timer", "Auto-compact timer"))
+        self._auto_compact_label = QLabel()
+        compact_layout.addRow(self._auto_compact_label, self._auto_compact_combo)
+
+        # Description for auto-compact
+        self._compact_desc = QLabel()
+        self._compact_desc.setStyleSheet("color: #666666; font-size: 9pt;")
+        self._compact_desc.setWordWrap(True)
+        compact_layout.addRow("", self._compact_desc)
+
+        layout.addWidget(self._compact_group)
+
         # Status refresh group
         self._refresh_group = QGroupBox()
         refresh_layout = QFormLayout(self._refresh_group)
@@ -147,13 +169,11 @@ class GeneralTab(BaseSettingsTab):
         self._language_combo.currentIndexChanged.connect(self.mark_dirty)
         self._start_with_windows_cb.stateChanged.connect(self.mark_dirty)
         self._minimize_to_tray_cb.stateChanged.connect(self.mark_dirty)
-        self._language_combo.currentIndexChanged.connect(self.mark_dirty)
-        self._start_with_windows_cb.stateChanged.connect(self.mark_dirty)
-        self._minimize_to_tray_cb.stateChanged.connect(self.mark_dirty)
         self._show_tray_notifications_cb.stateChanged.connect(self.mark_dirty)
         self._show_confirmations_cb.stateChanged.connect(self.mark_dirty)
         self._status_interval_spin.valueChanged.connect(self.mark_dirty)
         self._theme_combo.currentIndexChanged.connect(self.mark_dirty)
+        self._auto_compact_combo.currentIndexChanged.connect(self.mark_dirty)
 
     def collect_settings(self) -> Dict[str, Any]:
         """Collect current settings from widgets."""
@@ -165,6 +185,7 @@ class GeneralTab(BaseSettingsTab):
             "app.show_confirmations": self._show_confirmations_cb.isChecked(),
             "network.status_interval": self._status_interval_spin.value(),
             "ui.theme": self._theme_combo.currentData(),
+            "ui.auto_compact_timer": self._auto_compact_combo.currentData(),
         }
 
     def apply_settings(self, settings: Dict[str, Any]) -> None:
@@ -203,6 +224,12 @@ class GeneralTab(BaseSettingsTab):
             self._theme_combo.setCurrentIndex(index)
         IconLibrary.set_theme(theme)
 
+        # Auto-compact timer
+        auto_compact_minutes = settings.get("ui.auto_compact_timer", 0)
+        index = self._auto_compact_combo.findData(auto_compact_minutes)
+        if index >= 0:
+            self._auto_compact_combo.setCurrentIndex(index)
+
     def validate(self) -> Tuple[bool, List[str]]:
         """Validate settings - General tab has no validation errors."""
         return (True, [])
@@ -215,10 +242,12 @@ class GeneralTab(BaseSettingsTab):
         self._notifications_group.setTitle(t("settings.notifications_section", "Notifications"))
         self._refresh_group.setTitle(t("settings.refresh_section", "Status Refresh"))
         self._theme_group.setTitle(t("settings.theme_section", "Theme"))
+        self._compact_group.setTitle(t("settings.compact_section", "Compact Mode"))
 
         # Labels
         self._language_label.setText(t("settings.language", "Language:"))
         self._status_interval_label.setText(t("settings.refresh_interval", "Refresh interval:"))
+        self._auto_compact_label.setText(t("settings.auto_compact_timer", "Auto-compact timer:"))
 
         # Checkboxes
         self._start_with_windows_cb.setText(
@@ -234,10 +263,14 @@ class GeneralTab(BaseSettingsTab):
             t("settings.show_confirmations", "Show confirmation dialogs")
         )
 
-        # Description
+        # Descriptions
         self._refresh_desc.setText(
             t("settings.refresh_interval_desc",
               "How often to check projector status (in seconds)")
+        )
+        self._compact_desc.setText(
+            t("settings.compact_timer_desc",
+              "Automatically minimize to compact view after inactivity (power actions reset timer)")
         )
 
         # Spinbox suffix
@@ -246,3 +279,9 @@ class GeneralTab(BaseSettingsTab):
         # Theme
         self._theme_label.setText(t("settings.theme", "Theme:"))
         self._theme_combo.setToolTip(t("settings.theme_tooltip", "Select UI theme"))
+
+        # Auto-compact combo items
+        self._auto_compact_combo.setItemText(0, t("settings.compact_disabled", "Disabled"))
+        self._auto_compact_combo.setItemText(1, t("settings.compact_3min", "3 minutes"))
+        self._auto_compact_combo.setItemText(2, t("settings.compact_5min", "5 minutes"))
+        self._auto_compact_combo.setItemText(3, t("settings.compact_10min", "10 minutes"))

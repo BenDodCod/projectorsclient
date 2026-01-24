@@ -19,7 +19,8 @@ from typing import Optional
 
 from PyQt6.QtWidgets import (
     QMainWindow, QWidget, QVBoxLayout, QHBoxLayout,
-    QLabel, QPushButton, QSystemTrayIcon, QMenu, QStatusBar
+    QLabel, QPushButton, QSystemTrayIcon, QMenu, QStatusBar,
+    QApplication
 )
 from PyQt6.QtCore import Qt, QSize, pyqtSignal, QTimer
 from PyQt6.QtGui import QAction, QIcon, QCloseEvent
@@ -105,14 +106,20 @@ class MainWindow(QMainWindow):
         # Apply saved button visibility
         self._apply_saved_button_visibility()
 
+        # Apply saved compact mode
+        self._apply_saved_compact_mode()
+
+        # Setup auto-compact timer
+        self._setup_compact_timer()
+
         logger.info("Main window initialized")
 
     def _init_ui(self) -> None:
         """Initialize the user interface."""
         # Set window properties
         self.setWindowTitle(f"{t('app.name', 'Projector Control')} - {self._projector_name}")
-        self.setMinimumSize(520, 380)
-        self.resize(520, 380)
+        self.setMinimumSize(765, 654)
+        self.resize(765, 654)
 
         # Set window icon
         try:
@@ -198,6 +205,15 @@ class MainWindow(QMainWindow):
         settings_btn.clicked.connect(self.settings_requested.emit)
         layout.addWidget(settings_btn)
 
+        # Compact mode toggle button
+        self.compact_btn = QPushButton()
+        self._update_compact_button_icon()
+        self.compact_btn.setIconSize(QSize(24, 24))
+        self.compact_btn.setFixedSize(36, 36)
+        self.compact_btn.setAccessibleName("Toggle compact mode button")
+        self.compact_btn.clicked.connect(self.toggle_compact_mode)
+        layout.addWidget(self.compact_btn)
+
         # Theme toggle button
         self.theme_btn = QPushButton()
         self._update_theme_button_icon()
@@ -243,14 +259,28 @@ class MainWindow(QMainWindow):
 
     def _connect_control_signals(self) -> None:
         """Connect control panel signals to main window signals."""
-        self.controls_panel.power_on_clicked.connect(self.power_on_requested.emit)
-        self.controls_panel.power_off_clicked.connect(self.power_off_requested.emit)
+        self.controls_panel.power_on_clicked.connect(self._on_power_on)
+        self.controls_panel.power_off_clicked.connect(self._on_power_off)
         self.controls_panel.blank_toggled.connect(self.blank_toggled.emit)
         self.controls_panel.freeze_toggled.connect(self.freeze_toggled.emit)
         self.controls_panel.input_clicked.connect(self.input_change_requested.emit)
         self.controls_panel.volume_clicked.connect(self.volume_change_requested.emit)
         self.controls_panel.input_code_clicked.connect(self.input_code_requested.emit)
         self.controls_panel.mute_toggled.connect(self.mute_toggled.emit)
+
+    def _on_power_on(self) -> None:
+        """Handle power on button click."""
+        self.power_on_requested.emit()
+        # Reset auto-compact timer on power actions
+        if hasattr(self, '_compact_timer'):
+            self._reset_compact_timer()
+
+    def _on_power_off(self) -> None:
+        """Handle power off button click."""
+        self.power_off_requested.emit()
+        # Reset auto-compact timer on power actions
+        if hasattr(self, '_compact_timer'):
+            self._reset_compact_timer()
 
     def _setup_system_tray(self) -> None:
         """Setup system tray icon and menu."""
@@ -438,6 +468,10 @@ class MainWindow(QMainWindow):
         self._projector_name = name
         self.projector_label.setText(name)
         self.setWindowTitle(f"{t('app.name', 'Projector Control')} - {name}")
+
+        # Reset auto-compact timer when projector changes
+        if hasattr(self, '_compact_timer'):
+            self._reset_compact_timer()
 
     def set_projector_ip(self, ip: str) -> None:
         """
@@ -810,6 +844,203 @@ class MainWindow(QMainWindow):
             logger.debug("UI icons refreshed for new theme")
         except Exception as e:
             logger.warning(f"Failed to refresh icons: {e}")
+
+    def toggle_compact_mode(self) -> None:
+        """Toggle between normal and compact view."""
+        try:
+            current_mode = self._settings.get_bool("ui.compact_mode", False)
+            new_mode = not current_mode
+
+            # Save to settings
+            self._settings.set("ui.compact_mode", new_mode)
+
+            # Apply changes
+            self._set_compact_mode(new_mode)
+            self._update_compact_button_icon()
+
+            # Reset auto-compact timer
+            if hasattr(self, '_compact_timer'):
+                self._reset_compact_timer()
+
+            # Notify of change
+            logger.info(f"Compact mode toggled to: {new_mode}")
+        except Exception as e:
+            logger.error(f"Failed to toggle compact mode: {e}")
+
+    def _update_compact_button_icon(self) -> None:
+        """Update the compact button icon based on current mode."""
+        if not hasattr(self, 'compact_btn'):
+            return
+
+        is_compact = self._settings.get_bool("ui.compact_mode", False)
+        if is_compact:
+            # In compact mode: show arrow_up icon to expand
+            self.compact_btn.setIcon(IconLibrary.get_icon('arrow_up'))
+            self.compact_btn.setToolTip(t('buttons.expand_view', 'Expand view'))
+        else:
+            # In normal mode: show arrow_down icon to compact
+            self.compact_btn.setIcon(IconLibrary.get_icon('arrow_down'))
+            self.compact_btn.setToolTip(t('buttons.compact_view', 'Compact view'))
+
+    def _set_compact_mode(self, enabled: bool) -> None:
+        """
+        Apply compact mode to the UI.
+
+        Args:
+            enabled: True to enable compact mode, False to disable
+        """
+        try:
+            if enabled:
+                # Hide panels in compact mode
+                if hasattr(self, 'status_panel'):
+                    self.status_panel.hide()
+                if hasattr(self, 'history_panel'):
+                    self.history_panel.hide()
+
+                # Hide extra control buttons - only show Power On/Off
+                if hasattr(self, 'controls_panel'):
+                    self.controls_panel.set_button_visibility({
+                        'power_on': True,
+                        'power_off': True,
+                        'blank': False,
+                        'freeze': False,
+                        'input': False,
+                        'volume': False,
+                        'mute': False
+                    })
+
+                # Shrink window to compact size
+                self.setMinimumSize(400, 150)
+                self.resize(450, 180)
+            else:
+                # Restore normal window size FIRST
+                self.setMinimumSize(765, 654)
+                self.resize(765, 654)
+
+                # Restore all buttons to their saved visibility settings BEFORE showing
+                if hasattr(self, 'controls_panel'):
+                    self._apply_saved_button_visibility()
+
+                    # Force controls panel layout to recalculate
+                    if self.controls_panel.layout():
+                        self.controls_panel.layout().activate()
+                        self.controls_panel.layout().update()
+                    self.controls_panel.updateGeometry()
+
+                # Show panels in normal mode
+                if hasattr(self, 'status_panel'):
+                    self.status_panel.show()
+                if hasattr(self, 'history_panel'):
+                    self.history_panel.show()
+                if hasattr(self, 'controls_panel'):
+                    self.controls_panel.show()
+
+                # Force main layout update to ensure everything displays correctly
+                if hasattr(self, 'centralWidget'):
+                    central = self.centralWidget()
+                    if central and central.layout():
+                        central.layout().activate()
+                        central.layout().update()
+
+                # Update geometry to recalculate sizes
+                self.updateGeometry()
+
+                # Process events to force immediate GUI update
+                QApplication.processEvents()
+
+            logger.debug(f"Compact mode set to: {enabled}")
+        except Exception as e:
+            logger.error(f"Failed to set compact mode: {e}")
+
+    def _apply_saved_compact_mode(self) -> None:
+        """Load and apply compact mode from settings."""
+        try:
+            is_compact = self._settings.get_bool("ui.compact_mode", False)
+            self._set_compact_mode(is_compact)
+            self._update_compact_button_icon()
+        except Exception as e:
+            logger.warning(f"Could not apply compact mode: {e}")
+
+    def _setup_compact_timer(self) -> None:
+        """Setup the auto-compact timer."""
+        try:
+            # Create timer for auto-compact
+            self._compact_timer = QTimer(self)
+            self._compact_timer.timeout.connect(self._on_compact_timer_tick)
+            self._compact_timer_seconds = 0
+            self._compact_warning_shown = False
+
+            # Start timer if configured and not in compact mode
+            timer_minutes = self._settings.get_int("ui.auto_compact_timer", 0)
+            is_compact = self._settings.get_bool("ui.compact_mode", False)
+
+            if timer_minutes > 0 and not is_compact:
+                self._compact_timer.start(1000)  # Tick every second
+                logger.debug(f"Auto-compact timer started: {timer_minutes} minutes")
+        except Exception as e:
+            logger.error(f"Failed to setup compact timer: {e}")
+
+    def _reset_compact_timer(self) -> None:
+        """Reset the auto-compact timer countdown."""
+        try:
+            self._compact_timer_seconds = 0
+            self._compact_warning_shown = False
+
+            # Restart timer if configured and not in compact mode
+            timer_minutes = self._settings.get_int("ui.auto_compact_timer", 0)
+            is_compact = self._settings.get_bool("ui.compact_mode", False)
+
+            if timer_minutes > 0 and not is_compact:
+                if not self._compact_timer.isActive():
+                    self._compact_timer.start(1000)
+                logger.debug("Auto-compact timer reset")
+            else:
+                self._compact_timer.stop()
+        except Exception as e:
+            logger.error(f"Failed to reset compact timer: {e}")
+
+    def _on_compact_timer_tick(self) -> None:
+        """Handle auto-compact timer tick."""
+        try:
+            timer_minutes = self._settings.get_int("ui.auto_compact_timer", 0)
+
+            if timer_minutes <= 0:
+                self._compact_timer.stop()
+                return
+
+            # Increment timer
+            self._compact_timer_seconds += 1
+            timer_limit_seconds = timer_minutes * 60
+
+            # Show warning at 60 seconds before auto-compact
+            if self._compact_timer_seconds == (timer_limit_seconds - 60) and not self._compact_warning_shown:
+                self._show_compact_warning()
+                self._compact_warning_shown = True
+
+            # Auto-compact when timer expires
+            if self._compact_timer_seconds >= timer_limit_seconds:
+                logger.info("Auto-compact timer expired, entering compact mode")
+                self._compact_timer.stop()
+                self._compact_timer_seconds = 0
+                self._compact_warning_shown = False
+
+                # Enter compact mode
+                self._settings.set("ui.compact_mode", True)
+                self._set_compact_mode(True)
+                self._update_compact_button_icon()
+        except Exception as e:
+            logger.error(f"Error in compact timer tick: {e}")
+
+    def _show_compact_warning(self) -> None:
+        """Show warning before auto-entering compact mode."""
+        try:
+            if hasattr(self, 'update_label') and self.update_label:
+                self.update_label.setText(
+                    t('status.compact_warning', 'Entering compact mode in 60 seconds...')
+                )
+                logger.debug("Auto-compact warning shown")
+        except Exception as e:
+            logger.error(f"Failed to show compact warning: {e}")
 
     def _apply_button_visibility(self, settings: dict) -> None:
         """

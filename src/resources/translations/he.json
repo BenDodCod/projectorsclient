@@ -170,7 +170,9 @@
     "volume": "עוצמה",
     "settings": "הגדרות",
     "minimize": "מזער למגש",
-    "toggle_theme": "החלף ערכת נושא בהיר/כהה"
+    "toggle_theme": "החלף ערכת נושא בהיר/כהה",
+    "compact_view": "תצוגה מצומצמת",
+    "expand_view": "הרחב תצוגה"
   },
   "tooltips": {
     "power_on": "הפעל מקרן (Ctrl+P)",
@@ -200,7 +202,8 @@
     "warning": "אזהרה",
     "checking": "בודק...",
     "power_on": "פועל",
-    "power_off": "כבוי"
+    "power_off": "כבוי",
+    "compact_warning": "עובר לתצוגה מצומצמת בעוד 60 שניות..."
   },
   "history": {
     "title": "פעולות אחרונות",
@@ -319,6 +322,13 @@
     "theme_dark": "כהה",
     "theme_section": "ערכת נושא",
     "theme_tooltip": "בחר ערכת נושא",
+    "compact_section": "תצוגה מצומצמת",
+    "auto_compact_timer": "טיימר אוטומטי לתצוגה מצומצמת:",
+    "compact_disabled": "מבוטל",
+    "compact_3min": "3 דקות",
+    "compact_5min": "5 דקות",
+    "compact_10min": "10 דקות",
+    "compact_timer_desc": "מעבר אוטומטי לתצוגה מצומצמת לאחר חוסר פעילות (פעולות הפעלה מאפסות את הטיימר)",
     "operation_mode": "מצב פעולה",
     "current_mode": "מצב נוכחי:",
     "mode_note": "מצב הפעולה נקבע בהתקנה הראשונית ולא ניתן לשינוי כאן.",
