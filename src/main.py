@@ -488,7 +488,6 @@ def show_main_window(db: "DatabaseManager") -> "QMainWindow":
         Main window instance
     """
     from src.ui.main_window import MainWindow
-    from src.config.settings import SettingsManager
     from src.core.controller_factory import ControllerFactory
     from src.network.pjlink_protocol import PowerState
 
@@ -511,12 +510,45 @@ def show_main_window(db: "DatabaseManager") -> "QMainWindow":
 
     # Load and apply projector configuration from database
     try:
-        settings = SettingsManager(db)
-        projector_name = settings.get("projector.name", "Projector")
-        projector_ip = settings.get("projector.ip", "")
-        projector_port = settings.get("projector.port", 4352)
-        projector_password = settings.get_secure("projector.password_encrypted") or ""
-        projector_type = settings.get("projector.type", "pjlink")  # Get protocol type
+        # Load projector from projector_config table (first active projector)
+        projector_row = db.fetchone(
+            "SELECT proj_name, proj_ip, proj_port, proj_type, proj_pass_encrypted FROM projector_config WHERE active = 1 LIMIT 1"
+        )
+
+        if projector_row:
+            projector_name = projector_row[0] or "Projector"
+            projector_ip = projector_row[1] or ""
+            projector_port = projector_row[2] or 4352
+            projector_type = projector_row[3] or "pjlink"
+            encrypted_password = projector_row[4]
+
+            # Decrypt password if it exists
+            projector_password = ""
+            if encrypted_password:
+                try:
+                    from src.utils.security import CredentialManager
+                    from pathlib import Path
+                    import os
+
+                    app_data = os.getenv("APPDATA")
+                    if app_data:
+                        app_data_dir = Path(app_data) / "ProjectorControl"
+                    else:
+                        app_data_dir = Path.home() / "AppData" / "Roaming" / "ProjectorControl"
+
+                    cred_manager = CredentialManager(str(app_data_dir))
+                    projector_password = cred_manager.decrypt_credential(encrypted_password)
+                    logger.debug("Successfully decrypted projector password")
+                except Exception as e:
+                    logger.error(f"Failed to decrypt projector password: {e}")
+                    projector_password = ""
+        else:
+            # No projector configured
+            projector_name = "Projector"
+            projector_ip = ""
+            projector_port = 4352
+            projector_type = "pjlink"
+            projector_password = ""
 
         window.set_projector_name(projector_name)
         if projector_ip:

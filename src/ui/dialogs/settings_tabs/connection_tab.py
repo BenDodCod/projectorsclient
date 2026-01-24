@@ -355,9 +355,9 @@ class ConnectionTab(BaseSettingsTab):
                 from pathlib import Path
                 import os
 
-                # Encrypt password if provided
-                encrypted_password = None
+                # Build UPDATE query conditionally based on whether password is provided
                 if updated_data.get("proj_password"):
+                    # Password provided - encrypt and update it
                     app_data = os.getenv("APPDATA")
                     if app_data:
                         app_data_dir = Path(app_data) / "ProjectorControl"
@@ -367,22 +367,35 @@ class ConnectionTab(BaseSettingsTab):
                     cred_manager = CredentialManager(str(app_data_dir))
                     encrypted_password = cred_manager.encrypt_credential(updated_data["proj_password"])
 
-                # Update database
-                self.db_manager.execute("""
-                    UPDATE projector_config
-                    SET proj_name = ?, proj_port = ?, proj_type = ?, proj_user = ?,
-                        proj_pass_encrypted = ?
-                    WHERE proj_ip = ? AND active = 1
-                """, (
-                    updated_data["proj_name"],
-                    updated_data["proj_port"],
-                    updated_data["proj_type"],
-                    updated_data.get("proj_username", ""),
-                    encrypted_password,
-                    updated_data["proj_ip"]
-                ))
-
-                logger.info(f"Saved projector to database: {updated_data['proj_name']} ({updated_data['proj_ip']})")
+                    # Update all fields including password
+                    self.db_manager.execute("""
+                        UPDATE projector_config
+                        SET proj_name = ?, proj_port = ?, proj_type = ?, proj_user = ?,
+                            proj_pass_encrypted = ?
+                        WHERE proj_ip = ? AND active = 1
+                    """, (
+                        updated_data["proj_name"],
+                        updated_data["proj_port"],
+                        updated_data["proj_type"],
+                        updated_data.get("proj_username", ""),
+                        encrypted_password,
+                        updated_data["proj_ip"]
+                    ))
+                    logger.info(f"Saved projector with updated password: {updated_data['proj_name']} ({updated_data['proj_ip']})")
+                else:
+                    # No password provided - preserve existing password
+                    self.db_manager.execute("""
+                        UPDATE projector_config
+                        SET proj_name = ?, proj_port = ?, proj_type = ?, proj_user = ?
+                        WHERE proj_ip = ? AND active = 1
+                    """, (
+                        updated_data["proj_name"],
+                        updated_data["proj_port"],
+                        updated_data["proj_type"],
+                        updated_data.get("proj_username", ""),
+                        updated_data["proj_ip"]
+                    ))
+                    logger.info(f"Saved projector (password unchanged): {updated_data['proj_name']} ({updated_data['proj_ip']})")
 
             except Exception as e:
                 logger.error(f"Failed to save projector to database: {e}")

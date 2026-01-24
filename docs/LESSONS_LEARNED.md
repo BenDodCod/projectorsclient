@@ -23,6 +23,13 @@
 - **Fix:** Moved import inside function where it was needed
 - **Prevention:** Use lazy imports or restructure module dependencies
 
+### Projector password not persisting across app restarts
+- **Date:** 2026-01-24
+- **Symptom:** Password saves successfully in settings, authentication works while app is running, but after closing and restarting the app, authentication fails with "Authentication locked out after 3 failures"
+- **Root Cause:** Two separate issues: (1) Edit projector dialog always sets `proj_pass_encrypted = NULL` when no new password entered, overwriting existing password. (2) Startup code loads projector config from wrong table (`settings` table) instead of `projector_config` table.
+- **Fix:** (1) Modified `connection_tab.py:_edit_projector()` to conditionally update password field only when new password provided. (2) Modified `main.py` startup to load from `projector_config` table with proper password decryption.
+- **Prevention:** Ensure save and load paths use same table. When editing records, never update fields that weren't changed (especially sensitive fields like passwords).
+
 ---
 
 ## Gotchas
