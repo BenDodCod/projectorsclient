@@ -1,32 +1,35 @@
 # Latest Session Summary
 
 > **Last Updated:** 2026-01-24
-> **Session File:** [2026-01-24-session.md](./2026/2026-01-24-session.md)
+> **Session File:** [2026-01-24-compact-mode.md](./2026/2026-01-24-compact-mode.md)
 
 ---
 
 ## Quick Context for Next Session
 
 ### What Was Accomplished
-- Fixed password encryption to work without admin privileges (DPAPI → AES-256-GCM)
-- Implemented automatic PJLink fallback for Hitachi projectors (native protocol confirmed broken)
-- Fixed password save/reload workflow (settings → DB → main window config)
-- Created comprehensive documentation and 12 new tests (all passing)
-- Committed and pushed all changes to repository
+- Implemented compact mode feature with toggle button (arrow_up/arrow_down icons)
+- Added configurable auto-timer (3, 5, 10 minutes or disabled)
+- Compact view shows only Power On/Off buttons (450x180px window)
+- Normal view shows all panels and controls (765x654px window)
+- 60-second countdown warning before auto-entering compact mode
+- Timer resets on power button clicks and projector selection changes
+- Full English and Hebrew translations added
+- Settings UI in General tab for timer configuration
 
 ### Current State
-- **Working on:** Password encryption fix and Hitachi PJLink fallback (COMPLETED)
+- **Working on:** Compact mode feature (COMPLETED)
 - **Branch:** `main`
-- **Tests:** All passing (12 new tests added)
+- **Tests:** All 1,542 tests passing
 - **Blockers:** None
 
 ### Immediate Next Steps
-1. Test complete workflow with running application (password change → status polling)
-2. Update any unit tests that expect DPAPI errors
-3. Consider adding migration warning in UI for existing users
+1. Test compact mode feature in running application
+2. Verify auto-timer works correctly with countdown warning
+3. Test persistence across sessions (mode and timer settings)
 
 ### Open Questions/Decisions
-- None - all decisions made and documented in session file
+- None - feature complete and committed (f302f38)
 
 ---
 
@@ -34,6 +37,7 @@
 
 | Date | Summary | File |
 |------|---------|------|
-| 2026-01-24 | Password encryption fix (AES-GCM) and Hitachi PJLink fallback | [2026-01-24-session.md](./2026/2026-01-24-session.md) |
+| 2026-01-24 (PM) | Compact mode with auto-timer implementation | [2026-01-24-compact-mode.md](./2026/2026-01-24-compact-mode.md) |
+| 2026-01-24 (AM) | Password encryption fix (AES-GCM) and Hitachi PJLink fallback | [2026-01-24-session.md](./2026/2026-01-24-session.md) |
 
 <!-- Keep only last 5-10 sessions here; older ones are in their year folders -->
