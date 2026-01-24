@@ -18,21 +18,16 @@ import base64
 import hashlib
 import hmac
 import logging
-import os
 import secrets
-from abc import ABC, abstractmethod
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Optional, Tuple
 
-# Windows-specific imports
-try:
-    import win32api
-    import win32crypt
-    import pywintypes
-    WINDOWS_AVAILABLE = True
-except ImportError:
-    WINDOWS_AVAILABLE = False
+# Use cryptography library for AES-GCM encryption (already in requirements.txt)
+# This works without admin rights and doesn't require pywin32/DPAPI
+from cryptography.hazmat.primitives.ciphers.aead import AESGCM
+from cryptography.hazmat.primitives import hashes
+from cryptography.hazmat.primitives.kdf.pbkdf2 import PBKDF2HMAC
 
 # bcrypt for password hashing
 import bcrypt
@@ -191,14 +186,11 @@ class EntropyManager:
             32-byte derived entropy using SHA-256.
         """
         # Get machine-specific data
-        if WINDOWS_AVAILABLE:
-            try:
-                machine_name = win32api.GetComputerName().encode('utf-8')
-            except pywintypes.error:
-                machine_name = b"unknown_machine"
-        else:
-            import socket
+        import socket
+        try:
             machine_name = socket.gethostname().encode('utf-8')
+        except Exception:
+            machine_name = b"unknown_machine"
 
         # Combine all components and hash
         combined = self._config.app_secret + machine_name + random_component
@@ -217,13 +209,14 @@ class EntropyManager:
 
 
 class CredentialManager:
-    """Manages secure credential storage using DPAPI with entropy.
+    """Manages secure credential storage using AES-GCM encryption with entropy.
 
-    Provides encryption and decryption of credentials using Windows DPAPI
-    with application-specific entropy to prevent same-user extraction.
+    Provides encryption and decryption of credentials using AES-256-GCM
+    with application-specific entropy for key derivation.
 
     Addresses threats:
-    - T-003: DPAPI without entropy (adds application-specific entropy)
+    - T-003: Uses application-specific entropy for key derivation
+    - Works without admin rights (no DPAPI dependency)
 
     Example:
         >>> manager = CredentialManager("/path/to/appdata")
@@ -232,7 +225,7 @@ class CredentialManager:
         >>> assert decrypted == "my_password"
     """
 
-    DPAPI_DESCRIPTION = "ProjectorControl Credential"
+    DESCRIPTION = "ProjectorControl Credential"
 
     def __init__(
         self,
@@ -244,16 +237,7 @@ class CredentialManager:
         Args:
             app_data_dir: Directory for storing entropy and related files.
             entropy_config: Optional entropy configuration.
-
-        Raises:
-            SecurityError: If Windows DPAPI is not available.
         """
-        if not WINDOWS_AVAILABLE:
-            raise SecurityError(
-                "Windows DPAPI is required for credential encryption. "
-                "This application only supports Windows."
-            )
-
         self._entropy_manager = EntropyManager(app_data_dir, entropy_config)
 
     @property
@@ -262,48 +246,58 @@ class CredentialManager:
         return self._entropy_manager.entropy
 
     def encrypt_credential(self, plaintext: str) -> str:
-        """Encrypt a credential using DPAPI with application entropy.
+        """Encrypt a credential using AES-GCM with entropy-derived key.
 
         Args:
             plaintext: The credential to encrypt.
 
         Returns:
-            Base64-encoded encrypted credential.
+            Base64-encoded encrypted credential (format: nonce || ciphertext || tag).
 
         Raises:
             EncryptionError: If encryption fails.
 
-        Threat mitigation: T-003 (DPAPI without entropy)
+        Threat mitigation: T-003 (uses application-specific entropy for key derivation)
         """
         if not plaintext:
             return ""
 
         try:
+            # Derive 256-bit AES key from entropy using PBKDF2
             entropy = self.entropy
-
-            encrypted = win32crypt.CryptProtectData(
-                plaintext.encode('utf-8'),
-                self.DPAPI_DESCRIPTION,
-                entropy,
-                None,  # Reserved
-                None,  # Prompt struct (no UI)
-                0      # Flags
+            kdf = PBKDF2HMAC(
+                algorithm=hashes.SHA256(),
+                length=32,  # 256 bits for AES-256
+                salt=b"ProjectorControl.CredentialEncryption.v1",
+                iterations=100000,
             )
+            key = kdf.derive(entropy)
+
+            # Generate random 96-bit nonce (recommended for AES-GCM)
+            nonce = secrets.token_bytes(12)
+
+            # Encrypt with AES-GCM
+            aesgcm = AESGCM(key)
+            ciphertext = aesgcm.encrypt(
+                nonce,
+                plaintext.encode('utf-8'),
+                None  # No additional authenticated data
+            )
+
+            # Format: nonce || ciphertext (ciphertext includes authentication tag)
+            encrypted = nonce + ciphertext
 
             return base64.b64encode(encrypted).decode('ascii')
 
-        except pywintypes.error as e:
-            logger.error("DPAPI encryption failed: %s", e)
-            raise EncryptionError("Failed to encrypt credential") from e
         except Exception as e:
-            logger.error("Unexpected encryption error: %s", type(e).__name__)
+            logger.error("Encryption failed: %s", type(e).__name__)
             raise EncryptionError("Failed to encrypt credential") from e
 
     def decrypt_credential(self, ciphertext: str) -> str:
-        """Decrypt a credential using DPAPI with application entropy.
+        """Decrypt a credential using AES-GCM with entropy-derived key.
 
         Args:
-            ciphertext: Base64-encoded encrypted credential.
+            ciphertext: Base64-encoded encrypted credential (format: nonce || ciphertext || tag).
 
         Returns:
             Decrypted plaintext credential.
@@ -315,33 +309,43 @@ class CredentialManager:
             return ""
 
         try:
-            entropy = self.entropy
+            # Decode from base64
             encrypted = base64.b64decode(ciphertext.encode('ascii'))
 
-            # CryptUnprotectData returns (description, data)
-            _, decrypted = win32crypt.CryptUnprotectData(
-                encrypted,
-                entropy,
-                None,  # Reserved
-                None,  # Prompt struct (no UI)
-                0      # Flags
+            # Extract nonce (first 12 bytes) and ciphertext (remaining bytes)
+            if len(encrypted) < 12:
+                raise ValueError("Encrypted data too short")
+
+            nonce = encrypted[:12]
+            ciphertext_with_tag = encrypted[12:]
+
+            # Derive same key from entropy
+            entropy = self.entropy
+            kdf = PBKDF2HMAC(
+                algorithm=hashes.SHA256(),
+                length=32,  # 256 bits for AES-256
+                salt=b"ProjectorControl.CredentialEncryption.v1",
+                iterations=100000,
+            )
+            key = kdf.derive(entropy)
+
+            # Decrypt with AES-GCM (authentication happens automatically)
+            aesgcm = AESGCM(key)
+            plaintext = aesgcm.decrypt(
+                nonce,
+                ciphertext_with_tag,
+                None  # No additional authenticated data
             )
 
-            return decrypted.decode('utf-8')
+            return plaintext.decode('utf-8')
 
-        except pywintypes.error as e:
-            # This occurs when entropy is wrong or data is corrupted
-            logger.error("DPAPI decryption failed: %s", e)
+        except Exception as e:
+            # This occurs when key is wrong, data is corrupted, or authentication fails
+            logger.error("Decryption failed: %s", type(e).__name__)
             raise DecryptionError(
                 "Failed to decrypt credential. "
-                "The credential may be corrupted or encrypted on a different machine."
+                "The credential may be corrupted or encrypted with different entropy."
             ) from e
-        except (ValueError, UnicodeDecodeError) as e:
-            logger.error("Credential decoding failed: %s", e)
-            raise DecryptionError("Credential data is malformed") from e
-        except Exception as e:
-            logger.error("Unexpected decryption error: %s", type(e).__name__)
-            raise DecryptionError("Failed to decrypt credential") from e
 
     def rotate_entropy(self, old_credentials: dict[str, str]) -> dict[str, str]:
         """Rotate entropy and re-encrypt credentials.

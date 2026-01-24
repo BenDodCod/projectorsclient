@@ -349,16 +349,61 @@ class ConnectionTab(BaseSettingsTab):
         if dialog.exec() == QDialog.DialogCode.Accepted:
             updated_data = dialog.get_projector_data()
 
-            # Update table
+            # Save to database immediately
+            try:
+                from src.utils.security import CredentialManager
+                from pathlib import Path
+                import os
+
+                # Encrypt password if provided
+                encrypted_password = None
+                if updated_data.get("proj_password"):
+                    app_data = os.getenv("APPDATA")
+                    if app_data:
+                        app_data_dir = Path(app_data) / "ProjectorControl"
+                    else:
+                        app_data_dir = Path.home() / "AppData" / "Roaming" / "ProjectorControl"
+
+                    cred_manager = CredentialManager(str(app_data_dir))
+                    encrypted_password = cred_manager.encrypt_credential(updated_data["proj_password"])
+
+                # Update database
+                self.db_manager.execute("""
+                    UPDATE projector_config
+                    SET proj_name = ?, proj_port = ?, proj_type = ?, proj_user = ?,
+                        proj_pass_encrypted = ?
+                    WHERE proj_ip = ? AND active = 1
+                """, (
+                    updated_data["proj_name"],
+                    updated_data["proj_port"],
+                    updated_data["proj_type"],
+                    updated_data.get("proj_username", ""),
+                    encrypted_password,
+                    updated_data["proj_ip"]
+                ))
+
+                logger.info(f"Saved projector to database: {updated_data['proj_name']} ({updated_data['proj_ip']})")
+
+            except Exception as e:
+                logger.error(f"Failed to save projector to database: {e}")
+                QMessageBox.critical(
+                    self,
+                    t("settings.save_error", "Save Error"),
+                    t("settings.projector_save_failed", f"Failed to save projector configuration:\n\n{str(e)}"),
+                    QMessageBox.StandardButton.Ok
+                )
+                return
+
+            # Update table UI
             self._projector_table.setItem(row, 0, QTableWidgetItem(updated_data["proj_name"]))
             self._projector_table.setItem(row, 1, QTableWidgetItem(updated_data["proj_ip"]))
             self._projector_table.setItem(row, 2, QTableWidgetItem(str(updated_data["proj_port"])))
             self._projector_table.setItem(row, 3, QTableWidgetItem(updated_data["proj_type"]))
 
-            # Mark as dirty to enable Apply button
+            # Mark as dirty to trigger main window config reload
             self.mark_dirty()
 
-            logger.info(f"Updated projector: {updated_data['proj_name']} ({updated_data['proj_ip']})")
+            logger.info(f"Updated projector UI: {updated_data['proj_name']} ({updated_data['proj_ip']})")
 
     def _remove_projector(self) -> None:
         """Remove selected projector."""

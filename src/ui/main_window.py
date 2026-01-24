@@ -680,6 +680,67 @@ class MainWindow(QMainWindow):
             self._update_theme_button_icon()
             self._refresh_icons()
 
+        # Handle projector configuration changes (password, IP, port, etc.)
+        # When projector settings are modified, reload from database to update
+        # the connection configuration used by status polling
+        if hasattr(self, '_projector_config'):
+            try:
+                from src.utils.security import CredentialManager
+                from pathlib import Path
+                import os
+
+                # Get current projector IP to query the correct record
+                current_ip = self._projector_config.get('host', '')
+
+                if current_ip:
+                    # Query projector_config table for the current projector
+                    result = self.db.fetchone(
+                        "SELECT proj_port, proj_type, proj_pass_encrypted FROM projector_config WHERE proj_ip = ? AND active = 1",
+                        (current_ip,)
+                    )
+
+                    if result:
+                        new_port, new_type, encrypted_password = result
+
+                        # Decrypt password if present
+                        new_password = None
+                        if encrypted_password:
+                            app_data = os.getenv("APPDATA")
+                            if app_data:
+                                app_data_dir = Path(app_data) / "ProjectorControl"
+                            else:
+                                app_data_dir = Path.home() / "AppData" / "Roaming" / "ProjectorControl"
+
+                            cred_manager = CredentialManager(str(app_data_dir))
+                            try:
+                                new_password = cred_manager.decrypt_credential(encrypted_password)
+                            except Exception as decrypt_error:
+                                logger.warning(f"Failed to decrypt projector password: {decrypt_error}")
+
+                        # Update connection config if any values changed
+                        config_changed = False
+
+                        if new_password != self._projector_config.get('password', ''):
+                            logger.info("Projector password changed, updating connection configuration")
+                            self._projector_config['password'] = new_password
+                            config_changed = True
+
+                        if new_port != self._projector_config.get('port', 4352):
+                            logger.info(f"Projector port changed to {new_port}")
+                            self._projector_config['port'] = new_port
+                            config_changed = True
+
+                        if new_type != self._projector_config.get('protocol_type', 'pjlink'):
+                            logger.info(f"Projector type changed to {new_type}")
+                            self._projector_config['protocol_type'] = new_type
+                            config_changed = True
+
+                        if config_changed:
+                            logger.info("Projector configuration updated - next status poll will use new settings")
+
+            except Exception as e:
+                logger.warning(f"Failed to reload projector configuration: {e}")
+
         # Handle other settings that need immediate effect
         if 'network.status_interval' in settings:
             # Update status timer interval if running

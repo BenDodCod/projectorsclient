@@ -81,11 +81,11 @@ class ControllerFactory:
             password="admin"
         )
 
-        # Create Hitachi controller
+        # Create Hitachi controller (uses PJLink fallback by default)
         controller = ControllerFactory.create(
             ProtocolType.HITACHI,
             host="192.168.1.101",
-            port=9715,
+            port=4352,  # PJLink port (recommended for CP-EX series)
             password="admin"
         )
 
@@ -144,7 +144,7 @@ class ControllerFactory:
         elif protocol_type == ProtocolType.HITACHI:
             return ControllerFactory._create_hitachi_controller(
                 host=host,
-                port=port or 9715,
+                port=port or 4352,  # Use PJLink by default (native protocol has timeout issues)
                 password=password,
                 timeout=timeout,
                 **kwargs,
@@ -201,21 +201,51 @@ class ControllerFactory:
         timeout: float,
         **kwargs: Any,
     ) -> ProjectorControllerProtocol:
-        """Create a Hitachi controller.
+        """Create a Hitachi controller with PJLink fallback.
+
+        IMPORTANT: Hitachi CP-EX301N/CP-EX302N native protocol has known timeout
+        issues. PJLink is recommended as the primary control method for Hitachi
+        projectors. If port 4352 is specified, PJLink will be used automatically.
 
         Args:
             host: Projector IP address.
-            port: TCP port (23 or 9715).
-            password: Optional password for port 9715.
+            port: TCP port (4352 for PJLink, 23/9715 for native).
+            password: Optional password (PJLink auth or port 9715).
             timeout: Socket timeout.
-            **kwargs: Additional options (use_framing, etc.).
+            **kwargs: Additional options (use_pjlink_fallback=True forces PJLink).
 
         Returns:
-            HitachiController instance.
+            HitachiController instance or PJLink controller (fallback).
 
-        Raises:
-            ImportError: If Hitachi controller is not yet implemented.
+        Note:
+            Testing with CP-EX301N (192.168.19.207) confirmed:
+            - PJLink Class 1: Fully functional (port 4352)
+            - Native protocol: Timeout on all ports (23, 9715)
+            - Recommendation: Use PJLink for Hitachi CP-EX series
         """
+        # Check if PJLink fallback is requested or if port 4352 (PJLink) is specified
+        use_pjlink = kwargs.get("use_pjlink_fallback", False) or port == 4352
+
+        if use_pjlink:
+            logger.info(
+                f"Using PJLink fallback for Hitachi projector at {host}:{port}. "
+                "Native Hitachi protocol has known timeout issues on CP-EX301N/CP-EX302N models."
+            )
+            # Create PJLink controller instead
+            from src.core.projector_controller import ProjectorController
+
+            return ProjectorController(
+                host=host,
+                port=4352,  # Force PJLink port
+                password=password,
+                timeout=timeout,
+            )
+
+        # Use native Hitachi controller (may timeout on some models)
+        logger.warning(
+            f"Creating native Hitachi controller for {host}:{port}. "
+            "Consider using PJLink (port 4352) if connection timeouts occur."
+        )
         from src.core.controllers.hitachi_controller import HitachiController
 
         max_retries = kwargs.get("max_retries", 3)
@@ -254,9 +284,9 @@ class ControllerFactory:
             config = {
                 "proj_type": "hitachi",
                 "proj_ip": "192.168.1.100",
-                "proj_port": 9715,
+                "proj_port": 4352,  # PJLink port (recommended)
                 "proj_password": "admin",
-                "protocol_settings": '{"use_framing": true}'
+                "protocol_settings": '{"use_pjlink_fallback": true}'
             }
             controller = ControllerFactory.create_from_config(config)
         """
@@ -306,7 +336,7 @@ class ControllerFactory:
 
         defaults = {
             ProtocolType.PJLINK: 4352,
-            ProtocolType.HITACHI: 9715,  # Primary port (with auth)
+            ProtocolType.HITACHI: 4352,  # Use PJLink (native protocol has timeout issues on CP-EX series)
             ProtocolType.SONY: 53595,
             ProtocolType.BENQ: 4352,  # Uses PJLink
             ProtocolType.NEC: 7142,

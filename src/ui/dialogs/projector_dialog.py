@@ -47,15 +47,15 @@ PROTOCOL_CONFIGS = {
         "description": "Standard projector control protocol",
     },
     "hitachi": {
-        "display_name": "Hitachi (Native)",
-        "default_port": 23,
+        "display_name": "Hitachi (PJLink Recommended)",
+        "default_port": 4352,  # Use PJLink by default (native protocol has timeout issues)
         "ports": [
-            (23, "Port 23 (Primary/Legacy)"),
-            (9715, "Port 9715 (Enhanced)"),
-            (4352, "Port 4352 (PJLink)"),
+            (4352, "Port 4352 (PJLink - Recommended)"),
+            (23, "Port 23 (Native - May timeout)"),
+            (9715, "Port 9715 (Native - May timeout)"),
         ],
         "enabled": True,
-        "description": "Hitachi native protocol with full feature support",
+        "description": "Hitachi projectors - PJLink recommended for CP-EX series (native protocol may timeout)",
     },
     "sony": {
         "display_name": "Sony ADCP",
