@@ -41,6 +41,18 @@
 - **Issue:** Direct UI updates from non-main thread cause crashes
 - **Solution:** Always use `QMetaObject.invokeMethod` or signals to update UI from threads
 
+### Windows DPAPI requires administrator privileges
+- **Date:** 2026-01-24
+- **Context:** Using pywin32 for credential encryption with Windows DPAPI
+- **Issue:** pywin32 post-install script requires admin rights to copy DLLs to `C:\Windows\system32`. Application cannot run from user startup directory without admin privileges.
+- **Solution:** Use AES-256-GCM encryption from `cryptography` library instead. Implemented with PBKDF2-HMAC-SHA256 for key derivation (100,000 iterations). See `src/utils/security.py` and `docs/FIX_PASSWORD_ENCRYPTION_NO_ADMIN.md`
+
+### Hitachi CP-EX series native protocol has timeout issues
+- **Date:** 2026-01-24
+- **Context:** Controlling Hitachi CP-EX301N/CP-EX302N projectors
+- **Issue:** Native Hitachi protocol timeouts on all ports (23, 9715) despite successful TCP connection. Confirmed with physical projector at 192.168.19.207.
+- **Solution:** Use PJLink Class 1 protocol on port 4352 instead. Fully functional with MD5 authentication. Controller factory automatically uses PJLink when port 4352 is specified. See `docs/protocols/HITACHI_PJLINK_FALLBACK.md`
+
 ---
 
 ## Workarounds
@@ -100,5 +112,6 @@
 - **Database:** #sql-injection-prevention, #connection-pooling
 - **Testing:** #pytest-qt-fixture, #mock-pjlink
 - **UI/PyQt6:** #thread-safety, #signal-slot
-- **Security:** #dpapi-encryption, #password-hashing
+- **Security:** #dpapi-admin-rights, #aes-gcm-encryption, #password-hashing
 - **Performance:** #lazy-loading, #caching
+- **Hardware/Projectors:** #hitachi-pjlink-fallback, #native-protocol-timeouts

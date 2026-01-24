@@ -747,7 +747,7 @@ Use this index to navigate directly to relevant sections in IMPLEMENTATION_PLAN.
 **Work Order:** MULTI-BRAND-PROTOCOL-FIXES
 **Phase:** Multi-Brand Projector Support - Integration Fixes
 **Duration:** Full session
-**Status:** PARTIAL - Hitachi Protocol Commands Timeout
+**Status:** ✓ COMPLETE - PJLink Fallback Implemented (Session 13, 2026-01-24)
 
 **Work Completed:**
 - Fixed main.py to use ControllerFactory instead of hardcoded ProjectorController
@@ -758,25 +758,43 @@ Use this index to navigate directly to relevant sections in IMPLEMENTATION_PLAN.
 - Reduced timeouts (2-3s) to prevent UI freezing during command failures
 - Added duplicate prevention when saving projector from wizard
 
-**Known Issue - Hitachi Commands Timeout:**
+**Resolution - PJLink Fallback (Session 13):**
 ```
-TCP connection succeeds on all ports (23, 9715, 4352)
-But ALL commands timeout - no response received from projector
-Needs: Physical projector model documentation to verify command format
+Issue: Hitachi native protocol timeouts on all ports (23, 9715)
+Testing: Physical Hitachi CP-EX301N (192.168.19.207) confirmed native protocol unsupported
+Solution: PJLink Class 1 (port 4352) fully functional - 10/10 commands successful
+Implementation: Automatic PJLink fallback for Hitachi projectors
 ```
+
+**Session 13 Work:**
+- Tested with physical Hitachi CP-EX301N at 192.168.19.207
+- Created PJLink test script: `tools/test_hitachi_pjlink.py`
+- All 10 PJLink commands successful (power, input, lamp, info, etc.)
+- Updated ControllerFactory to use PJLink by default for Hitachi (port 4352)
+- Updated UI to recommend PJLink for Hitachi (port dropdown labels)
+- Created integration tests: `tests/integration/test_hitachi_pjlink_fallback.py` (6 tests passing)
+- Created diagnostic toolkit: CRC validator, traffic capture, testing guides
+- Documented solution: `docs/protocols/HITACHI_PJLINK_FALLBACK.md`
 
 **Files Modified:**
 - src/main.py (ControllerFactory integration, normalize_power_state helper)
-- src/ui/dialogs/projector_dialog.py (port dropdown, tuple handling)
+- src/ui/dialogs/projector_dialog.py (port dropdown, PJLink recommendation)
 - src/ui/dialogs/settings_tabs/connection_tab.py (ControllerFactory)
-- docs/planning/MULTI_BRAND_PROJECTOR_SUPPORT_PLAN.md (blocker documented)
-- ROADMAP.md (multi-brand reference added)
-- IMPLEMENTATION_PLAN.md (multi-brand reference added)
+- src/core/controller_factory.py (PJLink fallback logic, default port 4352)
+- tests/integration/test_hitachi_pjlink_fallback.py (new)
+- tools/test_hitachi_pjlink.py (new)
+- tools/hitachi_diagnostic.py (new)
+- tools/hitachi_crc_validator.py (new)
+- tools/hitachi_traffic_capture.py (new)
+- tools/README_HITACHI_DIAGNOSTIC.md (new)
+- tools/PJLINK_TESTING_GUIDE.md (new)
+- docs/protocols/HITACHI_PJLINK_FALLBACK.md (new)
+- docs/HITACHI_CP-EX_DEBUGGING.md (template)
+- ROADMAP.md (blocker resolved)
 
-**Next Steps:**
-- Obtain Hitachi projector model documentation
-- Verify binary command format matches specific model
-- Test with packet capture to debug protocol
+**Recommendation:**
+- Use PJLink (port 4352) for all Hitachi CP-EX series projectors
+- Native protocol support varies by model - PJLink is universal standard
 
 ---
 
