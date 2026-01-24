@@ -8,10 +8,64 @@ This file is a short, shared brief for all assistant models on this project.
 - **Tests:** 1,542 passing (94%+ coverage)
 - **Source:** 51 files (21,319 LOC), 71 test files (31,290 LOC)
 
+## CRITICAL: NO ASSUMPTIONS RULE
+
+**This is the #1 rule for all AI developers working on this project.**
+
+Before taking ANY action, you MUST:
+
+1. **Clarify understanding first** - Always ask questions to understand the task fully
+2. **Ask before decisions** - Never make assumptions about:
+   - Design decisions
+   - Functional decisions
+   - Optimization decisions
+   - Implementation approaches
+   - What to do when something doesn't work
+3. **Check during work** - When encountering any decision point, ask the user
+4. **Verify unclear items** - If you think you understand but aren't 100% sure, ASK
+
+**Example good behavior:**
+- "Before I make changes, I want to verify I understand correctly..."
+- "I have two approaches. Which would you prefer?"
+- "This didn't work as expected. Before trying something else, what would you like me to do?"
+
+**NEVER:**
+- Make decisions based on your opinion alone
+- Take action without asking when encountering choices
+- Assume you understand without verifying
+
 ## Single source of truth
 - `ROADMAP.md` - Current status, metrics, and next steps (read FIRST)
 - `IMPLEMENTATION_PLAN.md` - Detailed specifications (6,592 lines)
 - Do not duplicate details here; refer to the plan for specifics.
+
+## Session Continuity & Persistent Memory
+
+### LESSONS_LEARNED.md (Permanent Knowledge) - MANDATORY!
+
+**Location:** `docs/LESSONS_LEARNED.md`
+
+This file is PERMANENT and accumulates across ALL sessions.
+
+**WHEN TO READ (On-Demand, NOT always):**
+- When stuck - CHECK LESSONS_LEARNED first!
+- When encountering an error - search for similar issues
+- DO NOT read the whole file at session start
+
+**WHEN TO WRITE:**
+- At SESSION END - review if anything was learned → ADD it
+- When fixing a non-trivial bug → ADD the lesson immediately
+- When discovering a gotcha → ADD it immediately
+- RECURRING issues (even typos) → MUST add
+
+### Session Files (Short-term Context)
+
+**At SESSION END:** Create `docs/REVIEWS/YYYY/YYYY-MM-DD-session.md`
+
+**At Session Start:**
+1. Read `docs/REVIEWS/latest.md` → recent session file
+2. Read this file (CLAUDE.md)
+3. DO NOT read LESSONS_LEARNED.md at start (use on-demand)
 
 ## Sync rules (mandatory)
 - Keep `AGENTS.md`, `CLAUDE.md`, and `GEMINI.md` byte-identical.
