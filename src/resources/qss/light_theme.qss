@@ -34,20 +34,103 @@ QMainWindow {
 
 #status_card {
     background-color: #ffffff;
-    border: 2px solid #e0e0e0;
-    border-radius: 8px;
+    border: 1px solid #e0e0e0;  /* Thinner border */
+    border-radius: 10px;        /* More rounded */
+    padding: 10px;
     min-width: 110px;
 }
 
 #status_card:hover {
     background-color: #f8f9fa;
-    border-color: #333333;
+    border-color: #2196F3;
 }
 
 #panel_title {
     color: #2196F3;
     padding-bottom: 4px;
     border-bottom: 1px solid #ebeef5;
+}
+
+/* ===== Header ===== */
+#header {
+    background: qlineargradient(x1:0, y1:0, x2:1, y2:0,
+        stop:0 #2563eb,  /* Brighter blue for light mode */
+        stop:1 #1f2937   /* Charcoal gray */
+    );
+    border-bottom: 1px solid #374151;
+    min-height: 45px;
+    max-height: 45px;
+}
+
+#projector_name {
+    color: #f3f4f6;  /* Light text on dark gradient */
+    font-size: 14pt;
+    font-weight: bold;
+}
+
+/* Header icon buttons - flat transparent style */
+#header QPushButton {
+    background-color: transparent;
+    border: none;
+    border-radius: 4px;
+    padding: 0px;
+    min-height: 0px;
+}
+
+#header QPushButton:hover {
+    background-color: rgba(255, 255, 255, 0.1);
+}
+
+#header QPushButton:pressed {
+    background-color: rgba(255, 255, 255, 0.2);
+}
+
+#header QPushButton:focus {
+    outline: none;
+    background-color: rgba(255, 255, 255, 0.15);
+}
+
+/* ===== Compact Mode Status ===== */
+#compact_status {
+    background-color: transparent;
+    border: none;
+    border-radius: 0px;
+    padding: 6px 8px;
+}
+
+#compact_status_label {
+    color: #212121;
+    font-size: 10pt;
+    font-weight: bold;
+}
+
+#compact_status_small {
+    color: #757575;
+    font-size: 8pt;
+}
+
+/* Compact mode large cards (Connection/Power) */
+#compact_large_card {
+    background-color: #e8eaed;
+    border: 1px solid #c5c7ca;
+    border-radius: 8px;
+}
+
+#compact_large_card:hover {
+    background-color: #dfe1e5;
+    border-color: #2196F3;
+}
+
+/* Compact mode small icon cards (Input/Volume/Lamp) */
+#compact_small_card {
+    background-color: #e8eaed;
+    border: 1px solid #c5c7ca;
+    border-radius: 6px;
+}
+
+#compact_small_card:hover {
+    background-color: #dfe1e5;
+    border-color: #2196F3;
 }
 
 /* ===== Buttons ===== */
@@ -134,6 +217,18 @@ QPushButton:focus {
 #volume_btn:hover, #mute_btn:hover {
     background: qlineargradient(x1:0, y1:0, x2:0, y2:1, stop:0 #ab47bc, stop:1 #9c27b0);
     border-color: #7b1fa2;
+}
+
+/* Compact mode controls widget */
+#compact_controls {
+    background-color: transparent;
+    border: none;
+}
+
+/* Compact mode buttons - fixed size 350x55px */
+QPushButton[compact="true"] {
+    font-size: 11pt;
+    padding: 10px 16px;
 }
 
 /* Secondary buttons */

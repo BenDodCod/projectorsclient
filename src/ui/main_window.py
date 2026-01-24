@@ -178,7 +178,7 @@ class MainWindow(QMainWindow):
         """
         header = QWidget()
         header.setObjectName("header")
-        header.setFixedHeight(50)
+        header.setFixedHeight(45)
 
         layout = QHBoxLayout(header)
         layout.setContentsMargins(16, 8, 16, 8)
@@ -224,37 +224,59 @@ class MainWindow(QMainWindow):
         self.theme_btn.clicked.connect(self.toggle_theme)
         layout.addWidget(self.theme_btn)
 
-        # Minimize button
-        minimize_btn = QPushButton()
-        minimize_btn.setIcon(IconLibrary.get_icon('minimize'))
-        minimize_btn.setIconSize(QSize(24, 24))
-        minimize_btn.setFixedSize(36, 36)
-        minimize_btn.setToolTip(t('buttons.minimize', 'Minimize to tray'))
-        minimize_btn.setAccessibleName("Minimize to tray button")
-        minimize_btn.clicked.connect(self.hide)
-        layout.addWidget(minimize_btn)
+        # More menu button
+        more_btn = QPushButton()
+        more_btn.setIcon(IconLibrary.get_icon('menu'))
+        more_btn.setIconSize(QSize(24, 24))
+        more_btn.setFixedSize(36, 36)
+        more_btn.setToolTip(t('buttons.more', 'More options'))
+        more_btn.setAccessibleName("More menu button")
+        more_btn.clicked.connect(self._show_more_menu)
+        layout.addWidget(more_btn)
 
         return header
 
     def _create_status_bar(self) -> None:
-        """Create the status bar with connection indicator."""
+        """Create the status bar with connection indicator and heartbeat."""
         status_bar = QStatusBar()
         self.setStatusBar(status_bar)
 
-        # Connection indicator
+        # Heartbeat indicator (green dot)
+        self.heartbeat_indicator = QLabel()
+        self.heartbeat_indicator.setFixedSize(8, 8)
+        self.heartbeat_indicator.setStyleSheet(
+            "background-color: #10B981; border-radius: 4px;"
+        )
+        self.heartbeat_indicator.setAccessibleName("Connection heartbeat indicator")
+        self.heartbeat_indicator.hide()  # Hidden by default until connected
+        status_bar.addPermanentWidget(self.heartbeat_indicator)
+
+        # Connection status label (shows "Connected to IP" or "Disconnected")
         self.connection_label = QLabel()
-        self.connection_label.setAccessibleName("Connection status indicator")
-        self._update_connection_indicator()
+        self.connection_label.setAccessibleName("Connection status")
+        self._update_connection_status_label()
         status_bar.addPermanentWidget(self.connection_label)
 
-        # IP address label - will be updated from database config
+        # Small settings gear button (next to connection status)
+        self.footer_settings_btn = QPushButton()
+        self.footer_settings_btn.setIcon(IconLibrary.get_icon('settings'))
+        self.footer_settings_btn.setIconSize(QSize(14, 14))
+        self.footer_settings_btn.setFixedSize(20, 20)
+        self.footer_settings_btn.setFlat(True)
+        self.footer_settings_btn.setStyleSheet("QPushButton { background-color: transparent; border: none; } QPushButton:hover { background-color: rgba(100, 181, 246, 0.2); border-radius: 4px; }")
+        self.footer_settings_btn.setToolTip(t('buttons.settings', 'Settings'))
+        self.footer_settings_btn.clicked.connect(self.open_settings)
+        self.footer_settings_btn.setAccessibleName("Footer settings button")
+        status_bar.addPermanentWidget(self.footer_settings_btn)
+
+        # IP address label - will be updated from database config (kept for compatibility)
         self.ip_label = QLabel("")
         self.ip_label.setAccessibleName("Projector IP address")
-        status_bar.addPermanentWidget(self.ip_label)
+        self.ip_label.hide()  # Hidden since IP is now shown in connection_label
 
-        # Last update label
+        # Last update label (left side)
         self.update_label = QLabel(t('status.ready', 'Ready'))
-        self.update_label.setAccessibleName("Last update time")
+        self.update_label.setAccessibleName("Status message")
         status_bar.addWidget(self.update_label)
 
     def _connect_control_signals(self) -> None:
@@ -416,19 +438,27 @@ class MainWindow(QMainWindow):
         except Exception as e:
             logger.warning(f"Failed to save window geometry: {e}")
 
-    def _update_connection_indicator(self) -> None:
-        """Update the connection status indicator."""
-        if self._is_connected:
-            icon = IconLibrary.get_pixmap('connected', QSize(16, 16))
-            text = t('status.connected', 'Connected')
-            self.connection_label.setStyleSheet("color: #10B981;")
+    def _update_connection_status_label(self) -> None:
+        """Update connection status label with 'Connected to IP' format."""
+        if hasattr(self, 'ip_label') and self.ip_label.text():
+            ip = self.ip_label.text()
         else:
-            icon = IconLibrary.get_pixmap('disconnected', QSize(16, 16))
-            text = t('status.disconnected', 'Disconnected')
-            self.connection_label.setStyleSheet("color: #EF4444;")
+            ip = "Unknown"
 
-        self.connection_label.setPixmap(icon)
-        self.connection_label.setText(f" {text}")
+        if self._is_connected:
+            text = f"Connected to {ip}"
+            color = "#10B981"  # Green
+            if hasattr(self, 'heartbeat_indicator'):
+                self.heartbeat_indicator.show()
+        else:
+            text = t('status.disconnected', 'Disconnected')
+            color = "#EF4444"  # Red
+            if hasattr(self, 'heartbeat_indicator'):
+                self.heartbeat_indicator.hide()
+
+        if hasattr(self, 'connection_label'):
+            self.connection_label.setText(text)
+            self.connection_label.setStyleSheet(f"color: {color};")
 
     # Public API for updating status
 
@@ -441,7 +471,7 @@ class MainWindow(QMainWindow):
             error: Optional error message
         """
         self._is_connected = connected
-        self._update_connection_indicator()
+        self._update_connection_status_label()
 
         # Update tray icon
         if hasattr(self, 'tray_icon'):
@@ -457,6 +487,14 @@ class MainWindow(QMainWindow):
             self.update_label.setText(f"{t('status.error', 'Error')}: {error}")
         else:
             self.update_label.setText(t('status.disconnected', 'Disconnected'))
+
+        # Also update compact status connection if it exists
+        if hasattr(self, 'compact_status') and hasattr(self.status_panel, 'update_compact_status'):
+            # Get current status values from status panel
+            power = self.status_panel._power_state
+            input_source = self.status_panel._input_source
+            lamp_hours = self.status_panel._lamp_hours
+            self.status_panel.update_compact_status(power, input_source, lamp_hours, connected)
 
     def set_projector_name(self, name: str) -> None:
         """
@@ -492,6 +530,12 @@ class MainWindow(QMainWindow):
             lamp_hours: Lamp hours count
         """
         self.status_panel.update_status(power, input_source, lamp_hours)
+
+        # Also update compact status if it exists
+        if hasattr(self, 'compact_status'):
+            self.status_panel.update_compact_status(
+                power, input_source, lamp_hours, self._is_connected
+            )
 
     def add_history_entry(self, action: str, result: str, timestamp: str = None) -> None:
         """
@@ -785,19 +829,68 @@ class MainWindow(QMainWindow):
         try:
             current_theme = self._settings.get_str("ui.theme", "light")
             new_theme = "dark" if current_theme == "light" else "light"
-            
+
             # Save to settings
             self._settings.set("ui.theme", new_theme)
-            
+
             # Apply changes
             self._apply_saved_theme()
             self._update_theme_button_icon()
             self._refresh_icons()
-            
+
             # Notify of change
             logger.info(f"Theme toggled to: {new_theme}")
         except Exception as e:
             logger.error(f"Failed to toggle theme: {e}")
+
+    def _show_more_menu(self) -> None:
+        """Show more options menu."""
+        from PyQt6.QtWidgets import QMenu
+
+        menu = QMenu(self)
+
+        # Minimize action
+        minimize_action = menu.addAction(
+            IconLibrary.get_icon('minimize'),
+            t('buttons.minimize', 'Minimize to tray')
+        )
+        minimize_action.triggered.connect(self.hide)
+
+        # Language submenu
+        lang_menu = menu.addMenu(t('menu.language', 'Language'))
+        en_action = lang_menu.addAction("English")
+        en_action.triggered.connect(lambda: self._set_language('en'))
+        he_action = lang_menu.addAction("עברית")
+        he_action.triggered.connect(lambda: self._set_language('he'))
+
+        # About action
+        menu.addSeparator()
+        about_action = menu.addAction(t('menu.about', 'About'))
+        about_action.triggered.connect(self._show_about_dialog)
+
+        # Show menu below button
+        button = self.sender()
+        if button:
+            menu.exec(button.mapToGlobal(button.rect().bottomLeft()))
+
+    def _set_language(self, lang_code: str) -> None:
+        """Set application language and apply it immediately."""
+        try:
+            self._settings.set("ui.language", lang_code)
+            # Apply language change immediately (no restart needed)
+            self.set_language(lang_code)
+            logger.info(f"Language set to: {lang_code}")
+        except Exception as e:
+            logger.error(f"Failed to set language: {e}")
+
+    def _show_about_dialog(self) -> None:
+        """Show about dialog."""
+        from PyQt6.QtWidgets import QMessageBox
+        QMessageBox.about(
+            self,
+            t('menu.about', 'About'),
+            t('settings.copyright', 'Projector Control Application') + "\n\nVersion 2.0.0-rc1"
+        )
 
     def _update_theme_button_icon(self) -> None:
         """Update the theme button icon based on current theme."""
@@ -824,8 +917,8 @@ class MainWindow(QMainWindow):
                 for btn in buttons:
                     if "Settings" in btn.accessibleName():
                         btn.setIcon(IconLibrary.get_icon('settings'))
-                    elif "Minimize" in btn.accessibleName():
-                        btn.setIcon(IconLibrary.get_icon('minimize'))
+                    elif "More menu" in btn.accessibleName():
+                        btn.setIcon(IconLibrary.get_icon('menu'))
 
             # Update controls panel
             if hasattr(self, 'controls_panel'):
@@ -839,7 +932,7 @@ class MainWindow(QMainWindow):
                     self.tray_icon.setIcon(IconLibrary.get_icon('tray_disconnected'))
 
             # Update status bar icons
-            self._update_connection_indicator()
+            self._update_connection_status_label()
             
             logger.debug("UI icons refreshed for new theme")
         except Exception as e:
@@ -891,28 +984,52 @@ class MainWindow(QMainWindow):
         """
         try:
             if enabled:
-                # Hide panels in compact mode
+                # Hide normal panels
                 if hasattr(self, 'status_panel'):
                     self.status_panel.hide()
+                if hasattr(self, 'controls_panel'):
+                    self.controls_panel.hide()
                 if hasattr(self, 'history_panel'):
                     self.history_panel.hide()
 
-                # Hide extra control buttons - only show Power On/Off
-                if hasattr(self, 'controls_panel'):
-                    self.controls_panel.set_button_visibility({
-                        'power_on': True,
-                        'power_off': True,
-                        'blank': False,
-                        'freeze': False,
-                        'input': False,
-                        'volume': False,
-                        'mute': False
-                    })
+                # Show compact widgets
+                if not hasattr(self, 'compact_controls'):
+                    from src.ui.widgets.compact_controls import CompactControls
+                    self.compact_controls = CompactControls()
+                    self.compact_controls.power_on_clicked.connect(self._on_power_on)
+                    self.compact_controls.power_off_clicked.connect(self._on_power_off)
+                    self.compact_controls.blank_toggled.connect(self.blank_toggled.emit)
+                    # Insert into layout at position 2 (after header and compact_status)
+                    central = self.centralWidget()
+                    layout = central.layout()
+                    layout.insertWidget(2, self.compact_controls)
 
-                # Shrink window to compact size
-                self.setMinimumSize(400, 150)
-                self.resize(450, 180)
+                if not hasattr(self, 'compact_status'):
+                    self.compact_status = self.status_panel.create_compact_status()
+                    # Insert into layout at position 1 (after header), centered
+                    central = self.centralWidget()
+                    layout = central.layout()
+                    layout.insertWidget(1, self.compact_status, 0, Qt.AlignmentFlag.AlignHCenter)
+
+                    # Initialize compact status with current values
+                    power = self.status_panel._power_state
+                    input_source = self.status_panel._input_source
+                    lamp_hours = self.status_panel._lamp_hours
+                    self.status_panel.update_compact_status(power, input_source, lamp_hours, self._is_connected)
+
+                self.compact_controls.show()
+                self.compact_status.show()
+
+                # Set compact mode window size
+                self.setMinimumSize(390, 420)
+                self.resize(390, 420)
             else:
+                # Hide compact widgets
+                if hasattr(self, 'compact_controls'):
+                    self.compact_controls.hide()
+                if hasattr(self, 'compact_status'):
+                    self.compact_status.hide()
+
                 # Restore normal window size FIRST
                 self.setMinimumSize(765, 654)
                 self.resize(765, 654)
@@ -927,13 +1044,13 @@ class MainWindow(QMainWindow):
                         self.controls_panel.layout().update()
                     self.controls_panel.updateGeometry()
 
-                # Show panels in normal mode
+                # Show normal panels
                 if hasattr(self, 'status_panel'):
                     self.status_panel.show()
-                if hasattr(self, 'history_panel'):
-                    self.history_panel.show()
                 if hasattr(self, 'controls_panel'):
                     self.controls_panel.show()
+                if hasattr(self, 'history_panel'):
+                    self.history_panel.show()
 
                 # Force main layout update to ensure everything displays correctly
                 if hasattr(self, 'centralWidget'):
@@ -1165,6 +1282,17 @@ class MainWindow(QMainWindow):
         if hasattr(self.history_panel, 'retranslate'):
             self.history_panel.retranslate()
 
+        # Also retranslate compact mode widgets if they exist
+        if hasattr(self, 'compact_controls') and hasattr(self.compact_controls, 'retranslate'):
+            self.compact_controls.retranslate()
+
+        # Update compact status with retranslated values
+        if hasattr(self, 'compact_status') and hasattr(self.status_panel, 'update_compact_status'):
+            power = self.status_panel._power_state
+            input_source = self.status_panel._input_source
+            lamp_hours = self.status_panel._lamp_hours
+            self.status_panel.update_compact_status(power, input_source, lamp_hours, self._is_connected)
+
         # Emit language changed signal
         self.language_changed.emit(language)
 
@@ -1211,7 +1339,7 @@ class MainWindow(QMainWindow):
                     child.setToolTip(t('buttons.minimize', 'Minimize to tray'))
 
         # Update status bar
-        self._update_connection_indicator()
+        self._update_connection_status_label()
 
         # Update tray icon and menu if available
         if hasattr(self, 'tray_icon'):
