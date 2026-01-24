@@ -110,13 +110,29 @@ This file is PERMANENT and accumulates across ALL sessions.
 - Compatibility: Windows 10/11, DPI 1x-4x, PJLink Class 1 & 2
 
 ## Workflow for any task
-- Read `ROADMAP.md` first for current requirements, progress, and next steps.
-- Reference specific sections in `IMPLEMENTATION_PLAN.md` only when needed.
-- Use `@/.claude/agents/project-orchestrator.md` as the coordinating agent to distribute work.
-- For complex tasks (> 1 hour), use `@/.claude/agents/task-decomposer.md` to break into parallel subtasks.
-- Implement changes and update progress in `ROADMAP.md`.
-- If `IMPLEMENTATION_PLAN.md` changes, append an entry in `logs/plan_change_logs.md`.
-- Mirror updates across the three synced agent files (`AGENTS.md`, `CLAUDE.md`, `GEMINI.md`).
+
+### Session Start Checklist
+1. Read `docs/REVIEWS/latest.md` for recent context
+2. Read this file (CLAUDE.md) for project brief
+3. Read `ROADMAP.md` for current requirements, progress, and next steps
+4. (If stuck or errors) Check `docs/LESSONS_LEARNED.md` for known issues
+
+### During Work
+- Reference specific sections in `IMPLEMENTATION_PLAN.md` only when needed
+- Use `@/.claude/agents/project-orchestrator.md` as the coordinating agent to distribute work
+- For complex tasks (> 1 hour), use `@/.claude/agents/task-decomposer.md` to break into parallel subtasks
+- Document decisions as you make them
+- If fixing a non-trivial bug → Add to `docs/LESSONS_LEARNED.md` immediately
+- Implement changes and update progress in `ROADMAP.md`
+- If `IMPLEMENTATION_PLAN.md` changes, append an entry in `logs/plan_change_logs.md`
+- Mirror updates across the three synced agent files (`AGENTS.md`, `CLAUDE.md`, `GEMINI.md`)
+
+### Session End Checklist
+1. Create session file: Copy `docs/REVIEWS/_SESSION_TEMPLATE.md` to `docs/REVIEWS/YYYY/YYYY-MM-DD-session.md`
+2. Fill in session details (summary, work done, decisions, next steps)
+3. Update `docs/REVIEWS/latest.md` with quick context for next session
+4. Review work - add any lessons to `docs/LESSONS_LEARNED.md`
+5. Commit all changes with descriptive message
 
 ## Parallel execution
 - DEFAULT TO PARALLEL: When assigning work, maximize agents working simultaneously.
