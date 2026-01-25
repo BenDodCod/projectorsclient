@@ -29,7 +29,7 @@ class TestAuthenticationFlow:
 
     def test_pjlink_authentication_success(self, mock_server, caplog):
         """Verify successful PJLink authentication."""
-        caplog.set_level(logging.INFO)
+        caplog.set_level(logging.DEBUG)
         
         controller = ProjectorController(
             host="127.0.0.1", 

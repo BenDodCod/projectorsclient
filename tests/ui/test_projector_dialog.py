@@ -665,6 +665,11 @@ class TestConnectionTesting:
         """Test connection test without controller shows placeholder message."""
         from src.ui.dialogs.projector_dialog import ProjectorDialog
 
+        # Mock controller factory to avoid actual network calls
+        mock_controller = MagicMock()
+        mock_controller.connect.return_value = True
+        mock_controller.get_power_state.return_value = "on"
+
         dialog = ProjectorDialog(db_manager=mock_db_manager, controller=None)
         qtbot.addWidget(dialog)
 
@@ -672,18 +677,23 @@ class TestConnectionTesting:
         dialog._name_edit.setText("Test Projector")
         dialog._ip_edit.setText("192.168.1.100")
 
-        with patch.object(QMessageBox, 'information') as mock_info:
-            # Test connection
-            dialog._test_connection()
+        with patch('src.ui.dialogs.projector_dialog.ControllerFactory.create', return_value=mock_controller):
+            with patch.object(QMessageBox, 'information') as mock_info:
+                # Test connection
+                dialog._test_connection()
 
-            # Should show information message
-            assert mock_info.called
+                # Should show information message
+                assert mock_info.called
 
     def test_test_connection_with_controller(self, qapp, qtbot, mock_db_manager):
         """Test connection test with controller attempts actual test."""
         from src.ui.dialogs.projector_dialog import ProjectorDialog
 
+        # Mock controller factory to avoid actual network calls
         mock_controller = MagicMock()
+        mock_controller.connect.return_value = True
+        mock_controller.get_power_state.return_value = "on"
+
         dialog = ProjectorDialog(
             db_manager=mock_db_manager,
             controller=mock_controller
@@ -694,16 +704,22 @@ class TestConnectionTesting:
         dialog._name_edit.setText("Test Projector")
         dialog._ip_edit.setText("192.168.1.100")
 
-        with patch.object(QMessageBox, 'information') as mock_info:
-            # Test connection
-            dialog._test_connection()
+        with patch('src.ui.dialogs.projector_dialog.ControllerFactory.create', return_value=mock_controller):
+            with patch.object(QMessageBox, 'information') as mock_info:
+                # Test connection
+                dialog._test_connection()
 
-            # Should show success message
-            assert mock_info.called
+                # Should show success message
+                assert mock_info.called
 
     def test_test_connection_emits_signal(self, qapp, qtbot, mock_db_manager):
         """Test connection test emits connection_tested signal."""
         from src.ui.dialogs.projector_dialog import ProjectorDialog
+
+        # Mock controller factory to avoid actual network calls
+        mock_controller = MagicMock()
+        mock_controller.connect.return_value = True
+        mock_controller.get_power_state.return_value = "on"
 
         dialog = ProjectorDialog(db_manager=mock_db_manager)
         qtbot.addWidget(dialog)
@@ -716,13 +732,14 @@ class TestConnectionTesting:
         signal_emitted = []
         dialog.connection_tested.connect(lambda success, msg: signal_emitted.append((success, msg)))
 
-        with patch.object(QMessageBox, 'information'):
-            # Test connection
-            dialog._test_connection()
+        with patch('src.ui.dialogs.projector_dialog.ControllerFactory.create', return_value=mock_controller):
+            with patch.object(QMessageBox, 'information'):
+                # Test connection
+                dialog._test_connection()
 
-            # Signal should have been emitted
-            assert len(signal_emitted) == 1
-            assert signal_emitted[0][0] is True  # Success
+                # Signal should have been emitted
+                assert len(signal_emitted) == 1
+                assert signal_emitted[0][0] is True  # Success
 
     def test_test_connection_button_disabled_during_test(self, qapp, qtbot, mock_db_manager):
         """Test connection test button is disabled during test."""

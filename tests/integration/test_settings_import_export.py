@@ -2,7 +2,6 @@
 import json
 import pytest
 import os
-from unittest.mock import MagicMock, patch
 
 from src.config.settings import SettingsManager, SettingDefinition, SettingType
 from src.database.connection import DatabaseManager
@@ -20,34 +19,10 @@ class TestSettingsImportExport:
     @pytest.fixture
     def credential_manager(self, tmp_path):
         """Create a credential manager."""
-        # Need to mock Windows DPAPI if running on non-windows or just generally for stability
-        # But this is integration test, we can try using real if on Windows or Mock if not.
-        # Given previous tests used real security.py, we'll try that, assuming Windows environment.
-        # But we can mock `win32crypt` if needed.
-        # For reliability, let's mock the low-level encryption to focus on Manager logic
-        # OR better: use the real class but mock the win32api calls to be platform independent 
-        # and support "corrupted" ciphertext tests easily.
-        
-        with patch("src.utils.security.WINDOWS_AVAILABLE", True), \
-             patch("src.utils.security.win32crypt") as mock_crypt, \
-             patch("src.utils.security.win32api") as mock_api:
-             
-            # Setup mock encryption/decryption behavior (simple wrapping)
-            def mock_encrypt(data, desc, entropy, r, p, f):
-                # Simple "encryption" for testing
-                return b"ENC:" + data
-            
-            def mock_decrypt(data, entropy, r, p, f):
-                if not data.startswith(b"ENC:"):
-                    raise Exception("Invalid ciphertext")
-                return None, data[4:] # desc, data
-
-            mock_crypt.CryptProtectData.side_effect = mock_encrypt
-            mock_crypt.CryptUnprotectData.side_effect = mock_decrypt
-            mock_api.GetComputerName.return_value = "TEST-PC"
-            
-            cm = CredentialManager(str(tmp_path))
-            yield cm
+        # Use real CredentialManager with AES-GCM encryption (no DPAPI mocking needed)
+        # The cryptography library works cross-platform without requiring Windows APIs
+        cm = CredentialManager(str(tmp_path))
+        return cm
 
     @pytest.fixture
     def settings_manager(self, db_manager, credential_manager):
