@@ -14,15 +14,16 @@ This file is a short, shared brief for all assistant models on this project.
 
 Before taking ANY action, you MUST:
 
-1. **Clarify understanding first** - Always ask questions to understand the task fully
-2. **Ask before decisions** - Never make assumptions about:
+1. **Allways Follow the workflow** - at the start and at the end of each session
+2. **Clarify understanding first** - Always ask questions to understand the task fully
+3. **Ask before decisions** - Never make assumptions about:
    - Design decisions
    - Functional decisions
    - Optimization decisions
    - Implementation approaches
    - What to do when something doesn't work
-3. **Check during work** - When encountering any decision point, ask the user
-4. **Verify unclear items** - If you think you understand but aren't 100% sure, ASK
+4. **Check during work** - When encountering any decision point, ask the user
+5. **Verify unclear items** - If you think you understand but aren't 100% sure, ASK
 
 **Example good behavior:**
 - "Before I make changes, I want to verify I understand correctly..."

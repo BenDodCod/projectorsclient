@@ -257,18 +257,6 @@ class MainWindow(QMainWindow):
         self._update_connection_status_label()
         status_bar.addPermanentWidget(self.connection_label)
 
-        # Small settings gear button (next to connection status)
-        self.footer_settings_btn = QPushButton()
-        self.footer_settings_btn.setIcon(IconLibrary.get_icon('settings'))
-        self.footer_settings_btn.setIconSize(QSize(14, 14))
-        self.footer_settings_btn.setFixedSize(20, 20)
-        self.footer_settings_btn.setFlat(True)
-        self.footer_settings_btn.setStyleSheet("QPushButton { background-color: transparent; border: none; } QPushButton:hover { background-color: rgba(100, 181, 246, 0.2); border-radius: 4px; }")
-        self.footer_settings_btn.setToolTip(t('buttons.settings', 'Settings'))
-        self.footer_settings_btn.clicked.connect(self.open_settings)
-        self.footer_settings_btn.setAccessibleName("Footer settings button")
-        status_bar.addPermanentWidget(self.footer_settings_btn)
-
         # IP address label - will be updated from database config (kept for compatibility)
         self.ip_label = QLabel("")
         self.ip_label.setAccessibleName("Projector IP address")

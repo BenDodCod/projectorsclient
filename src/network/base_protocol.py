@@ -60,6 +60,66 @@ class ProtocolType(Enum):
             valid = ", ".join(p.value for p in cls)
             raise ValueError(f"Unknown protocol type: {value}. Valid types: {valid}")
 
+    @classmethod
+    def normalize_protocol_type(cls, value: str) -> str:
+        """Normalize protocol type string to canonical enum value.
+
+        Handles common variations and display names like:
+        - "PJLink Class 1" → "pjlink"
+        - "PJLink Class 2" → "pjlink"
+        - "PJLINK" → "pjlink"
+        - "Hitachi (Native Protocol)" → "hitachi"
+
+        Args:
+            value: Protocol type string (may include display text or variations).
+
+        Returns:
+            Normalized protocol type string (lowercase enum value).
+
+        Raises:
+            ValueError: If value cannot be normalized to a valid protocol type.
+        """
+        if not value:
+            return "pjlink"  # Default fallback
+
+        # Try exact match first (already normalized)
+        normalized = value.lower().strip()
+        try:
+            cls(normalized)
+            return normalized
+        except ValueError:
+            pass
+
+        # Handle known display names and variations
+        mapping = {
+            "pjlink class 1": "pjlink",
+            "pjlink class 2": "pjlink",
+            "hitachi (native protocol)": "hitachi",
+            "sony adcp": "sony",
+            "benq": "benq",
+            "nec": "nec",
+            "jvc d-ila": "jvc",
+            "jvc": "jvc",
+        }
+
+        normalized_lower = normalized.lower()
+        if normalized_lower in mapping:
+            return mapping[normalized_lower]
+
+        # Extract protocol name from display text (first word before space/parenthesis)
+        first_word = normalized.split()[0] if normalized else ""
+        try:
+            cls(first_word)
+            return first_word
+        except ValueError:
+            pass
+
+        # If all else fails, raise error with helpful message
+        valid = ", ".join(p.value for p in cls)
+        raise ValueError(
+            f"Cannot normalize protocol type: '{value}'. Valid types: {valid}"
+        )
+
 
 class UnifiedPowerState(Enum):
     """Protocol-agnostic projector power states.

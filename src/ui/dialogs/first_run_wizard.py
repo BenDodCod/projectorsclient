@@ -856,11 +856,11 @@ class ProjectorSelectionPage(QWizardPage):
                     # Map legacy columns/defaults
                     data['proj_pass_encrypted'] = row.get('proj_pass')
                     data['proj_port'] = 4352  # Default
-                    data['proj_type'] = "PJLink Class 1" # Default
+                    data['proj_type'] = "pjlink" # Default protocol type
                 else:
                     data['proj_pass_encrypted'] = row.get('proj_pass_encrypted')
                     data['proj_port'] = row.get('proj_port', 4352)
-                    data['proj_type'] = row.get('proj_type', "PJLink Class 1")
+                    data['proj_type'] = row.get('proj_type', "pjlink")
                 
                 self._projectors_data.append(data)
 

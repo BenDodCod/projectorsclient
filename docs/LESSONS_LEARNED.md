@@ -30,6 +30,17 @@
 - **Fix:** (1) Modified `connection_tab.py:_edit_projector()` to conditionally update password field only when new password provided. (2) Modified `main.py` startup to load from `projector_config` table with proper password decryption.
 - **Prevention:** Ensure save and load paths use same table. When editing records, never update fields that weren't changed (especially sensitive fields like passwords).
 
+### Projector type stored as display name instead of enum value in SQL Server mode
+- **Date:** 2026-01-25
+- **Symptom:** SQL Server first-run wizard saves projector successfully, but main window fails to load with error: "Unknown protocol type: PJLink Class 1. Valid types: pjlink, hitachi, sony, benq, nec, jvc". Standalone SQLite mode works correctly.
+- **Root Cause:** `first_run_wizard.py:ProjectorSelectionPage._load_projectors()` (lines 859, 863) hardcoded default as `"PJLink Class 1"` instead of `"pjlink"`. The ProtocolType enum expects lowercase protocol identifiers, not display names.
+- **Fix:** Implemented defense-in-depth with 5 layers: (1) Fixed hardcoded defaults to `"pjlink"` (2) Added `ProtocolType.normalize_protocol_type()` method (3) Runtime normalization on load (4) Validation on save (5) Database migration v3→v4 to fix existing corrupted data. See commit for full details.
+- **Prevention:**
+  - Always use enum values, never display names, for database storage
+  - Add normalization layer when loading user-facing values into database fields
+  - When fixing data corruption bugs, use defense-in-depth: fix root cause + runtime normalization + migration
+  - Test both standalone and SQL Server modes for data persistence bugs
+
 ---
 
 ## Gotchas

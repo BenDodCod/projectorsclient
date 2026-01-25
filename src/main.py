@@ -435,6 +435,15 @@ def show_first_run_wizard(db: "DatabaseManager") -> bool:
                     logger.info("Updated existing projector in projector_config table")
                 else:
                     # Insert new projector
+                    # Normalize and validate projector type before saving
+                    from src.network.base_protocol import ProtocolType
+                    proj_type_raw = projector_config.get("type", "pjlink")
+                    try:
+                        proj_type_normalized = ProtocolType.normalize_protocol_type(proj_type_raw)
+                    except ValueError:
+                        logger.warning(f"Invalid protocol type '{proj_type_raw}', using default 'pjlink'")
+                        proj_type_normalized = "pjlink"
+
                     db.execute("""
                         INSERT INTO projector_config
                         (proj_name, proj_ip, proj_port, proj_type, proj_user, proj_pass_encrypted, location, active)
@@ -443,7 +452,7 @@ def show_first_run_wizard(db: "DatabaseManager") -> bool:
                         projector_config.get("name", "Projector"),
                         proj_ip,
                         projector_config.get("port", 4352),
-                        projector_config.get("type", "pjlink"),
+                        proj_type_normalized,
                         projector_config.get("auth_username", ""),
                         encrypted_password,
                         projector_config.get("location", "")
@@ -519,7 +528,16 @@ def show_main_window(db: "DatabaseManager") -> "QMainWindow":
             projector_name = projector_row[0] or "Projector"
             projector_ip = projector_row[1] or ""
             projector_port = projector_row[2] or 4352
-            projector_type = projector_row[3] or "pjlink"
+
+            # Normalize protocol type (handles corrupted values like "PJLink Class 1")
+            from src.network.base_protocol import ProtocolType
+            projector_type_raw = projector_row[3] or "pjlink"
+            try:
+                projector_type = ProtocolType.normalize_protocol_type(projector_type_raw)
+            except ValueError as e:
+                logger.warning(f"Invalid protocol type '{projector_type_raw}' for projector, using default 'pjlink': {e}")
+                projector_type = "pjlink"
+
             encrypted_password = projector_row[4]
 
             # Decrypt password if it exists

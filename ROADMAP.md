@@ -1,8 +1,8 @@
 # Enhanced Projector Control Application - Project Roadmap
 
-**Version:** 2.0.0-rc1
-**Last Updated:** 2026-01-18 (Session 12 - Multi-Brand Protocol Fixes)
-**Status:** PRODUCTION READY - All Features Complete, 94%+ Coverage, 1542 Tests
+**Version:** 2.0.0-rc2
+**Last Updated:** 2026-01-25 (Session 13 - SQL Server Protocol Type Fix)
+**Status:** PRODUCTION READY - All Features Complete, 94%+ Coverage, 1564 Tests
 **Timeline:** 14+ days ahead of schedule (Ready for Pilot Deployment)
 
 ---
@@ -20,6 +20,8 @@
 
 **Known Issue (Session 12):** Hitachi commands timeout on all ports despite successful TCP connection. Physical projector testing needed to verify command format matches specific model requirements.
 
+**Fixed (Session 13):** SQL Server mode was storing protocol type as "PJLink Class 1" instead of "pjlink", causing connection failures. Implemented defense-in-depth fix with 5 layers including database migration v3→v4. See LESSONS_LEARNED.md.
+
 ---
 
 ## Quick Status Overview
@@ -28,16 +30,17 @@
 **Next Phase:** Pilot Deployment with External Users
 **Overall Progress:** 100% Core Features (8/18 weeks preparation complete, ahead of schedule)
 
-**Key Metrics (as of Jan 17, 2026 - Session 11 - Documentation Update):**
-- **Tests:** 1,542 passing (251 new tests since Session 8)
+**Key Metrics (as of Jan 25, 2026 - Session 13 - SQL Server Protocol Type Fix):**
+- **Tests:** 1,564 passing (22 new tests: 15 normalization + 7 migration)
 - **Coverage:** 94%+ (target: 85% EXCEEDED by 9%)
 - **Integration Tests:** 130+ (target: 50, EXCEEDED by 160%)
 - **UI Tests:** 100+ (target: 50, EXCEEDED by 100%)
 - **Benchmark Tests:** 14 (all performance targets MET)
 - **Compatibility Tests:** 39 (Windows 10/11, DPI 1x-4x, PJLink Class 1&2)
 - **Security Tests:** 74 (0 critical/high vulnerabilities)
+- **Database Migrations:** 4 (v1→v2, v2→v3, v3→v4)
 - **Source Files:** 51 Python files (21,319 lines)
-- **Test Files:** 71 test files (31,290 lines)
+- **Test Files:** 73 test files (32,200+ lines)
 - **Classes Implemented:** 151
 - **Timeline:** 14+ days ahead of schedule
 
