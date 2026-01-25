@@ -60,6 +60,13 @@
 - **Issue:** Native Hitachi protocol timeouts on all ports (23, 9715) despite successful TCP connection. Confirmed with physical projector at 192.168.19.207.
 - **Solution:** Use PJLink Class 1 protocol on port 4352 instead. Fully functional with MD5 authentication. Controller factory automatically uses PJLink when port 4352 is specified. See `docs/protocols/HITACHI_PJLINK_FALLBACK.md`
 
+### PyQt6/PySide6 conflict causes massive test failures
+- **Date:** 2026-01-24
+- **Context:** Running full pytest suite with both PyQt6 and PySide6 installed
+- **Issue:** Having both PyQt6 and PySide6 installed simultaneously causes 220+ UI test failures. Tests pass individually but fail when run together. pytest-qt can switch between backends causing inconsistencies.
+- **Solution:** Uninstall all PySide6 packages: `pip uninstall PySide6 PySide6-Addons PySide6-Essentials -y`. Project uses PyQt6 exclusively. Verify with `pip list | grep -i "pyqt\|pyside"` - should only show PyQt6 packages.
+- **Prevention:** Never install both Qt bindings simultaneously. Check for PySide6 before running tests.
+
 ---
 
 ## Workarounds

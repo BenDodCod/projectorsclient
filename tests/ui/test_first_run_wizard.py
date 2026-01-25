@@ -40,7 +40,7 @@ class TestWizardPages:
         page = PasswordSetupPage()
         qtbot.addWidget(page)
 
-        assert page.title() == "Admin Password Setup"
+        assert page.title() == "Set Administrator Password"
         assert page.password_edit is not None
         assert page.confirm_edit is not None
 
@@ -138,7 +138,7 @@ class TestWizardPages:
         page = ConnectionModePage()
         qtbot.addWidget(page)
 
-        assert page.title() == "Connection Mode"
+        assert page.title() == "Database Connection"
         assert page.standalone_radio.isChecked()  # Default
 
     def test_connection_page_standalone_complete(self, qapp, qtbot):
@@ -184,6 +184,7 @@ class TestWizardPages:
 
         page = ConnectionModePage()
         qtbot.addWidget(page)
+        page.show()  # Show the page so visibility checks work correctly
 
         # Initially standalone, SQL settings should be hidden
         page.standalone_radio.setChecked(True)
@@ -230,7 +231,7 @@ class TestWizardPages:
         page = UICustomizationPage()
         qtbot.addWidget(page)
 
-        assert page.title() == "UI Customization"
+        assert page.title() == "User Interface Preferences"
         # Power buttons should be checked by default
         assert page.power_on_cb.isChecked()
         assert page.power_off_cb.isChecked()
@@ -297,13 +298,15 @@ class TestFirstRunWizard:
         assert wizard.minimumHeight() >= 500
 
     def test_wizard_starts_at_welcome(self, qapp, qtbot):
-        """Test wizard starts at welcome page."""
+        """Test wizard starts at language selection page."""
         from src.ui.dialogs.first_run_wizard import FirstRunWizard
 
         wizard = FirstRunWizard()
         qtbot.addWidget(wizard)
+        wizard.restart()  # Initialize wizard to first page
 
-        assert wizard.currentId() == FirstRunWizard.PAGE_WELCOME
+        # Wizard starts at language selection (PAGE_LANGUAGE = 0)
+        assert wizard.currentId() == FirstRunWizard.PAGE_LANGUAGE
 
     def test_wizard_field_registration(self, qapp, qtbot):
         """Test wizard fields are registered correctly."""
@@ -411,6 +414,7 @@ class TestWizardNavigation:
 
         wizard = FirstRunWizard()
         qtbot.addWidget(wizard)
+        wizard.restart()  # Initialize wizard to first page
 
         initial_id = wizard.currentId()
         wizard.next()
@@ -423,9 +427,11 @@ class TestWizardNavigation:
 
         wizard = FirstRunWizard()
         qtbot.addWidget(wizard)
+        wizard.restart()  # Initialize wizard to first page
 
-        # Go to password page
-        wizard.next()
+        # Navigate: PAGE_LANGUAGE (0) → PAGE_WELCOME (1) → PAGE_PASSWORD (2)
+        wizard.next()  # Language → Welcome
+        wizard.next()  # Welcome → Password
         assert wizard.currentId() == FirstRunWizard.PAGE_PASSWORD
 
         # Try to go forward without password (should stay or validation fail)
@@ -438,6 +444,7 @@ class TestWizardNavigation:
 
         wizard = FirstRunWizard()
         qtbot.addWidget(wizard)
+        wizard.restart()  # Initialize wizard to first page
 
         # Go forward to password page
         wizard.next()
@@ -454,8 +461,13 @@ class TestWizardNavigation:
 
         wizard = FirstRunWizard()
         qtbot.addWidget(wizard)
+        wizard.restart()  # Initialize wizard to first page
 
-        # Start at welcome
+        # Start at language selection
+        assert wizard.currentId() == FirstRunWizard.PAGE_LANGUAGE
+
+        # Go to welcome
+        wizard.next()
         assert wizard.currentId() == FirstRunWizard.PAGE_WELCOME
 
         # Go to password

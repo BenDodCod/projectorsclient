@@ -106,7 +106,7 @@ psutil==5.9.8
 # =============================================================================
 
 # PyQt6 type stubs
-PyQt6-stubs==6.6.0.0
+PyQt6-stubs==20250824
 
 # Types for common libraries
 types-jsonschema==4.20.0.0

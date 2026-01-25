@@ -259,9 +259,9 @@ class TestControllerFactoryGetDefaultPort:
         assert ControllerFactory.get_default_port("pjlink") == 4352
 
     def test_default_port_hitachi(self):
-        """Hitachi default port is 9715."""
-        assert ControllerFactory.get_default_port(ProtocolType.HITACHI) == 9715
-        assert ControllerFactory.get_default_port("hitachi") == 9715
+        """Hitachi default port is 4352 (PJLink fallback due to CP-EX timeout issues)."""
+        assert ControllerFactory.get_default_port(ProtocolType.HITACHI) == 4352
+        assert ControllerFactory.get_default_port("hitachi") == 4352
 
     def test_default_port_sony(self):
         """Sony default port is 53595."""

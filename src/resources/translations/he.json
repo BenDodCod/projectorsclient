@@ -362,7 +362,7 @@
     "add_projector": "הוסף מקרן",
     "edit_projector": "ערוך מקרן",
     "remove_projector": "הסר מקרן",
-    "confirm_remove_projector": "האם אתה בטוח שברצונך להסיר מקרן זה?",
+    "confirm_remove_projector": "האם אתה בטוח שברצונך להסיר את '{0}'?",
     "projector_editor_not_implemented": "עורך המקרן ייושם בעדכון עתידי.",
     "buttons_desc": "בחר אילו כפתורים יופיעו בממשק הראשי:",
     "buttons_power": "פקדי הפעלה",

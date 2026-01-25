@@ -338,7 +338,7 @@ class TestAddProjector:
 
         # Create a signal spy for dirty signal
         dirty_emitted = []
-        tab.dirty_changed.connect(lambda: dirty_emitted.append(True))
+        tab.settings_changed.connect(lambda: dirty_emitted.append(True))
 
         with patch('src.ui.dialogs.settings_tabs.connection_tab.ProjectorDialog') as mock_dialog_class:
             mock_dialog = MagicMock()
@@ -632,7 +632,7 @@ class TestAuthenticationTypeToggle:
 
         # Create a signal spy for dirty signal
         dirty_emitted = []
-        tab.dirty_changed.connect(lambda: dirty_emitted.append(True))
+        tab.settings_changed.connect(lambda: dirty_emitted.append(True))
 
         # Change auth type
         tab._sql_auth_combo.setCurrentIndex(1)

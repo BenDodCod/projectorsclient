@@ -369,7 +369,7 @@
     "add_projector": "Add Projector",
     "edit_projector": "Edit Projector",
     "remove_projector": "Remove Projector",
-    "confirm_remove_projector": "Are you sure you want to remove this projector?",
+    "confirm_remove_projector": "Are you sure you want to remove '{0}'?",
     "projector_editor_not_implemented": "Projector editor will be implemented in a future update.",
     "buttons_desc": "Select which buttons appear in the main interface:",
     "buttons_power": "Power Controls",

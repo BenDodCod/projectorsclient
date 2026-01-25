@@ -207,13 +207,20 @@ class ConnectionTab(BaseSettingsTab):
         self._remove_projector_btn.clicked.connect(self._remove_projector)
         self._test_projector_btn.clicked.connect(self._test_projector_connection)
 
-    def _on_auth_type_changed(self) -> None:
-        """Handle authentication type change."""
+        # Initialize auth type state
+        self._update_auth_fields_state()
+
+    def _update_auth_fields_state(self) -> None:
+        """Update the enabled state of auth fields based on auth type."""
         use_windows_auth = self._sql_auth_combo.currentData()
         self._sql_username_edit.setEnabled(not use_windows_auth)
         self._sql_password_edit.setEnabled(not use_windows_auth)
         self._sql_username_label.setEnabled(not use_windows_auth)
         self._sql_password_label.setEnabled(not use_windows_auth)
+
+    def _on_auth_type_changed(self) -> None:
+        """Handle authentication type change."""
+        self._update_auth_fields_state()
         self.mark_dirty()
 
     def _on_projector_selection_changed(self) -> None:
@@ -431,7 +438,7 @@ class ConnectionTab(BaseSettingsTab):
             self,
             t("settings.remove_projector", "Remove Projector"),
             t("settings.confirm_remove_projector",
-              f"Are you sure you want to remove '{projector_name}'?"),
+              "Are you sure you want to remove '{0}'?").format(projector_name),
             QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
             QMessageBox.StandardButton.No
         )

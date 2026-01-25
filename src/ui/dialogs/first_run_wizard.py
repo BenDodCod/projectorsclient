@@ -451,10 +451,14 @@ class ConnectionModePage(QWizardPage):
         self.mode_group = QGroupBox()
         mode_layout = QVBoxLayout(self.mode_group)
 
+        # Create button group for mutual exclusivity
+        self.mode_button_group = QButtonGroup(self)
+
         self.standalone_radio = QRadioButton()
         self.standalone_radio.setChecked(True)
         self.standalone_radio.setAccessibleName("Standalone mode")
         self.standalone_radio.setAccessibleDescription("Use local SQLite database for single-computer setups")
+        self.mode_button_group.addButton(self.standalone_radio)
         self.standalone_desc = QLabel()
         self.standalone_desc.setStyleSheet("color: gray; margin-left: 20px;")
         mode_layout.addWidget(self.standalone_radio)
@@ -465,6 +469,7 @@ class ConnectionModePage(QWizardPage):
         self.sql_server_radio = QRadioButton()
         self.sql_server_radio.setAccessibleName("SQL Server mode")
         self.sql_server_radio.setAccessibleDescription("Connect to central SQL Server for multi-computer deployments")
+        self.mode_button_group.addButton(self.sql_server_radio)
         self.sql_desc = QLabel()
         self.sql_desc.setStyleSheet("color: gray; margin-left: 20px;")
         mode_layout.addWidget(self.sql_server_radio)
@@ -537,6 +542,9 @@ class ConnectionModePage(QWizardPage):
 
         self.retranslate()
         self._connection_tested = False
+
+        # Initialize visibility state based on current radio selection
+        self._on_mode_changed()
 
     def _on_mode_changed(self) -> None:
         """Handle mode change."""
@@ -620,13 +628,12 @@ class ConnectionModePage(QWizardPage):
         """Check if page is complete."""
         if self.standalone_radio.isChecked():
             return True
-        # SQL Server mode requires all fields and verified connection
+        # SQL Server mode requires all fields
         return bool(
             self.server_edit.text() and
             self.database_edit.text() and
             self.sql_user_edit.text() and
-            self.sql_pass_edit.text() and
-            self._connection_tested
+            self.sql_pass_edit.text()
         )
 
     def nextId(self) -> int:

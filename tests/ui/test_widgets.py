@@ -325,8 +325,11 @@ class TestWidgetInteraction:
         edit2 = QLineEdit(widget)
 
         widget.setTabOrder(edit1, edit2)
+        widget.show()  # Widgets must be visible to receive focus
+        qtbot.wait(50)  # Allow time for widgets to become visible
 
         edit1.setFocus()
+        qtbot.wait(10)  # Allow time for focus to take effect
         assert edit1.hasFocus()
 
         # Simulate Tab key

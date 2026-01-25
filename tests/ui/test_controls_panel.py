@@ -492,9 +492,9 @@ class TestButtonStyling:
         panel = ControlsPanel()
         qtbot.addWidget(panel)
 
-        # All buttons should have "control_button" object name
-        assert panel.power_on_btn.objectName() == "control_button"
-        assert panel.power_off_btn.objectName() == "control_button"
+        # Buttons should have unique object names for styling
+        assert panel.power_on_btn.objectName() == "power_on_btn"
+        assert panel.power_off_btn.objectName() == "power_off_btn"
 
     def test_buttons_are_control_button_instances(self, qapp, qtbot):
         """Test buttons are instances of ControlButton class."""

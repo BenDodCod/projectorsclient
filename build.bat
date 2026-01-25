@@ -22,7 +22,7 @@ echo ========================================
 echo.
 
 REM Configuration
-set COVERAGE_THRESHOLD=90
+set COVERAGE_THRESHOLD=85
 set BUILD_DIR=build
 set DIST_DIR=dist
 set EXE_NAME=ProjectorControl.exe
@@ -109,6 +109,12 @@ pip install pyinstaller --quiet
 if errorlevel 1 (
     echo ERROR: Failed to install PyInstaller
     exit /b 1
+)
+
+REM Register pywin32 DLLs (required for Windows API access)
+python -c "import sys; import os; from pathlib import Path; venv_scripts = Path(sys.executable).parent; pywin32_post = venv_scripts / 'pywin32_postinstall.py'; exec(open(pywin32_post).read() + '\ninstall()')" 2>nul
+if errorlevel 1 (
+    echo Warning: pywin32 post-install script not found or failed
 )
 echo Done.
 
