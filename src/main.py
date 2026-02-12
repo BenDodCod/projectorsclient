@@ -936,6 +936,14 @@ def main() -> int:
     app.setOrganizationName(APP_ORG_NAME)
     app.setOrganizationDomain(APP_ORG_DOMAIN)
 
+    # Setup single instance - exit if another instance is already running
+    from src.utils.single_instance import setup_single_instance
+    instance_manager = setup_single_instance("ProjectorControl")
+
+    if not instance_manager:
+        # Another instance is running and has been notified
+        return 0
+
     # Get application data directory
     app_data_dir = get_app_data_dir()
 
@@ -1004,6 +1012,16 @@ def main() -> int:
     # Show main window
     main_window = show_main_window(db)
 
+    # Wire up single instance handler to bring window to front
+    def bring_window_to_front():
+        """Bring the main window to front when another instance tries to start."""
+        logger.info("Bringing main window to front (requested by another instance)")
+        main_window.showNormal()  # Restore if minimized
+        main_window.raise_()  # Bring to front
+        main_window.activateWindow()  # Give focus
+
+    instance_manager.show_window.connect(bring_window_to_front)
+
     # Set application icon if available
     try:
         from src.resources.icons import IconLibrary
@@ -1016,6 +1034,9 @@ def main() -> int:
     # Run event loop
     logger.info("Starting Qt event loop")
     exit_code = app.exec()
+
+    # Cleanup single instance resources
+    instance_manager.cleanup()
 
     logger.info("Application exiting with code %d", exit_code)
     return exit_code
