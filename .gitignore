@@ -129,6 +129,7 @@ coverage.json
 .pytest_cache/
 nosetests.xml
 pytest-results/
+testsprite_tests/
 
 # Translations
 *.mo
@@ -226,6 +227,8 @@ secrets.json
 # Local test data
 test_data/
 test_output/
+test/.projector_entropy
+*.entropy
 
 # Build artifacts
 *.exe
@@ -255,6 +258,12 @@ test_output/
 *.bak
 *.backup
 *.old
+environment-backup*.txt
+test-results.txt
+debug_*.txt
+test_syntax.py
+verify_*.py
+nul
 
 # Lock files (project uses pinned versions)
 poetry.lock

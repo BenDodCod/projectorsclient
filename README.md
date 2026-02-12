@@ -342,7 +342,7 @@ For detailed compatibility information, see [COMPATIBILITY_MATRIX.md](docs/compa
 **Code Metrics:**
 - Source code: 51 Python files, 21,319 lines
 - Test code: 73 test files, 32,200+ lines
-- Documentation: 6,592 lines (IMPLEMENTATION_PLAN.md)
+- Documentation: 6,592 lines (docs/IMPLEMENTATION_PLAN.md)
 - Test-to-code ratio: 1.51:1 (excellent coverage)
 
 ---
@@ -358,14 +358,14 @@ For detailed compatibility information, see [COMPATIBILITY_MATRIX.md](docs/compa
 ### For IT Administrators
 
 - **[Deployment Guide](docs/deployment/DEPLOYMENT_GUIDE.md)** *(Coming Soon)* - Enterprise installation and configuration
-- **[Security Policy](SECURITY.md)** - 322 lines of security documentation and best practices
+- **[Security Policy](docs/SECURITY.md)** - 322 lines of security documentation and best practices
 - **[Compatibility Matrix](docs/compatibility/COMPATIBILITY_MATRIX.md)** - Windows/DPI/Projector compatibility details
 - **[Performance Benchmarks](docs/performance/BENCHMARK_RESULTS.md)** - Detailed performance metrics and analysis
 
 ### Technical Documentation
 
-- **[Architecture Overview](IMPLEMENTATION_PLAN.md)** - 6,592 lines of detailed specifications
-- **[Project Roadmap](ROADMAP.md)** - Current status, metrics, and progress tracking
+- **[Architecture Overview](docs/IMPLEMENTATION_PLAN.md)** - 6,592 lines of detailed specifications
+- **[Project Roadmap](docs/ROADMAP.md)** - Current status, metrics, and progress tracking
 - **[API Documentation](docs/api/README.md)** - Component and module documentation
 - **[Database Schema](docs/database/INDEX_IMPLEMENTATION.md)** - SQLite and SQL Server schemas
 
@@ -624,7 +624,7 @@ Still experiencing issues? See [Support](#support) section below for contact inf
 - Not applicable (no HTTPS/TLS connections)
 - Future enhancement if web interface added
 
-For complete security documentation, see [SECURITY.md](SECURITY.md).
+For complete security documentation, see [SECURITY.md](docs/SECURITY.md).
 
 ---
 
@@ -689,7 +689,7 @@ We value feedback from our users! Share your feature requests and suggestions:
 - Email: support@projector-control.example.com
 - Subject: "Feature Request: [brief description]"
 
-For detailed planning and current progress, see [ROADMAP.md](ROADMAP.md).
+For detailed planning and current progress, see [ROADMAP.md](docs/ROADMAP.md).
 
 ---
 
@@ -701,7 +701,7 @@ For detailed planning and current progress, see [ROADMAP.md](ROADMAP.md).
 1. Check this README (especially [Troubleshooting](#troubleshooting) section)
 2. Review [UAT Scenarios](docs/uat/UAT_SCENARIOS.md) for common workflows
 3. Consult [Compatibility Matrix](docs/compatibility/COMPATIBILITY_MATRIX.md) for projector support
-4. Check [Security Policy](SECURITY.md) for deployment best practices
+4. Check [Security Policy](docs/SECURITY.md) for deployment best practices
 
 **Contact Support:**
 - **General Support:** support@projector-control.example.com
@@ -744,7 +744,7 @@ For detailed planning and current progress, see [ROADMAP.md](ROADMAP.md).
 - We aim for 30-90 day resolution (severity-based)
 - We will credit researchers in security advisories (unless anonymity requested)
 
-For complete security reporting guidelines, see [SECURITY.md](SECURITY.md).
+For complete security reporting guidelines, see [SECURITY.md](docs/SECURITY.md).
 
 ---
 
@@ -835,8 +835,12 @@ projectorsclient/
 ├── requirements-dev.txt          # Development dependencies
 ├── projector_control.spec        # PyInstaller spec file
 ├── build.bat                     # Build script
-├── IMPLEMENTATION_PLAN.md        # 6,592 lines of specifications
-└── ROADMAP.md                    # Current progress and status
+├── docs/                         # Documentation directory
+│   ├── IMPLEMENTATION_PLAN.md   # 6,592 lines of specifications
+│   ├── ROADMAP.md               # Current progress and status
+│   ├── SECURITY.md              # Security policies and guidelines
+│   └── archive/                 # Historical documentation
+└── (other files...)
 ```
 
 ### Building the Application

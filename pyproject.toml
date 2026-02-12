@@ -110,7 +110,6 @@ extend-exclude = '''
     | build
     | dist
     | \.eggs
-    | workspace/Archive
 )/
 '''
 
@@ -121,7 +120,7 @@ extend-exclude = '''
 profile = "black"
 line_length = 100
 skip_gitignore = true
-skip = [".git", ".venv", "venv", "build", "dist", "workspace/Archive"]
+skip = [".git", ".venv", "venv", "build", "dist"]
 known_first_party = ["src"]
 known_third_party = ["PyQt6", "pypjlink2", "bcrypt", "pyodbc", "cryptography", "keyring", "tendo"]
 sections = ["FUTURE", "STDLIB", "THIRDPARTY", "FIRSTPARTY", "LOCALFOLDER"]
@@ -166,7 +165,7 @@ load-plugins = [
     "pylint.extensions.docparams",
     "pylint.extensions.docstyle",
 ]
-ignore = [".git", ".venv", "venv", "build", "dist", "workspace"]
+ignore = [".git", ".venv", "venv", "build", "dist"]
 ignore-patterns = ["test_.*\\.py"]
 
 [tool.pylint.messages_control]
@@ -190,7 +189,7 @@ max-line-length = 100
 # Bandit - Security Scanner
 # -----------------------------------------------------------------------------
 [tool.bandit]
-exclude_dirs = ["tests", ".venv", "venv", "build", "dist", "workspace"]
+exclude_dirs = ["tests", ".venv", "venv", "build", "dist"]
 skips = ["B101"]  # assert_used - valid in tests
 
 # -----------------------------------------------------------------------------
@@ -234,7 +233,6 @@ omit = [
     "*/.venv/*",
     "*/venv/*",
     "*/__pycache__/*",
-    "*/workspace/*",
 ]
 
 [tool.coverage.report]

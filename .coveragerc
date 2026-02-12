@@ -15,7 +15,6 @@ omit =
     */.venv/*
     */venv/*
     */__pycache__/*
-    */workspace/*
     */site-packages/*
 
 # Data file location

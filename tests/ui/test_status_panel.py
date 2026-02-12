@@ -10,8 +10,8 @@ This module tests:
 - Status updates from controller data
 - Visual state changes
 
-These tests are written against the expected interface from IMPLEMENTATION_PLAN.md
-lines 543-568. They will pass once the implementation is created.
+These tests are written against the expected interface from docs/IMPLEMENTATION_PLAN.md
+(original lines 543-568). They will pass once the implementation is created.
 """
 
 import pytest

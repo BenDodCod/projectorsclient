@@ -187,7 +187,7 @@ class TestSQLInjectionPrevention:
         1. Table names are validated with _is_valid_identifier() first
         2. Table names are hardcoded class constants (not user input)
 
-        Documented in SECURITY.md as acceptable patterns:
+        Documented in docs/SECURITY.md as acceptable patterns:
         - B608 findings in connection.py and sqlserver_manager.py are false positives
         - Table names validated by _is_valid_identifier() before use
         - migration_manager.py uses hardcoded SCHEMA_VERSION_TABLE constant
