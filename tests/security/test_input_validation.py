@@ -205,8 +205,11 @@ class TestSQLInjectionPrevention:
             content = py_file.read_text(encoding="utf-8", errors="ignore")
 
             # Check for f-string SQL patterns
+            # Match f-strings with actual SQL syntax, not just keywords in normal text.
+            # Requires SQL structure keywords (INTO, SET, FROM) to avoid false positives
+            # like "updated" in logging statements.
             has_fstring_sql = bool(re.search(
-                r'f"[^"]*(?:INSERT|UPDATE|DELETE|SELECT)',
+                r'f"[^"]*\b(?:INSERT\s+INTO|UPDATE\s+\w+\s+SET|DELETE\s+FROM|SELECT\s+\w+\s+FROM)\b',
                 content, re.IGNORECASE
             ))
 

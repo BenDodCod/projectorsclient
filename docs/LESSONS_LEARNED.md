@@ -78,6 +78,13 @@
 - **Solution:** Uninstall all PySide6 packages: `pip uninstall PySide6 PySide6-Addons PySide6-Essentials -y`. Project uses PyQt6 exclusively. Verify with `pip list | grep -i "pyqt\|pyside"` - should only show PyQt6 packages.
 - **Prevention:** Never install both Qt bindings simultaneously. Check for PySide6 before running tests.
 
+### SQL injection test regex matching SQL keywords in normal text
+- **Date:** 2026-02-12
+- **Context:** Running security test `test_no_unvalidated_sql_interpolation` to detect unvalidated SQL f-string interpolation
+- **Issue:** Test regex `r'f"[^"]*(?:INSERT|UPDATE|DELETE|SELECT)'` matches SQL keywords within normal English words (e.g., "UPDATE" in "updated", "DELETE" in "deleted"). This causes false positives for safe logging statements like `logger.info(f"Normalized {rows_updated} projector(s)...")` in migration files.
+- **Solution:** Use more precise regex that requires SQL syntax structure: `r'f"[^"]*\b(?:INSERT\s+INTO|UPDATE\s+\w+\s+SET|DELETE\s+FROM|SELECT\s+\w+\s+FROM)\b'`. This requires keywords to be followed by SQL structure (INTO, SET, FROM) to avoid matching keywords in normal text.
+- **Prevention:** When writing regex patterns for security tests, require complete syntax patterns rather than isolated keywords. Test against both positive (should catch) and negative (should not catch) cases.
+
 ---
 
 ## Workarounds

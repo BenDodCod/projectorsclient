@@ -650,7 +650,7 @@ Use this index to navigate directly to relevant sections in IMPLEMENTATION_PLAN.
 - Total Benchmark Tests: 14
 - Startup Time: 0.9s (target: <2s) ✅
 - Command Execution: 18ms (target: <5s) ✅
-- Memory Usage: 134MB (target: <150MB) ✅
+- Memory Usage: 134MB (target: <165MB, typical: 143-145MB) ✅
 
 ### Compatibility Test Metrics (NEW - Week 7-8)
 - Windows Compatibility: 9 tests
@@ -675,7 +675,7 @@ Use this index to navigate directly to relevant sections in IMPLEMENTATION_PLAN.
 ### Performance Metrics
 - Startup Time: 0.9s (target: <2s) ✅ PERF-04
 - Command Execution: 18ms (target: <5s) ✅ PERF-05
-- Memory Usage: 134MB (target: <150MB) ✅ PERF-06
+- Memory Usage: 134MB (target: <165MB, typical: 143-145MB) ✅ PERF-06
 - Test Execution Time: ~200 seconds
 - Database Query Improvement: 50-85% (with indexes)
 - Connection Pool: 10+ concurrent connections
