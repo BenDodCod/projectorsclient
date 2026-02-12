@@ -32,53 +32,54 @@ if result.returncode != 0:
 
 block_cipher = None
 
-# Collect all data files from PyQt6
-pyqt6_datas = collect_data_files('PyQt6', include_py_files=False)
+# Collect data files only from PyQt6 modules actually used
+# This significantly reduces bundle size by excluding unused modules (Qt3D, QML, WebEngine, etc.)
+pyqt6_datas = []
+for module in ['QtCore', 'QtWidgets', 'QtGui', 'QtNetwork', 'QtSvg', 'QtSvgWidgets']:
+    try:
+        pyqt6_datas.extend(collect_data_files(f'PyQt6.{module}', include_py_files=False))
+    except Exception:
+        pass  # Module not found, skip
 
 # Hidden imports for PyQt6 and dependencies
+# Note: Modern PyInstaller auto-detects standard library modules, so we only include:
+# - PyQt6 modules (not always auto-detected)
+# - Dynamically loaded modules (databases, security submodules)
+# - Windows-specific modules (dynamic loading)
 hidden_imports = [
-    # PyQt6 core modules
+    # PyQt6 core modules (keep - not always auto-detected)
     'PyQt6',
     'PyQt6.QtCore',
     'PyQt6.QtWidgets',
     'PyQt6.QtGui',
     'PyQt6.QtSvg',
     'PyQt6.QtSvgWidgets',
+    'PyQt6.QtNetwork',
     'PyQt6.sip',
 
-    # Database drivers
+    # Database drivers (keep - dynamic loading)
     'sqlite3',
     'pyodbc',
 
-    # Security libraries
+    # Security libraries (keep - some submodules dynamically loaded)
     'bcrypt',
-    'cryptography',
-    'cryptography.hazmat.primitives.kdf.pbkdf2',
-    'cryptography.hazmat.primitives.ciphers',
-    'cryptography.hazmat.backends',
     'cryptography.fernet',
+    'cryptography.hazmat.primitives.kdf.pbkdf2',
+    'cryptography.hazmat.primitives.ciphers.aead',
 
-    # JSON Schema validation
+    # JSON Schema validation (keep - dynamic loading)
     'jsonschema',
     'jsonschema.validators',
 
-    # Logging and utilities
-    'logging.handlers',
-    'json',
-    'hashlib',
-    'secrets',
-    'threading',
-    'queue',
-    'socket',
-    'ssl',
-
-    # Windows-specific
-    'ctypes',
-    'ctypes.wintypes',
+    # Windows-specific (keep - dynamic loading)
     'win32api',
     'win32con',
     'win32crypt',
 ]
+
+# Removed auto-detected stdlib modules (PyInstaller 6.18.0 handles these):
+# - logging.handlers, json, hashlib, secrets, threading, queue, socket, ssl
+# - ctypes, ctypes.wintypes (auto-detected)
 
 # Collect submodules
 hidden_imports.extend(collect_submodules('cryptography'))
@@ -112,17 +113,22 @@ a = Analysis(
     hooksconfig={},
     runtime_hooks=[],
     excludes=[
-        # Exclude unnecessary large packages
+        # Data science packages (not used)
         'matplotlib',
         'numpy',
         'pandas',
         'scipy',
         'PIL',
+
+        # UI frameworks (not used)
         'tkinter',
+
+        # Testing frameworks (not needed in production)
         'test',
         'unittest',
         'pytest',
-        # Exclude development tools
+
+        # Development tools (not needed in production)
         'pip',
         'setuptools',
         'wheel',
@@ -130,6 +136,29 @@ a = Analysis(
         'flake8',
         'mypy',
         'pylint',
+
+        # Documentation tools (not used)
+        'sphinx',
+        'docutils',
+        'alabaster',
+        'jinja2',
+        'babel',
+        'markupsafe',
+        'pygments',
+        'imagesize',
+        'snowballstemmer',
+
+        # Unused stdlib modules
+        'distutils',
+        'xmlrpc',
+        'email.mime',
+        'http.server',
+        'pydoc_data',
+        'lib2to3',
+
+        # Async frameworks (app is synchronous)
+        'asyncio',
+        'concurrent.futures',
     ],
     win_no_prefer_redirects=False,
     win_private_assemblies=False,
@@ -168,7 +197,7 @@ exe = EXE(
     target_arch=None,
     codesign_identity=None,
     entitlements_file=None,
-    icon='src/resources/icons/app_icon.ico',
+    icon='video_projector.ico',
     version='version_info.txt',
     uac_admin=False,  # Don't require admin privileges
 )
