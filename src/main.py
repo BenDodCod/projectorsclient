@@ -19,10 +19,11 @@ from PyQt6.QtCore import Qt, QThread, pyqtSignal
 from PyQt6.QtGui import QIcon
 
 from src.resources.translations import get_translation_manager, t
+from src.__version__ import __version__
 
 # Application information
 APP_NAME = "Projector Control"
-APP_VERSION = "1.0.0"
+APP_VERSION = __version__
 APP_ORG_NAME = "Your Organization"
 APP_ORG_DOMAIN = "example.com"
 

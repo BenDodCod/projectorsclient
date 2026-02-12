@@ -56,8 +56,19 @@ echo.
 exit /b 0
 
 :start_build
+REM Step 0: Verify version consistency
+echo [0/7] Verifying version consistency...
+python scripts\verify_version.py
+if errorlevel 1 (
+    echo ERROR: Version inconsistencies detected
+    echo Please fix version issues before building
+    exit /b 1
+)
+echo Done.
+
 REM Step 1: Clean previous builds
-echo [1/6] Cleaning previous builds...
+echo.
+echo [1/7] Cleaning previous builds...
 if exist "%BUILD_DIR%" (
     rd /s /q "%BUILD_DIR%" 2>nul
     if !errorlevel! neq 0 (
@@ -81,7 +92,7 @@ if %CLEAN_ONLY%==1 (
 
 REM Step 2: Check Python environment
 echo.
-echo [2/6] Checking Python environment...
+echo [2/7] Checking Python environment...
 python --version >nul 2>&1
 if errorlevel 1 (
     echo ERROR: Python is not installed or not in PATH
@@ -92,7 +103,7 @@ echo Done.
 
 REM Step 3: Install/update dependencies
 echo.
-echo [3/6] Installing dependencies...
+echo [3/7] Installing dependencies...
 python -m pip install --upgrade pip --quiet
 if errorlevel 1 (
     echo ERROR: Failed to upgrade pip
@@ -121,10 +132,10 @@ echo Done.
 REM Step 4: Run tests
 if %SKIP_TESTS%==1 (
     echo.
-    echo [4/6] Skipping tests (--skip-tests flag)
+    echo [4/7] Skipping tests (--skip-tests flag)
 ) else (
     echo.
-    echo [4/6] Running tests...
+    echo [4/7] Running tests...
 
     REM Install test dependencies
     pip install -r requirements-dev.txt --quiet
@@ -150,10 +161,10 @@ if %SKIP_TESTS%==1 (
 REM Step 5: Run security scan
 if %SKIP_SECURITY%==1 (
     echo.
-    echo [5/6] Skipping security scan (--skip-security flag)
+    echo [5/7] Skipping security scan (--skip-security flag)
 ) else (
     echo.
-    echo [5/6] Running security scan...
+    echo [5/7] Running security scan...
 
     pip install bandit --quiet
 
@@ -172,7 +183,7 @@ if %SKIP_SECURITY%==1 (
 
 REM Step 6: Build executable
 echo.
-echo [6/6] Building executable...
+echo [6/7] Building executable...
 
 REM Check if spec file exists
 if not exist "projector_control.spec" (
