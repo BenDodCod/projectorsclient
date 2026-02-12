@@ -24,6 +24,11 @@ import time
 from pathlib import Path
 from datetime import datetime
 
+try:
+    import psutil
+except ImportError:
+    psutil = None  # Will handle gracefully in the startup test
+
 # Add project root to path
 project_root = Path(__file__).parent.parent
 sys.path.insert(0, str(project_root))
@@ -95,26 +100,97 @@ def check_startup_basic(exe_path: Path) -> tuple[bool, str]:
     We can only verify it launches without immediate crash.
     """
     try:
-        # Try to launch with --help or invalid flag to get quick exit
-        # Timeout after 5 seconds to avoid hanging
+        # Try to launch the GUI app and verify it starts without crashing
+        # Use Popen for better process control on Windows
         start_time = time.time()
 
-        result = subprocess.run(
-            [str(exe_path), '--help'],
-            capture_output=True,
-            timeout=5,
-            text=True
+        # Windows-specific flags to prevent window from showing
+        startupinfo = None
+        creationflags = 0
+
+        if sys.platform == 'win32':
+            startupinfo = subprocess.STARTUPINFO()
+            startupinfo.dwFlags |= subprocess.STARTF_USESHOWWINDOW
+            startupinfo.wShowWindow = 0  # SW_HIDE
+            # Don't create console window
+            creationflags = subprocess.CREATE_NO_WINDOW if hasattr(subprocess, 'CREATE_NO_WINDOW') else 0x08000000
+
+        # Launch process
+        process = subprocess.Popen(
+            [str(exe_path)],
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            startupinfo=startupinfo,
+            creationflags=creationflags
         )
 
-        elapsed = time.time() - start_time
+        # Wait up to 2 seconds for process to start or crash
+        time.sleep(2)
 
-        # Any exit is OK - we just want to verify it doesn't crash immediately
-        # (GUI apps may not support --help flag, that's fine)
-        return True, f"OK Executable launches ({elapsed:.2f}s startup time)"
+        # Check if process is still running (good - didn't crash)
+        poll_result = process.poll()
 
-    except subprocess.TimeoutExpired:
-        # Timeout is actually OK - it means app is running (GUI waiting for user)
-        return True, "OK Executable launches (GUI app, timed out waiting for exit - expected)"
+        if poll_result is None:
+            # Process is running - GUI app started successfully
+            elapsed = time.time() - start_time
+
+            # Terminate the process gracefully
+            try:
+                # Try to kill all child processes too (PyInstaller may spawn multiple)
+                if sys.platform == 'win32' and psutil is not None:
+                    try:
+                        parent = psutil.Process(process.pid)
+                        for child in parent.children(recursive=True):
+                            child.terminate()
+                        parent.terminate()
+
+                        # Wait up to 2 seconds for graceful termination
+                        parent.wait(timeout=2)
+                    except (psutil.NoSuchProcess, psutil.TimeoutExpired):
+                        # Process already gone or didn't terminate, force kill
+                        try:
+                            parent.kill()
+                        except psutil.NoSuchProcess:
+                            pass
+                    except Exception:
+                        # Fallback to basic termination
+                        process.terminate()
+                        try:
+                            process.wait(timeout=2)
+                        except subprocess.TimeoutExpired:
+                            process.kill()
+                            process.wait()
+                else:
+                    # Fallback for non-Windows or when psutil not available
+                    process.terminate()
+                    try:
+                        process.wait(timeout=2)
+                    except subprocess.TimeoutExpired:
+                        process.kill()
+                        process.wait()
+
+            except Exception:
+                # If terminate fails, force kill
+                try:
+                    process.kill()
+                    process.wait()
+                except Exception:
+                    pass  # Process might already be gone
+
+            return True, f"OK Executable launches successfully ({elapsed:.2f}s startup verified)"
+
+        else:
+            # Process exited - check if it was an error
+            stdout, stderr = process.communicate()
+
+            if poll_result == 0:
+                # Clean exit (maybe responded to --help or similar)
+                elapsed = time.time() - start_time
+                return True, f"OK Executable launches ({elapsed:.2f}s, clean exit)"
+            else:
+                # Non-zero exit code - crashed
+                stderr_text = stderr.decode('utf-8', errors='replace')[:200] if stderr else ''
+                return False, f"ERROR: Executable crashed on startup (exit code {poll_result}): {stderr_text}"
 
     except FileNotFoundError:
         return False, "ERROR: Could not execute file (not found or not executable)"
