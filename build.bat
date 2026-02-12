@@ -57,7 +57,7 @@ exit /b 0
 
 :start_build
 REM Step 0: Verify version consistency
-echo [0/7] Verifying version consistency...
+echo [0/9] Verifying version consistency...
 python scripts\verify_version.py
 if errorlevel 1 (
     echo ERROR: Version inconsistencies detected
@@ -68,7 +68,7 @@ echo Done.
 
 REM Step 1: Clean previous builds
 echo.
-echo [1/7] Cleaning previous builds...
+echo [1/9] Cleaning previous builds...
 if exist "%BUILD_DIR%" (
     rd /s /q "%BUILD_DIR%" 2>nul
     if !errorlevel! neq 0 (
@@ -92,7 +92,7 @@ if %CLEAN_ONLY%==1 (
 
 REM Step 2: Check Python environment
 echo.
-echo [2/7] Checking Python environment...
+echo [2/9] Checking Python environment...
 python --version >nul 2>&1
 if errorlevel 1 (
     echo ERROR: Python is not installed or not in PATH
@@ -103,7 +103,7 @@ echo Done.
 
 REM Step 3: Install/update dependencies
 echo.
-echo [3/7] Installing dependencies...
+echo [3/9] Installing dependencies...
 python -m pip install --upgrade pip --quiet
 if errorlevel 1 (
     echo ERROR: Failed to upgrade pip
@@ -132,10 +132,10 @@ echo Done.
 REM Step 4: Run tests
 if %SKIP_TESTS%==1 (
     echo.
-    echo [4/7] Skipping tests (--skip-tests flag)
+    echo [4/9] Skipping tests (--skip-tests flag)
 ) else (
     echo.
-    echo [4/7] Running tests...
+    echo [4/9] Running tests...
 
     REM Install test dependencies
     pip install -r requirements-dev.txt --quiet
@@ -161,10 +161,10 @@ if %SKIP_TESTS%==1 (
 REM Step 5: Run security scan
 if %SKIP_SECURITY%==1 (
     echo.
-    echo [5/7] Skipping security scan (--skip-security flag)
+    echo [5/9] Skipping security scan (--skip-security flag)
 ) else (
     echo.
-    echo [5/7] Running security scan...
+    echo [5/9] Running security scan...
 
     pip install bandit --quiet
 
@@ -183,7 +183,7 @@ if %SKIP_SECURITY%==1 (
 
 REM Step 6: Build executable
 echo.
-echo [6/7] Building executable...
+echo [6/9] Building executable...
 
 REM Check if spec file exists
 if not exist "projector_control.spec" (
@@ -228,19 +228,95 @@ REM Get file size
 for %%A in ("%DIST_DIR%\%EXE_NAME%") do set SIZE=%%~zA
 set /a SIZE_MB=%SIZE% / 1048576
 
+echo Build complete.
+
+REM Step 7: Run smoke test
+echo.
+echo [7/9] Running post-build validation (smoke test)...
+python scripts\smoke_test.py "%DIST_DIR%\%EXE_NAME%"
+if errorlevel 2 (
+    echo.
+    echo ========================================
+    echo  WARNING: Smoke test failed critically
+    echo  Review smoke_test_report.txt
+    echo ========================================
+    set SMOKE_TEST_FAILED=1
+) else if errorlevel 1 (
+    echo.
+    echo ========================================
+    echo  WARNING: Smoke test passed with warnings
+    echo  Review smoke_test_report.txt
+    echo ========================================
+    set SMOKE_TEST_WARNING=1
+) else (
+    echo Smoke test passed.
+)
+
+REM Step 8: Generate build manifest
+echo.
+echo [8/9] Generating build manifest...
+python scripts\build_manifest.py "%DIST_DIR%\%EXE_NAME%"
+if errorlevel 1 (
+    echo WARNING: Failed to generate build manifest
+    set MANIFEST_FAILED=1
+) else (
+    echo Build manifest generated.
+)
+
+REM Step 9: Archive build
+echo.
+echo [9/9] Archiving build...
+call scripts\archive_build.bat
+if errorlevel 1 (
+    echo WARNING: Failed to archive build
+    set ARCHIVE_FAILED=1
+) else (
+    echo Build archived successfully.
+)
+
+REM Final summary
 echo.
 echo ========================================
-echo  BUILD SUCCESSFUL!
+echo  BUILD COMPLETE
 echo ========================================
 echo.
 echo Output: %DIST_DIR%\%EXE_NAME%
 echo Size: ~%SIZE_MB% MB
 echo.
-echo Next steps:
-echo   1. Test the executable manually
-echo   2. Run: dist\%EXE_NAME%
-echo   3. Check all features work correctly
+
+REM Show warnings if any
+if defined SMOKE_TEST_FAILED (
+    echo WARNING: Smoke test failed - review smoke_test_report.txt
+)
+if defined SMOKE_TEST_WARNING (
+    echo WARNING: Smoke test warnings - review smoke_test_report.txt
+)
+if defined MANIFEST_FAILED (
+    echo WARNING: Build manifest generation failed
+)
+if defined ARCHIVE_FAILED (
+    echo WARNING: Build archiving failed
+)
+
 echo.
+echo Build artifacts:
+echo   - Executable: %DIST_DIR%\%EXE_NAME%
+echo   - Manifest: build_manifest.json
+echo   - Smoke test: smoke_test_report.txt
+echo   - Archive: archive\builds\[timestamp]
+echo.
+echo Next steps:
+echo   1. Review smoke_test_report.txt for validation results
+echo   2. Test the executable manually: dist\%EXE_NAME%
+echo   3. Check build_manifest.json for build details
+echo.
+
+REM Exit with appropriate code
+if defined SMOKE_TEST_FAILED (
+    echo Build completed but smoke test failed.
+    endlocal
+    exit /b 1
+)
 
 endlocal
 exit /b 0
