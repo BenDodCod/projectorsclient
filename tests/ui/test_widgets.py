@@ -62,7 +62,10 @@ class TestBasicWidgetFunctionality:
         label.setPixmap(pixmap)
 
         assert not label.pixmap().isNull()
-        assert label.pixmap().width() == 32
+        # Account for device pixel ratio (e.g., 125% DPI scaling)
+        device_ratio = label.pixmap().devicePixelRatio()
+        actual_width = label.pixmap().width() / device_ratio
+        assert actual_width == 32
 
     def test_checkbox_state(self, qapp, qtbot):
         """Test checkbox state management."""

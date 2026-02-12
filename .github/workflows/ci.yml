@@ -235,6 +235,9 @@ jobs:
     name: Build Executable
     runs-on: windows-latest
     needs: [unit-tests, security-scan, integration-tests]
+    outputs:
+      exe_size: ${{ steps.metrics.outputs.exe_size }}
+      version: ${{ steps.metrics.outputs.version }}
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -244,6 +247,16 @@ jobs:
         with:
           python-version: ${{ env.PYTHON_VERSION_DEFAULT }}
           cache: pip
+
+      - name: Cache PyInstaller build
+        uses: actions/cache@v4
+        with:
+          path: |
+            build/
+            dist/
+          key: ${{ runner.os }}-pyinstaller-${{ hashFiles('projector_control.spec', 'src/__version__.py') }}
+          restore-keys: |
+            ${{ runner.os }}-pyinstaller-
 
       - name: Install dependencies
         run: |
@@ -271,6 +284,23 @@ jobs:
           }
         shell: pwsh
 
+      - name: Collect build metrics
+        id: metrics
+        if: success()
+        run: |
+          python scripts/collect_metrics.py
+          $size = (Get-Item "dist/ProjectorControl.exe").Length
+          echo "exe_size=$size" >> $env:GITHUB_OUTPUT
+          $version = python -c "from src.__version__ import __version_full__; print(__version_full__)"
+          echo "version=$version" >> $env:GITHUB_OUTPUT
+        shell: pwsh
+
+      - name: Check size regression
+        if: success()
+        run: |
+          python scripts/check_size_regression.py ${{ steps.metrics.outputs.exe_size }}
+        continue-on-error: true
+
       - name: Upload build artifact
         uses: actions/upload-artifact@v4
         if: success()
@@ -278,6 +308,13 @@ jobs:
           name: ProjectorControl-${{ github.sha }}
           path: dist/ProjectorControl.exe
           if-no-files-found: ignore
+
+      - name: Upload build metrics
+        uses: actions/upload-artifact@v4
+        if: success()
+        with:
+          name: build-metrics
+          path: metrics/
 
   # ===========================================================================
   # Stage 7: Release (on tag)

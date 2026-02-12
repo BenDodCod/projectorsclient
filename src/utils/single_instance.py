@@ -73,23 +73,38 @@ class SingleInstanceManager(QObject):
 
             # Send message to show the existing window
             message = b"SHOW_WINDOW"
-            socket.write(message)
+            bytes_written = socket.write(message)
+            self._logger.info(f"Wrote {bytes_written} bytes to socket")
+
+            # Ensure data is flushed to the OS
             socket.flush()
 
-            # Wait for the bytes to be written to the OS buffer
-            if not socket.waitForBytesWritten(1000):
-                self._logger.warning("Timeout waiting for bytes to be written")
+            # Wait longer for the bytes to be written (increased timeout)
+            timeout_ms = 3000
+            if not socket.waitForBytesWritten(timeout_ms):
+                self._logger.warning(f"Timeout waiting for bytes to be written (state: {socket.state()}, error: {socket.errorString()})")
+                # Even if timeout occurs, data might still be in buffer
+                # Continue to try to send it
+            else:
+                self._logger.info("Bytes written successfully to OS buffer")
 
-            # Small delay to ensure data reaches the server before we close
-            # In local socket communication, this helps ensure the receiver
-            # gets the data before the connection closes
-            import time
-            time.sleep(0.1)
+            # Give the event loop time to process the transmission
+            from PyQt6.QtCore import QCoreApplication
+            QCoreApplication.processEvents()
+
+            # Wait for the server to process and close its side
+            # This ensures the server has received and read the data
+            if socket.state() == QLocalSocket.LocalSocketState.ConnectedState:
+                self._logger.info("Waiting for server to process message...")
+                if not socket.waitForDisconnected(3000):
+                    self._logger.warning(f"Timeout waiting for disconnect (state: {socket.state()})")
 
             # Now close the connection
-            socket.close()
+            socket.disconnectFromServer()
+            if socket.state() != QLocalSocket.LocalSocketState.UnconnectedState:
+                socket.waitForDisconnected(1000)
 
-            self._logger.info("Message sent, closing connection")
+            self._logger.info("Message sent, connection closed")
 
             self._is_primary = False
             return False
@@ -122,33 +137,56 @@ class SingleInstanceManager(QObject):
         if not socket:
             return
 
-        self._logger.info("Received connection from another instance")
+        self._logger.info(f"Received connection from another instance (state: {socket.state()})")
+
+        # Check if data is immediately available
+        bytes_available = socket.bytesAvailable()
+        self._logger.info(f"Initial bytes available: {bytes_available}")
 
         # Wait for data to arrive or connection to close with data in buffer
         # We need to wait because the client might still be writing
-        if socket.bytesAvailable() == 0:
-            # Wait for data or disconnection (client closes after writing)
-            if not socket.waitForReadyRead(2000):
-                # Check if we have data anyway (client might have closed)
-                if socket.bytesAvailable() == 0:
-                    self._logger.warning(f"No data received. Socket state: {socket.state()}")
+        if bytes_available == 0:
+            self._logger.info("No data available yet, waiting for ready read...")
+            # Wait longer for data to arrive (increased timeout)
+            timeout_ms = 3000
+            if not socket.waitForReadyRead(timeout_ms):
+                self._logger.info(f"waitForReadyRead timeout after {timeout_ms}ms, checking buffer. State: {socket.state()}")
+                # Process events to give Qt a chance to deliver any pending data
+                from PyQt6.QtCore import QCoreApplication
+                QCoreApplication.processEvents()
+
+                # Check if we have data now
+                bytes_available = socket.bytesAvailable()
+                if bytes_available == 0:
+                    self._logger.warning(f"No data received after timeout. Socket state: {socket.state()}, error: {socket.errorString()}")
+                    socket.close()
                     socket.deleteLater()
                     return
+                else:
+                    self._logger.info(f"Found {bytes_available} bytes after processing events")
+            else:
+                bytes_available = socket.bytesAvailable()
+                self._logger.info(f"Data ready, {bytes_available} bytes available")
 
         # Read the message (data should be in buffer even if socket is closing)
         data = bytes(socket.readAll())
         if not data:
-            self._logger.warning("No data in buffer")
+            self._logger.warning("No data in buffer after read")
+            socket.close()
             socket.deleteLater()
             return
 
         message = data.decode('utf-8', errors='ignore').strip()
-        self._logger.info(f"Received message: '{message}'")
+        self._logger.info(f"Received message: '{message}' ({len(data)} bytes)")
 
         # If it's a show window request, emit signal
         if message == "SHOW_WINDOW":
             self._logger.info("Emitting show_window signal")
             self.show_window.emit()
+            self._logger.info("Signal emitted successfully")
+
+        # Close the socket to signal the client we're done
+        socket.close()
 
         # Clean up
         socket.deleteLater()

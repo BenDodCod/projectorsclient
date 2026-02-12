@@ -75,8 +75,12 @@ class TestIconLibrary:
         # Note: QIcon doesn't have a direct size property,
         # but we can check that a pixmap of that size can be obtained
         pixmap = icon.pixmap(size)
-        assert pixmap.width() <= size.width()
-        assert pixmap.height() <= size.height()
+        # Account for device pixel ratio (e.g., 125% DPI scaling)
+        device_ratio = pixmap.devicePixelRatio()
+        actual_width = pixmap.width() / device_ratio
+        actual_height = pixmap.height() / device_ratio
+        assert actual_width <= size.width()
+        assert actual_height <= size.height()
 
     def test_get_pixmap_returns_qpixmap(self, qapp):
         """Test that get_pixmap returns a QPixmap."""
@@ -94,8 +98,12 @@ class TestIconLibrary:
         size = QSize(32, 32)
         pixmap = IconLibrary.get_pixmap('refresh', size=size)
 
-        assert pixmap.width() == size.width()
-        assert pixmap.height() == size.height()
+        # Account for device pixel ratio (e.g., 125% DPI scaling)
+        device_ratio = pixmap.devicePixelRatio()
+        actual_width = pixmap.width() / device_ratio
+        actual_height = pixmap.height() / device_ratio
+        assert actual_width == size.width()
+        assert actual_height == size.height()
 
     def test_get_pixmap_with_color(self, qapp):
         """Test getting pixmap with custom color."""

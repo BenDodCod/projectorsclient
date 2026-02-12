@@ -1,0 +1,48 @@
+{
+  "version": {
+    "version": "2.0.0",
+    "build": 1,
+    "full": "2.0.0.1",
+    "version_info": [
+      2,
+      0,
+      0,
+      1
+    ]
+  },
+  "build": {
+    "timestamp": "2026-02-12T14:12:42.478491+00:00",
+    "timestamp_unix": 1770905562,
+    "date": "2026-02-12",
+    "time": "14:12:42 UTC"
+  },
+  "git": {
+    "commit": "9ecacb9332bbe4a48f533e0712136b38bcc583cd",
+    "short_commit": "9ecacb9",
+    "branch": "main",
+    "is_clean": true
+  },
+  "executable": {
+    "path": "dist\\ProjectorControl.exe",
+    "name": "ProjectorControl.exe",
+    "size": {
+      "bytes": 46304771,
+      "mb": 44.16,
+      "formatted": "44.16 MB"
+    }
+  },
+  "warnings": {
+    "count": 0,
+    "file_found": false
+  },
+  "environment": {
+    "python_version": "3.12.6",
+    "pyinstaller_version": "6.18.0",
+    "platform": "win32",
+    "architecture": "64-bit"
+  },
+  "tests": {
+    "available": true,
+    "coverage_percent": 65.61
+  }
+}
