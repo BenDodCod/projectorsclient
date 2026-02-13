@@ -1,0 +1,252 @@
+{
+  "version": "1.0",
+  "last_updated": "2026-02-13",
+  "categories": [
+    {
+      "id": "global",
+      "name": {
+        "en": "Global",
+        "he": "כללי"
+      },
+      "shortcuts": [
+        {
+          "action": {
+            "en": "Open Settings",
+            "he": "פתח הגדרות"
+          },
+          "key": "Ctrl+,",
+          "description": {
+            "en": "Open the Settings dialog to configure projectors and application preferences",
+            "he": "פתח את חלון ההגדרות להגדרת מקרנים והעדפות יישום"
+          }
+        },
+        {
+          "action": {
+            "en": "Help",
+            "he": "עזרה"
+          },
+          "key": "F1",
+          "description": {
+            "en": "Toggle the Help panel to view documentation and guides",
+            "he": "הצג/הסתר את פאנל העזרה לצפייה בתיעוד ומדריכים"
+          }
+        },
+        {
+          "action": {
+            "en": "Keyboard Shortcuts",
+            "he": "קיצורי מקלדת"
+          },
+          "key": "Ctrl+K",
+          "description": {
+            "en": "Show the keyboard shortcuts reference dialog",
+            "he": "הצג את חלון קיצורי המקלדת"
+          }
+        },
+        {
+          "action": {
+            "en": "Quit Application",
+            "he": "יציאה מהיישום"
+          },
+          "key": "Ctrl+Q",
+          "description": {
+            "en": "Close the application completely (exits system tray)",
+            "he": "סגור את היישום לגמרי (יוצא ממגש המערכת)"
+          }
+        },
+        {
+          "action": {
+            "en": "Close Window",
+            "he": "סגור חלון"
+          },
+          "key": "Alt+F4",
+          "description": {
+            "en": "Close main window (application stays in system tray)",
+            "he": "סגור חלון ראשי (היישום נשאר במגש המערכת)"
+          }
+        }
+      ]
+    },
+    {
+      "id": "controls",
+      "name": {
+        "en": "Projector Controls",
+        "he": "שליטה במקרן"
+      },
+      "shortcuts": [
+        {
+          "action": {
+            "en": "Power Toggle",
+            "he": "הפעלה/כיבוי"
+          },
+          "key": "Ctrl+P",
+          "description": {
+            "en": "Toggle projector power on/off",
+            "he": "הפעל/כבה את המקרן"
+          }
+        },
+        {
+          "action": {
+            "en": "Input Source",
+            "he": "מקור קלט"
+          },
+          "key": "Ctrl+I",
+          "description": {
+            "en": "Open input source selector to switch between HDMI, VGA, etc.",
+            "he": "פתח בורר מקור קלט להחלפה בין HDMI, VGA וכו'"
+          }
+        },
+        {
+          "action": {
+            "en": "Blank Screen",
+            "he": "השחרת מסך"
+          },
+          "key": "Ctrl+B",
+          "description": {
+            "en": "Toggle blank screen on/off (hides projection temporarily)",
+            "he": "הפעל/בטל השחרת מסך (מסתיר הקרנה זמנית)"
+          }
+        },
+        {
+          "action": {
+            "en": "Freeze Display",
+            "he": "הקפאת תצוגה"
+          },
+          "key": "Ctrl+F",
+          "description": {
+            "en": "Toggle freeze display on/off (freezes current image)",
+            "he": "הפעל/בטל הקפאת תצוגה (מקפיא תמונה נוכחית)"
+          }
+        },
+        {
+          "action": {
+            "en": "Mute Audio",
+            "he": "השתק שמע"
+          },
+          "key": "Ctrl+M",
+          "description": {
+            "en": "Toggle audio mute on/off (if feature is enabled)",
+            "he": "הפעל/בטל השתקת שמע (אם התכונה מופעלת)"
+          }
+        }
+      ]
+    },
+    {
+      "id": "navigation",
+      "name": {
+        "en": "Navigation",
+        "he": "ניווט"
+      },
+      "shortcuts": [
+        {
+          "action": {
+            "en": "Focus History Panel",
+            "he": "מיקוד פאנל היסטוריה"
+          },
+          "key": "Ctrl+H",
+          "description": {
+            "en": "Set keyboard focus to the History Panel",
+            "he": "הגדר מיקוד מקלדת לפאנל ההיסטוריה"
+          }
+        },
+        {
+          "action": {
+            "en": "Focus Status Panel",
+            "he": "מיקוד פאנל סטטוס"
+          },
+          "key": "Ctrl+S",
+          "description": {
+            "en": "Set keyboard focus to the Status Panel",
+            "he": "הגדר מיקוד מקלדת לפאנל הסטטוס"
+          }
+        },
+        {
+          "action": {
+            "en": "Quick Projector Switch",
+            "he": "החלפת מקרן מהירה"
+          },
+          "key": "Ctrl+1 ... Ctrl+9",
+          "description": {
+            "en": "Switch to projector 1-9 (if multiple projectors configured)",
+            "he": "עבור למקרן 1-9 (אם מספר מקרנים מוגדרים)"
+          }
+        }
+      ]
+    },
+    {
+      "id": "system_tray",
+      "name": {
+        "en": "System Tray",
+        "he": "מגש מערכת"
+      },
+      "shortcuts": [
+        {
+          "action": {
+            "en": "Minimize to Tray",
+            "he": "מזער למגש"
+          },
+          "key": "Ctrl+N",
+          "description": {
+            "en": "Minimize application to system tray",
+            "he": "מזער יישום למגש המערכת"
+          }
+        },
+        {
+          "action": {
+            "en": "Restore Window",
+            "he": "שחזר חלון"
+          },
+          "key": "Ctrl+R",
+          "description": {
+            "en": "Restore window from system tray (when tray icon is focused)",
+            "he": "שחזר חלון ממגש המערכת (כשסמל המגש במיקוד)"
+          }
+        }
+      ]
+    },
+    {
+      "id": "accessibility",
+      "name": {
+        "en": "Accessibility",
+        "he": "נגישות"
+      },
+      "shortcuts": [
+        {
+          "action": {
+            "en": "Move Window (Alternative)",
+            "he": "הזז חלון (חלופי)"
+          },
+          "key": "Alt+Space, M",
+          "description": {
+            "en": "Open system menu and activate Move mode (use arrow keys, press Enter to confirm)",
+            "he": "פתח תפריט מערכת והפעל מצב הזזה (השתמש במקשי חצים, לחץ Enter לאישור)"
+          }
+        },
+        {
+          "action": {
+            "en": "Task Manager",
+            "he": "מנהל משימות"
+          },
+          "key": "Ctrl+Shift+Esc",
+          "description": {
+            "en": "Open Windows Task Manager (useful for troubleshooting)",
+            "he": "פתח מנהל משימות של Windows (שימושי לפתרון בעיות)"
+          }
+        }
+      ]
+    }
+  ],
+  "notes": {
+    "en": [
+      "All shortcuts are customizable in Settings > Keyboard Shortcuts (planned feature)",
+      "Some shortcuts may conflict with other applications - check Settings if a shortcut doesn't work",
+      "Shortcuts work when the application window is focused",
+      "System tray shortcuts (Ctrl+N, Ctrl+R) work globally when the tray icon is focused"
+    ],
+    "he": [
+      "כל קיצורי המקלדת ניתנים להתאמה אישית בהגדרות > קיצורי מקלדת (תכונה מתוכננת)",
+      "חלק מהקיצורים עשויים להתנגש עם יישומים אחרים - בדוק בהגדרות אם קיצור לא עובד",
+      "קיצורים פועלים כשחלון היישום במיקוד",
+      "קיצורי מגש מערכת (Ctrl+N, Ctrl+R) פועלים גלובלית כשסמל המגש במיקוד"
+    ]
+  }
+}

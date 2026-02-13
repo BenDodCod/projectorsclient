@@ -1,0 +1,9 @@
+{
+  "id": "control-buttons",
+  "title": "Control Buttons Overview",
+  "category": "interface",
+  "keywords": ["buttons", "controls", "power", "input", "blank", "freeze", "commands"],
+  "content": "The Control Buttons section provides quick access to common projector operations.\n\n## Default Buttons\n\n**Power On** (Green)\n- Turns the projector on\n- Takes 30-60 seconds for warm-up\n- Status Panel shows \"Warming Up\" progress\n\n**Power Off** (Red)\n- Turns the projector off\n- May show confirmation dialog\n- Takes 60-90 seconds for cool-down\n\n**Input Source** (Blue dropdown)\n- Switch between HDMI1, HDMI2, VGA, etc.\n- Available options depend on your projector\n- Current input shown in Status Panel\n\n**Blank Screen** (Yellow)\n- Temporarily hides projected image\n- Click again to restore\n- Faster than power off for brief pauses\n\n## Optional Buttons\n\nIf enabled in Settings:\n- **Freeze Display** - Pauses projected image\n- **Volume Control** - Adjust audio level\n- **Mute Audio** - Toggle sound\n- **Picture Mode** - Switch display modes\n- **Aspect Ratio** - Change screen ratio\n\n## Customizing Buttons\n\n1. Open **Settings** (Ctrl+,)\n2. Go to **UI Buttons** tab\n3. Check/uncheck buttons you want visible\n4. Click **Apply**\n\n> **Tip:** Only enable buttons you use regularly to keep the interface clean.\n\n> **Note:** All buttons remain accessible from the system tray menu even if hidden.",
+  "related_topics": ["main-window", "status-panel", "ui-buttons-settings", "power-on", "input-switch"],
+  "screenshots": []
+}

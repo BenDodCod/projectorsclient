@@ -1,0 +1,9 @@
+{
+  "id": "freeze-display",
+  "title": "Freezing the Display",
+  "category": "advanced",
+  "keywords": ["freeze", "pause", "display", "image", "snapshot", "hold"],
+  "content": "## What It Does\n\nFreeze Display captures the current projected image and holds it static:\n- The projected image stays frozen\n- Your computer screen continues updating normally\n- The audience sees a \"snapshot\" of what was displayed\n\n## When to Use\n\n**Ideal situations:**\n- Pause a video while explaining a concept\n- Keep a slide visible while navigating to other content\n- Hide your desktop while opening files or applications\n- Review a specific frame without replaying video\n\n## How to Use\n\n1. Click the **Freeze Display** button (light blue)\n2. The projected image freezes immediately\n3. The button changes to **Unfreeze Display**\n4. Continue working on your computer (audience won't see changes)\n5. Click **Unfreeze Display** when ready to resume\n\n## Keyboard Shortcut\n\nPress **Ctrl+F** to toggle freeze on/off.\n\n## Important Notes\n\n> **⚠️ Warning:** While frozen, the audience cannot see what you're doing on your computer. This includes mouse movements, new windows, or any content changes.\n\n> **Note:** The projector lamp remains on - this is NOT a power-saving feature. Use **Blank Screen** for breaks.\n\n> **Tip:** Freeze is perfect for \"hiding\" your notes or speaker view while presenting.",
+  "related_topics": ["blank-screen", "control-buttons", "ui-buttons-settings"],
+  "screenshots": []
+}

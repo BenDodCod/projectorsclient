@@ -1,0 +1,9 @@
+{
+  "id": "power-off",
+  "title": "Turning the Projector Off",
+  "category": "daily-tasks",
+  "keywords": ["power", "off", "shutdown", "turn off", "cool down", "cooling"],
+  "content": "## Quick Steps\n\n1. Click the red **Power Off** button\n2. Confirm shutdown if prompted\n3. Wait for cool-down period (60-90 seconds)\n4. Status Panel will show **Power: Cooling Down**, then **Power: Off**\n\n## Confirmation Dialog\n\nBy default, you'll see a confirmation:\n- \"Are you sure you want to turn off the projector?\"\n- Click **Yes, Turn Off** to proceed\n- Or click **Cancel** to abort\n- Check **Don't ask me again** to disable future prompts\n\n## Cooling Down Process\n\nAfter sending the power-off command:\n- The projector fan runs to cool the lamp\n- This typically takes **60-90 seconds**\n- Status Panel shows estimated time remaining\n- Do NOT unplug power during cool-down!\n\n## What Happens\n\n- Application sends power-off command\n- Projector begins cool-down cycle\n- Status updates automatically\n- History Panel shows \"Power Off → Success ✓\"\n\n> **⚠️ Warning:** Never unplug a projector immediately after turning it off! Always let it cool down completely to protect the expensive lamp.\n\n> **Tip:** If you need a brief pause, use **Blank Screen** instead - it's faster than power off/on.",
+  "related_topics": ["power-on", "blank-screen", "status-panel", "control-buttons"],
+  "screenshots": []
+}

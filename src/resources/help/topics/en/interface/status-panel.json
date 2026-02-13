@@ -1,0 +1,9 @@
+{
+  "id": "status-panel",
+  "title": "Understanding the Status Panel",
+  "category": "interface",
+  "keywords": ["status", "panel", "connection", "power", "input", "connected", "disconnected"],
+  "content": "The Status Panel shows real-time information about your projector. It's located on the left side of the main window.\n\n## What You'll See\n\n### Projector Name\nThe friendly name you assigned during setup (e.g., \"Conference Room A\").\n\n### Connection Status\n- 🟢 **Connected** - Communication is working normally\n- 🔴 **Disconnected** - Cannot reach the projector\n- 🟡 **Connecting** - Attempting to establish connection\n\n### Power State\n- **On** - Projector is powered on and ready\n- **Off** - Projector is powered off\n- **Warming Up** - Projector is turning on (30-60 seconds)\n- **Cooling Down** - Projector is shutting down (60-90 seconds)\n\n### Current Input Source\nShows which input is active:\n- HDMI1, HDMI2 - Digital HDMI inputs\n- VGA - Analog VGA input\n- Component - Component video\n- Network - Network display\n\n### Last Update\nTime since the last status refresh. Updates automatically every 5 seconds.\n\n## What to Watch For\n\n> **Tip:** If \"Last Update\" shows more than 10 seconds, there may be a connection issue.\n\n> **Note:** The Status Panel only shows information - use the Control Buttons to make changes.",
+  "related_topics": ["main-window", "control-buttons", "connection-test", "troubleshoot-connection"],
+  "screenshots": []
+}

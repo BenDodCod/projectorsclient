@@ -1,0 +1,9 @@
+{
+  "id": "power-on",
+  "title": "Turning the Projector On",
+  "category": "daily-tasks",
+  "keywords": ["power", "on", "start", "turn on", "warm up", "boot", "startup"],
+  "content": "## Quick Steps\n\n1. Make sure the Status Panel shows **Connected**\n2. Click the green **Power On** button\n3. Wait for the projector to warm up (30-60 seconds)\n4. The Status Panel will update to show **Power: Warming Up**, then **Power: On**\n\n## What Happens\n\n- The application sends a power-on command to the projector\n- The projector lamp begins warming up\n- Status updates automatically as the projector starts\n- History Panel shows \"Power On → Success ✓\"\n\n## Warm-Up Time\n\nMost projectors take **30-60 seconds** to fully warm up. During this time:\n- The Status Panel shows \"Warming Up\" with an animated indicator\n- The projected image gradually gets brighter\n- You cannot turn the projector off (must wait for warm-up to complete)\n\n## Troubleshooting\n\n**If the command fails:**\n- Check that Status Panel shows \"Connected\"\n- Verify the projector is plugged in and powered at the wall\n- Check the History Panel for specific error messages\n- See \"Troubleshooting Connection Problems\" for detailed help\n\n> **Tip:** Don't click the Power On button multiple times! The command was received the first time. Be patient and wait for the status to update.\n\n> **Best Practice:** Turn on the projector 5-10 minutes before your presentation to allow proper warm-up time.",
+  "related_topics": ["power-off", "status-panel", "history-panel", "troubleshoot-connection"],
+  "screenshots": []
+}

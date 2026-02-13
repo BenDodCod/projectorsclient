@@ -246,6 +246,32 @@ DEFAULT_SETTINGS: Dict[str, SettingDefinition] = {
         setting_type=SettingType.INTEGER,
         description="Number of log file backups to keep"
     ),
+
+    # Help system settings
+    "help.tooltips_enabled": SettingDefinition(
+        key="help.tooltips_enabled",
+        default=True,
+        setting_type=SettingType.BOOLEAN,
+        description="Enable context-aware help tooltips"
+    ),
+    "help.tooltip_delay_ms": SettingDefinition(
+        key="help.tooltip_delay_ms",
+        default=500,
+        setting_type=SettingType.INTEGER,
+        description="Tooltip display delay in milliseconds"
+    ),
+    "help.last_viewed_version": SettingDefinition(
+        key="help.last_viewed_version",
+        default=[2, 0, 0],
+        setting_type=SettingType.JSON,
+        description="Last viewed What's New version (major, minor, patch tuple)"
+    ),
+    "help.tour_completed": SettingDefinition(
+        key="help.tour_completed",
+        default=False,
+        setting_type=SettingType.BOOLEAN,
+        description="Whether interactive tour has been completed (Phase 2 feature)"
+    ),
 }
 
 

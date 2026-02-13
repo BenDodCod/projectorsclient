@@ -1,0 +1,9 @@
+{
+  "id": "slow-commands",
+  "title": "Commands Take Too Long (>10 Seconds)",
+  "category": "troubleshooting",
+  "keywords": ["slow", "timeout", "delay", "performance", "lag", "waiting"],
+  "content": "## Symptom\n\nCommands (power on/off, input change, etc.) take more than 10 seconds to execute.\n\n**Target:** Commands should complete in <5 seconds\n\n## Diagnosis\n\n1. Check History Panel timestamps\n2. Note time between clicking button and success/failure\n3. Compare to 5-second target\n\n## Common Causes\n\n**Network Issues:**\n- Wi-Fi connection with high latency\n- VPN routing traffic through distant servers\n- Network congestion during peak hours\n- Poor signal strength\n\n**Projector Issues:**\n- Old firmware (slow to respond)\n- Projector overloaded with requests\n- Compatibility issues\n\n**Configuration Issues:**\n- Timeout set too high (waiting unnecessarily)\n- Too many retry attempts configured\n\n## Solutions\n\n### Quick Fixes\n\n1. **Increase timeout** if commands are succeeding but slow:\n   - Settings > Connection > Command Timeout\n   - Set to 15 seconds\n   - Gives projector more time to respond\n\n2. **Reduce retries** if you want faster failures:\n   - Settings > Connection > Retry attempts\n   - Set to 1\n   - Fails quickly instead of retrying\n\n3. **Test network latency:**\n   - Settings > Diagnostics > Run Network Test\n   - Check ping time (should be <50ms)\n\n### Long-Term Solutions\n\n- **Use wired Ethernet** instead of Wi-Fi\n- **Update projector firmware** (contact IT)\n- **Avoid VPN** when controlling projectors\n- **Schedule operations** during off-peak hours\n\n> **Tip:** A combination of higher timeout (15s) and fewer retries (1-2) often provides the best balance.",
+  "related_topics": ["connection-settings", "troubleshoot-connection", "diagnostics-settings"],
+  "screenshots": []
+}

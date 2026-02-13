@@ -1,0 +1,9 @@
+{
+  "id": "language-selection",
+  "title": "Choosing Your Language",
+  "category": "getting-started",
+  "keywords": ["language", "english", "hebrew", "עברית", "wizard", "setup", "rtl"],
+  "content": "The first step of the setup wizard lets you choose your preferred language for the application interface.\n\n## Available Languages\n\n**English**\n- Standard left-to-right layout\n- Default selection\n- All features fully supported\n\n**עברית (Hebrew)**\n- Right-to-left (RTL) layout\n- Mirror image interface\n- Full translation of all text and menus\n\n## How to Select\n\n1. Click on your preferred language option\n2. The interface immediately switches to that language\n3. Click **Next** to continue setup\n\n## Changing Language Later\n\nYou can change the language anytime after setup:\n- Open **Settings** (gear icon or Ctrl+,)\n- Go to **General** tab\n- Select language from **Language Preferences**\n- Click **Apply**\n\nThe interface will switch immediately - no restart required!\n\n> **Tip:** If you select Hebrew, the entire interface will flip to right-to-left layout. Menus, dialogs, and panels will all mirror automatically.",
+  "related_topics": ["first-run-wizard", "general-settings"],
+  "screenshots": []
+}

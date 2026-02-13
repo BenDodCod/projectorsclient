@@ -1,0 +1,9 @@
+{
+  "id": "history-panel",
+  "title": "Operation History Panel",
+  "category": "interface",
+  "keywords": ["history", "log", "operations", "panel", "events", "audit"],
+  "content": "## What is the History Panel?\n\nThe History Panel shows a chronological log of all projector operations performed through the application.\n\n## What Each Entry Shows\n\n**Timestamp** - Exact time (HH:MM:SS)\n**Icon** - Visual indicator of operation type:\n- 🔌 Power operations\n- 📺 Input changes\n- ⚪ Screen blank/unblank\n- 🧊 Freeze/unfreeze\n- 🔊 Volume/mute\n\n**Operation** - Description of what was done\n**Status** - Result:\n- ✓ **Success** (green) - Operation completed\n- ✗ **Failed** (red) - Operation failed with error\n\n## Using the History Panel\n\n**Scrolling:**\n- Scroll up/down to view older entries\n- Latest operations appear at top\n\n**Details:**\n- Hover over entry to see full details\n- Failed operations show error messages\n\n**Right-Click Menu:**\n- **Copy Details** - Copy to clipboard\n- **View Full Message** - See complete error (for failures)\n- **Clear This Entry** - Remove single entry\n- **Clear All History** - Erase entire history\n- **Export History** - Save to file\n\n## Entry Limits\n\nShows last **10 operations** by default.\nBottom shows: \"Showing X of Y operations today\"\n\n## Troubleshooting with History\n\nPatterns of failures indicate issues:\n\n**Many timeout errors →** Network problem\n**\"Command not supported\" →** Compatibility issue\n**Intermittent failures →** Unstable connection\n\nSee the specific error message for troubleshooting guidance.\n\n> **Tip:** If you see repeated failures, check the FAQ or contact IT with a screenshot of the history panel.",
+  "related_topics": ["main-window", "troubleshoot-connection", "troubleshoot-commands-fail"],
+  "screenshots": []
+}

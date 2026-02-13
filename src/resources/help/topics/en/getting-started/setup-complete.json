@@ -1,0 +1,9 @@
+{
+  "id": "setup-complete",
+  "title": "Setup Complete - What's Next?",
+  "category": "getting-started",
+  "keywords": ["complete", "finish", "done", "setup", "wizard", "next steps", "getting started"],
+  "content": "## Congratulations!\n\nYour Enhanced Projector Control Application is ready to use!\n\n## Configuration Summary\n\nReview what was configured:\n- **Language:** Your selected UI language\n- **Database Mode:** Standalone or Enterprise\n- **Projectors:** Number configured (or \"None - add later\")\n- **Control Buttons:** Customized interface\n\n## What's Next?\n\n### 1. Control Your Projector\n\nFrom the main window:\n- Click **Power On** to turn on projector\n- Use **Input Source** to switch inputs\n- Try **Blank Screen** during presentations\n\n### 2. View Operation History\n\nThe **History Panel** shows:\n- Recent operations with timestamps\n- Success/failure status\n- Helpful for troubleshooting\n\n### 3. Explore Settings\n\nOpen **Settings** (⚙️ or Ctrl+,) to:\n- Add more projectors\n- Adjust timeouts and behavior\n- Customize UI buttons\n- Configure security options\n\n### 4. Learn Keyboard Shortcuts\n\nPress **F1** or **Ctrl+?** for help anytime!\n\nCommon shortcuts:\n- `Ctrl+P` - Power toggle\n- `Ctrl+B` - Blank screen\n- `Ctrl+,` - Settings\n- `F1` - Help\n\n## System Tray\n\nWhen minimized, the app runs in the system tray (📽️):\n- **Double-click** - Restore window\n- **Right-click** - Quick controls menu\n\n## Need Help?\n\n- Press **F1** for in-app help\n- Check **Help > Keyboard Shortcuts**\n- Read the User Guide (external)\n- Contact your IT administrator\n\n> **Tip:** Enable \"Launch on Windows startup\" in Settings so the app is always ready!",
+  "related_topics": ["first-run-wizard", "main-window", "control-buttons", "system-tray", "general-settings"],
+  "screenshots": []
+}

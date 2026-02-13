@@ -1,0 +1,9 @@
+{
+  "id": "input-switch",
+  "title": "Switching Input Sources",
+  "category": "daily-tasks",
+  "keywords": ["input", "source", "switch", "hdmi", "vga", "component", "network", "change input"],
+  "content": "## What Are Input Sources?\n\nProjectors accept video from multiple input ports:\n- **HDMI1, HDMI2** - Digital HDMI inputs\n- **VGA** - Analog VGA input\n- **Component** - Component video input\n- **Network** - Network display\n\nYou can switch between these inputs to control which device is projected.\n\n## Switching the Input\n\n**Steps:**\n1. Click the **Input Source** dropdown button\n2. Select your desired input from the list\n3. Wait a few seconds for the projector to switch\n4. The Status Panel will update to show the new input\n\n**What happens:**\n- The application sends an input change command\n- The projector switches to the selected input\n- Status Panel updates to show \"Input: [Source Name]\"\n- History Panel shows \"Input Changed to [Source] → Success ✓\"\n\n## Available Inputs\n\nThe dropdown shows only inputs supported by your projector model. If an input is missing, it may not be supported or enabled on your projector.\n\n**Common inputs:**\n- HDMI1 - Primary digital input\n- HDMI2 - Secondary digital input\n- VGA - Legacy analog computers\n- Component - DVD/Blu-ray players\n- Network - Wireless presentation systems\n\n## Input Switching Tips\n\n**Speed:**\n- Most projectors switch inputs in 2-3 seconds\n- Some older models may take 5-10 seconds\n\n**Troubleshooting:**\n- If input switch fails, check that the source device is connected\n- Some projectors require specific input modes to be enabled\n- Not all projectors support all input types\n\n> **Tip:** Available inputs depend on your specific projector model. If an input is missing, it may not be supported by your projector.",
+  "related_topics": ["control-buttons", "status-panel", "commands-fail"],
+  "screenshots": []
+}

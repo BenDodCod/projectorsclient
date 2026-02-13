@@ -1,0 +1,9 @@
+{
+  "id": "first-run-wizard",
+  "title": "First-Run Wizard Overview",
+  "category": "getting-started",
+  "keywords": ["setup", "wizard", "first time", "installation", "initial setup", "configure"],
+  "content": "When you launch the application for the first time, you'll go through a quick setup wizard that takes about 5 minutes to complete.\n\n## What the Wizard Configures\n\nThe wizard will guide you through:\n\n1. **Language Selection** - Choose English or Hebrew (עברית)\n2. **Admin Password Setup** - Create a master password to protect your settings\n3. **Database Mode** - Select Standalone (SQLite) or Enterprise (SQL Server)\n4. **Projector Configuration** - Add your first projector\n5. **UI Customization** - Choose which control buttons to show\n6. **Setup Complete** - Review configuration and start using the app\n\n## Tips for Setup\n\n- Have your projector's IP address ready (ask IT if needed)\n- Choose a strong admin password and write it down in a safe place\n- Most users should select \"Standalone (SQLite)\" for database mode\n- You can add more projectors and customize settings later\n\n## After Setup\n\nOnce complete, you'll see the main window and can immediately start controlling your projector!\n\n> **Need Help?** Each wizard page includes instructions and tips. You can also click \"Back\" to review previous steps.",
+  "related_topics": ["language-selection", "admin-password", "database-mode", "add-projector"],
+  "screenshots": []
+}

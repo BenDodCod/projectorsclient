@@ -1,0 +1,9 @@
+{
+  "id": "ui-customization",
+  "title": "Customizing Control Buttons",
+  "category": "getting-started",
+  "keywords": ["ui", "customize", "buttons", "interface", "controls", "wizard"],
+  "content": "## What You Can Customize\n\nChoose which control buttons appear in the main window.\n\n## Recommended Defaults (Pre-Selected)\n\n✓ **Power On/Off** - Essential\n✓ **Input Source** - Very common\n✓ **Blank Screen** - Useful for presentations\n✓ **Freeze Display** - Helpful for explaining content\n\n## Optional Controls\n\n☐ **Volume Control** - Slider for audio level\n☐ **Mute Audio** - Quick mute toggle\n☐ **Picture Mode** - Switch presentation modes\n☐ **Aspect Ratio** - Change screen ratio\n\n## How to Choose\n\n**Keep it simple!** Only enable buttons you'll use regularly.\n\n**Basic User:**\n- Power On/Off + Input Source = minimal interface\n\n**Presenter:**\n- Add Blank Screen + Freeze Display for presentation control\n\n**Advanced User:**\n- Enable all controls for complete access\n\n## Changing Later\n\nYou can always adjust button visibility:\n- **Settings** (Ctrl+,) > **UI Buttons** tab\n- Check/uncheck desired buttons\n- Click **Apply**\n\n## System Tray Access\n\n> **Note:** Even if you hide buttons from the main window, all controls remain accessible via system tray right-click menu.\n\n> **Tip:** Start with recommended defaults. You can enable more buttons later if needed!",
+  "related_topics": ["first-run-wizard", "control-buttons", "ui-buttons-settings", "system-tray"],
+  "screenshots": []
+}

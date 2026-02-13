@@ -1,0 +1,9 @@
+{
+  "id": "main-window",
+  "title": "Main Window Overview",
+  "category": "interface",
+  "keywords": ["main window", "interface", "layout", "overview", "ui", "screen"],
+  "content": "## The Main Window\n\nAfter setup, the main window has 5 key areas:\n\n### 1. Top Toolbar\n\n**Left side:**\n- ⚙️ **Settings** icon - Open settings (Ctrl+,)\n- 🌐 **Language toggle** - Switch EN/HE\n- ❓ **Help** icon - Access help (F1)\n\n**Right side:**\n- Standard Windows controls (Minimize, Maximize, Close)\n\n### 2. Status Panel (Left)\n\nShows current projector state:\n- **Projector Name** - Bold at top\n- **Connection Status** - Green/Red/Yellow indicator\n- **Power State** - On/Off/Warming/Cooling\n- **Input Source** - Current active input\n- **Last Update** - Time since status refresh\n\n### 3. Control Buttons (Center)\n\nQuick access to operations:\n- **Power On** (green) / **Power Off** (red)\n- **Input Source** (blue dropdown)\n- **Blank Screen** (yellow)\n- Plus any optional buttons you enabled\n\n### 4. History Panel (Right)\n\nOperation log showing:\n- Timestamp of each operation\n- Operation type with icon\n- Success ✓ or Failed ✗ status\n- Scrollable list of recent operations\n\n### 5. Status Bar (Bottom)\n\n**Left:** Connection stability indicator\n**Center:** Operations count today\n**Right:** Application version\n\n## Window Behavior\n\n**Minimize:** Hides to system tray (app keeps running)\n**Maximize:** Expands to full screen\n**Close:** Closes window (app continues in tray if configured)\n\n## Keyboard Shortcuts\n\n- `Ctrl+,` - Open Settings\n- `F1` - Help Panel\n- `Ctrl+Q` - Quit completely\n- `Alt+F4` - Close window\n\n> **Tip:** All 5 areas update in real-time as you control the projector!",
+  "related_topics": ["status-panel", "control-buttons", "history-panel", "system-tray"],
+  "screenshots": []
+}

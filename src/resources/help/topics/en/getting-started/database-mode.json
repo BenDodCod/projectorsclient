@@ -1,0 +1,9 @@
+{
+  "id": "database-mode",
+  "title": "Choosing Database Mode",
+  "category": "getting-started",
+  "keywords": ["database", "sqlite", "sql server", "standalone", "enterprise", "storage"],
+  "content": "## What is Database Mode?\n\nDatabase mode determines where your settings and projector configurations are stored.\n\n## Two Options\n\n### Standalone (SQLite) - Recommended for Most Users\n\n**Best for:**\n- Individual users\n- Single computer installations\n- No central server available\n\n**Characteristics:**\n- Settings stored locally: `%APPDATA%\\ProjectorControl\\`\n- No network database required\n- Easy setup and maintenance\n- Data stays on your computer only\n\n### Enterprise (SQL Server) - For Organizations\n\n**Best for:**\n- Organizations with multiple computers\n- Shared configuration across users\n- Centralized management\n\n**Requirements:**\n- SQL Server instance (setup by IT)\n- Server hostname/IP address\n- Database credentials\n- Network connectivity to server\n\n**Benefits:**\n- Multiple computers share same projector list\n- Centralized configuration management\n- IT can manage remotely\n\n## Making Your Choice\n\n**Not sure?** Select **Standalone (SQLite)**\n- Works for 95% of users\n- You can migrate to Enterprise later if needed\n- Contact IT to assist with migration\n\n## After Setup\n\n> **Note:** Database mode cannot be changed after initial setup without reinstalling. Choose carefully!\n\n> **Tip:** If your organization has a SQL Server, check with IT before choosing. They may want you to use Enterprise mode.",
+  "related_topics": ["first-run-wizard", "advanced-settings"],
+  "screenshots": []
+}

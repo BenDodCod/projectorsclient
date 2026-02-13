@@ -1,0 +1,9 @@
+{
+  "id": "blank-screen",
+  "title": "Blanking the Screen",
+  "category": "daily-tasks",
+  "keywords": ["blank", "screen", "hide", "black screen", "mute video", "pause presentation"],
+  "content": "## What is Screen Blanking?\n\nBlanking the screen temporarily hides the projected image by displaying a black screen. The projector lamp stays on and audio continues (if enabled).\n\n**Not the same as:**\n- Power Off - Turns projector completely off\n- Freeze - Shows static snapshot of last frame\n\n## How to Blank/Unblank\n\n**Steps:**\n1. Click the **Blank Screen** button (yellow)\n2. The projected image immediately blanks to black\n3. The button changes to **Unblank Screen**\n4. Click again to restore the image\n\n**What happens:**\n- The projector immediately displays a black screen\n- The projector lamp stays on (not the same as power off)\n- Audio continues if enabled\n- History Panel shows \"Screen Blanked → Success ✓\"\n\n## When to Use Blank Screen\n\n**Common scenarios:**\n- Hide sensitive content temporarily during a presentation\n- Pause between presentation sections\n- Keep audience focused during discussions\n- Prevent distractions during Q&A\n- Switch between presenters\n\n**Why use blank instead of power off?**\n- Much faster (instant vs. 30-90 second warm-up)\n- No projector wear from power cycling\n- No cooling delay when resuming\n\n## Blank vs. Freeze\n\n**Blank Screen:**\n- Shows black screen\n- Use to hide content completely\n- Instant on/off\n\n**Freeze Display:**\n- Shows static snapshot\n- Use to pause while explaining\n- Your screen continues updating\n\n> **Tip:** Blank Screen is faster than turning the projector off and back on. Use it for brief pauses.",
+  "related_topics": ["control-buttons", "freeze-display", "power-off"],
+  "screenshots": []
+}
