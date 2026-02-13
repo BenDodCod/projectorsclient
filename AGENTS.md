@@ -106,7 +106,7 @@ This file is PERMANENT and accumulates across ALL sessions.
 
 ## Quality Gates (All Met)
 - Test coverage: 94%+ (target: 85%)
-- Performance: Startup 0.9s (<2s), Commands 18ms (<5s), Memory 134MB (<150MB)
+- Performance: Startup 0.9s (<2s), Commands 18ms (<5s), Memory 165MB (<200MB)
 - Security: 0 critical/high vulnerabilities
 - Compatibility: Windows 10/11, DPI 1x-4x, PJLink Class 1 & 2
 

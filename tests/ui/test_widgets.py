@@ -394,3 +394,229 @@ class TestWidgetValidation:
         combo.setCurrentText("10.0.0.1")
 
         assert combo.currentText() == "10.0.0.1"
+
+
+class TestCompactControls:
+    """Tests for CompactControls widget (110 lines)."""
+
+    def test_compact_controls_creation(self, qapp, qtbot):
+        """Test widget can be created."""
+        from src.ui.widgets.compact_controls import CompactControls
+
+        widget = CompactControls()
+        qtbot.addWidget(widget)
+
+        assert widget is not None
+        assert widget.objectName() == "compact_controls"
+
+    def test_buttons_exist(self, qapp, qtbot):
+        """Test all three buttons are created."""
+        from src.ui.widgets.compact_controls import CompactControls
+
+        widget = CompactControls()
+        qtbot.addWidget(widget)
+
+        assert hasattr(widget, 'power_on_btn')
+        assert hasattr(widget, 'power_off_btn')
+        assert hasattr(widget, 'blank_btn')
+        assert widget.power_on_btn is not None
+        assert widget.power_off_btn is not None
+        assert widget.blank_btn is not None
+
+    def test_button_properties(self, qapp, qtbot):
+        """Test button properties (size, object names, compact property)."""
+        from src.ui.widgets.compact_controls import CompactControls
+
+        widget = CompactControls()
+        qtbot.addWidget(widget)
+
+        # Check sizes (all 350x55)
+        assert widget.power_on_btn.size() == QSize(350, 55)
+        assert widget.power_off_btn.size() == QSize(350, 55)
+        assert widget.blank_btn.size() == QSize(350, 55)
+
+        # Check object names
+        assert widget.power_on_btn.objectName() == "power_on_btn"
+        assert widget.power_off_btn.objectName() == "power_off_btn"
+        assert widget.blank_btn.objectName() == "blank_btn"
+
+        # Check compact property
+        assert widget.power_on_btn.property("compact") == "true"
+        assert widget.power_off_btn.property("compact") == "true"
+        assert widget.blank_btn.property("compact") == "true"
+
+    def test_blank_button_checkable(self, qapp, qtbot):
+        """Test blank button is checkable."""
+        from src.ui.widgets.compact_controls import CompactControls
+
+        widget = CompactControls()
+        qtbot.addWidget(widget)
+
+        assert widget.blank_btn.isCheckable()
+        assert not widget.power_on_btn.isCheckable()
+        assert not widget.power_off_btn.isCheckable()
+
+    def test_power_on_signal(self, qapp, qtbot):
+        """Test power on button emits signal."""
+        from src.ui.widgets.compact_controls import CompactControls
+
+        widget = CompactControls()
+        qtbot.addWidget(widget)
+
+        with qtbot.waitSignal(widget.power_on_clicked, timeout=1000):
+            widget.power_on_btn.click()
+
+    def test_power_off_signal(self, qapp, qtbot):
+        """Test power off button emits signal."""
+        from src.ui.widgets.compact_controls import CompactControls
+
+        widget = CompactControls()
+        qtbot.addWidget(widget)
+
+        with qtbot.waitSignal(widget.power_off_clicked, timeout=1000):
+            widget.power_off_btn.click()
+
+    def test_blank_toggle_signal(self, qapp, qtbot):
+        """Test blank button emits toggle signal with state."""
+        from src.ui.widgets.compact_controls import CompactControls
+
+        widget = CompactControls()
+        qtbot.addWidget(widget)
+
+        # Capture signal emissions
+        signals_received = []
+        widget.blank_toggled.connect(lambda state: signals_received.append(state))
+
+        # Click to activate blank
+        widget.blank_btn.click()
+        qtbot.wait(100)  # Wait for signal processing
+
+        assert len(signals_received) == 1
+        assert signals_received[0] is True
+
+        # Click to deactivate blank
+        widget.blank_btn.click()
+        qtbot.wait(100)
+
+        assert len(signals_received) == 2
+        assert signals_received[1] is False
+
+    def test_blank_state_tracking(self, qapp, qtbot):
+        """Test internal _blank_active state is tracked correctly."""
+        from src.ui.widgets.compact_controls import CompactControls
+
+        widget = CompactControls()
+        qtbot.addWidget(widget)
+
+        # Initial state
+        assert widget._blank_active is False
+        assert not widget.blank_btn.isChecked()
+
+        # Click to activate
+        widget.blank_btn.click()
+        qtbot.wait(100)
+
+        assert widget._blank_active is True
+        assert widget.blank_btn.isChecked()
+
+        # Click to deactivate
+        widget.blank_btn.click()
+        qtbot.wait(100)
+
+        assert widget._blank_active is False
+        assert not widget.blank_btn.isChecked()
+
+    def test_blank_text_changes(self, qapp, qtbot):
+        """Test blank button text changes between Blank/Unblank."""
+        from src.ui.widgets.compact_controls import CompactControls
+
+        widget = CompactControls()
+        qtbot.addWidget(widget)
+
+        # Initial text should be "Blank"
+        initial_text = widget.blank_btn.text()
+        assert "Blank" in initial_text or "blank" in initial_text.lower()
+
+        # Click to activate - text should change to "Unblank"
+        widget.blank_btn.click()
+        qtbot.wait(100)
+
+        active_text = widget.blank_btn.text()
+        assert "Unblank" in active_text or "unblank" in active_text.lower()
+
+        # Click to deactivate - text should change back to "Blank"
+        widget.blank_btn.click()
+        qtbot.wait(100)
+
+        inactive_text = widget.blank_btn.text()
+        assert "Blank" in inactive_text or "blank" in inactive_text.lower()
+        assert "Unblank" not in inactive_text
+
+    def test_set_blank_state_programmatic(self, qapp, qtbot):
+        """Test programmatic blank state setting."""
+        from src.ui.widgets.compact_controls import CompactControls
+
+        widget = CompactControls()
+        qtbot.addWidget(widget)
+
+        # Set to active programmatically
+        widget.set_blank_state(True)
+
+        assert widget._blank_active is True
+        assert widget.blank_btn.isChecked()
+        assert "Unblank" in widget.blank_btn.text() or "unblank" in widget.blank_btn.text().lower()
+
+        # Set to inactive programmatically
+        widget.set_blank_state(False)
+
+        assert widget._blank_active is False
+        assert not widget.blank_btn.isChecked()
+        assert "Blank" in widget.blank_btn.text()
+        assert "Unblank" not in widget.blank_btn.text()
+
+    def test_retranslate(self, qapp, qtbot):
+        """Test retranslation updates button text."""
+        from src.ui.widgets.compact_controls import CompactControls
+
+        widget = CompactControls()
+        qtbot.addWidget(widget)
+
+        # Call retranslate
+        widget.retranslate()
+
+        # Buttons should have text (exact text depends on translation)
+        assert len(widget.power_on_btn.text()) > 0
+        assert len(widget.power_off_btn.text()) > 0
+        assert len(widget.blank_btn.text()) > 0
+
+    def test_retranslate_preserves_blank_state(self, qapp, qtbot):
+        """Test retranslate preserves blank button state."""
+        from src.ui.widgets.compact_controls import CompactControls
+
+        widget = CompactControls()
+        qtbot.addWidget(widget)
+
+        # Activate blank
+        widget.set_blank_state(True)
+        initial_text = widget.blank_btn.text()
+
+        # Retranslate
+        widget.retranslate()
+
+        # State should be preserved
+        assert widget._blank_active is True
+        assert widget.blank_btn.isChecked()
+        # Text should still be "Unblank"
+        assert "Unblank" in widget.blank_btn.text() or "unblank" in widget.blank_btn.text().lower()
+
+    def test_button_icons_loaded(self, qapp, qtbot):
+        """Test buttons have icons loaded."""
+        from src.ui.widgets.compact_controls import CompactControls
+
+        widget = CompactControls()
+        qtbot.addWidget(widget)
+
+        # All buttons should have icons
+        assert not widget.power_on_btn.icon().isNull()
+        assert not widget.power_off_btn.icon().isNull()
+        assert not widget.blank_btn.icon().isNull()

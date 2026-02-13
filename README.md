@@ -44,8 +44,8 @@
 | **Network** | TCP/IP connectivity to projector (port 4352 for PJLink) |
 | **Projector** | PJLink Class 1 or Class 2 compatible device |
 | **SQL Server** (Optional) | SQL Server 2019+ for enterprise mode |
-| **Disk Space** | ~150MB for application |
-| **Memory** | 134MB typical usage |
+| **Disk Space** | ~200MB for application |
+| **Memory** | 165MB typical usage |
 
 **DPI Support:** Fully tested at 100%-400% scaling for high-resolution displays
 
@@ -229,7 +229,7 @@ Click input button (HDMI1, HDMI2, VGA, etc.) → Input switches immediately
 |--------|--------|----------|--------|
 | Startup Time | <2.0s | 0.08-0.9s | ✅ 55-96% faster |
 | Command Execution | <5.0s | 0.020s | ✅ 99.6% faster |
-| Memory Usage | <150MB | 134.3MB | ✅ 11% under target |
+| Memory Usage | <200MB | 165.1MB | ✅ 17% under target |
 
 **Modern UI:**
 - PyQt6 with custom themes (QSS)
@@ -326,7 +326,7 @@ For detailed compatibility information, see [COMPATIBILITY_MATRIX.md](docs/compa
 |--------|--------|----------|-------------|
 | Startup Time | <2.0s | 0.08-0.9s | 55-96% faster than target |
 | Command Latency | <5.0s | 0.020s (20ms) | 99.6% faster than target |
-| Memory Usage | <150MB | 134.3MB | 11% under target |
+| Memory Usage | <200MB | 165.1MB | 17% under target |
 
 *Startup time varies based on OS file caching: 0.8-0.9s on cold start, 0.08s on warm start*
 

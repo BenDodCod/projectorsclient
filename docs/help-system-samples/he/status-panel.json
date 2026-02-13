@@ -1,0 +1,9 @@
+{
+  "id": "status-panel",
+  "title": "הבנת לוח הסטטוס",
+  "category": "interface",
+  "keywords": ["סטטוס", "לוח", "חיבור", "חשמל", "קלט", "מחובר", "מנותק"],
+  "content": "לוח הסטטוס מציג מידע בזמן אמת אודות המקרן שלך. הוא ממוקם בצד שמאל של החלון הראשי.\n\n## מה תראה\n\n### שם המקרן\nהשם הידידותי שהקצית במהלך ההגדרה (לדוגמה, \"Conference Room A\").\n\n### מצב חיבור\n- 🟢 **Connected** - התקשורת פועלת כרגיל\n- 🔴 **Disconnected** - לא ניתן להגיע למקרן\n- 🟡 **Connecting** - מנסה ליצור חיבור\n\n### מצב חשמל\n- **On** - המקרן מופעל ומוכן\n- **Off** - המקרן כבוי\n- **Warming Up** - המקרן מתחמם (30-60 שניות)\n- **Cooling Down** - המקרן נכבה (60-90 שניות)\n\n### מקור קלט נוכחי\nמציג איזה קלט פעיל:\n- HDMI1, HDMI2 - קלטי HDMI דיגיטליים\n- VGA - קלט VGA אנלוגי\n- Component - וידאו Component\n- Network - תצוגת רשת\n\n### עדכון אחרון\nזמן מאז רענון סטטוס אחרון. מתעדכן אוטומטית כל 5 שניות.\n\n## למה לשים לב\n\n> **טיפ:** אם \"Last Update\" מציג יותר מ-10 שניות, ייתכן שיש בעיית חיבור.\n\n> **הערה:** לוח הסטטוס מציג רק מידע - השתמש בכפתורי הבקרה לביצוע שינויים.",
+  "related_topics": ["main-window", "control-buttons", "connection-test", "troubleshoot-connection"],
+  "screenshots": []
+}
