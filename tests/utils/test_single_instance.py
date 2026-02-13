@@ -232,3 +232,130 @@ class TestEdgeCases:
             # Brief pause to ensure cleanup completes
             QTimer.singleShot(50, qapp.quit)
             qapp.exec()
+
+    def test_bytes_written_timeout(self, qapp):
+        """Test handling of bytes written timeout."""
+        QLocalServer.removeServer("TimeoutTest")
+
+        manager1 = SingleInstanceManager("TimeoutTest")
+        assert manager1.try_start() is True
+
+        # Mock socket to simulate timeout
+        with patch('PyQt6.QtNetwork.QLocalSocket.waitForBytesWritten', return_value=False):
+            manager2 = SingleInstanceManager("TimeoutTest")
+            # Should still return False (not primary) even with timeout
+            assert manager2.try_start() is False
+
+        manager1.cleanup()
+
+    def test_disconnect_timeout_handling(self, qapp):
+        """Test handling of disconnect timeout."""
+        QLocalServer.removeServer("DisconnectTest")
+
+        manager1 = SingleInstanceManager("DisconnectTest")
+        assert manager1.try_start() is True
+
+        # Mock to simulate disconnect timeout
+        with patch('PyQt6.QtNetwork.QLocalSocket.waitForDisconnected', return_value=False):
+            manager2 = SingleInstanceManager("DisconnectTest")
+            result = manager2.try_start()
+            # Should handle timeout gracefully
+            assert result is False
+
+        manager1.cleanup()
+
+    def test_server_listen_failure(self, qapp):
+        """Test handling of server listen failure."""
+        QLocalServer.removeServer("ListenFailTest")
+
+        manager = SingleInstanceManager("ListenFailTest")
+
+        # Mock listen to fail
+        with patch('PyQt6.QtNetwork.QLocalServer.listen', return_value=False):
+            result = manager.try_start()
+
+            assert result is False
+            assert manager.is_primary_instance() is False
+
+    def test_cleanup_without_server(self, qapp):
+        """Test cleanup when server was never created."""
+        manager = SingleInstanceManager("NoServerTest")
+        # Don't call try_start, so _server is None
+
+        # Should not crash
+        manager.cleanup()
+
+    def test_on_new_connection_with_no_socket(self, qapp):
+        """Test _on_new_connection when nextPendingConnection returns None."""
+        QLocalServer.removeServer("NoSocketTest")
+
+        manager = SingleInstanceManager("NoSocketTest")
+        manager.try_start()
+
+        # Mock nextPendingConnection to return None
+        with patch.object(manager._server, 'nextPendingConnection', return_value=None):
+            # Should handle gracefully
+            manager._on_new_connection()
+
+        manager.cleanup()
+
+    def test_on_new_connection_without_server(self, qapp):
+        """Test _on_new_connection when _server is None."""
+        manager = SingleInstanceManager("NoServerTest2")
+        # Don't call try_start
+
+        # Should not crash when _server is None
+        manager._on_new_connection()
+
+    def test_on_new_connection_no_data_timeout(self, qapp):
+        """Test _on_new_connection when no data arrives."""
+        from unittest.mock import MagicMock
+        from PyQt6.QtNetwork import QLocalSocket
+
+        QLocalServer.removeServer("NoDataTest")
+
+        manager = SingleInstanceManager("NoDataTest")
+        manager.try_start()
+
+        # Create mock socket with no data
+        mock_socket = MagicMock()
+        mock_socket.bytesAvailable.return_value = 0
+        mock_socket.waitForReadyRead.return_value = False
+        mock_socket.state.return_value = QLocalSocket.LocalSocketState.ConnectedState
+        mock_socket.errorString.return_value = "Timeout"
+
+        # Mock nextPendingConnection to return our mock socket
+        with patch.object(manager._server, 'nextPendingConnection', return_value=mock_socket):
+            manager._on_new_connection()
+
+            # Should call close and deleteLater
+            mock_socket.close.assert_called()
+            mock_socket.deleteLater.assert_called()
+
+        manager.cleanup()
+
+    def test_on_new_connection_empty_buffer(self, qapp):
+        """Test _on_new_connection when buffer is empty after read."""
+        from unittest.mock import MagicMock
+        from PyQt6.QtCore import QByteArray
+
+        QLocalServer.removeServer("EmptyBufferTest")
+
+        manager = SingleInstanceManager("EmptyBufferTest")
+        manager.try_start()
+
+        # Create mock socket that has data available but returns empty on read
+        mock_socket = MagicMock()
+        mock_socket.bytesAvailable.return_value = 10  # Says data is available
+        mock_socket.waitForReadyRead.return_value = True
+        mock_socket.readAll.return_value = QByteArray()  # But returns empty
+        mock_socket.state.return_value = 1
+
+        with patch.object(manager._server, 'nextPendingConnection', return_value=mock_socket):
+            manager._on_new_connection()
+
+            # Should call close and deleteLater
+            mock_socket.close.assert_called()
+            mock_socket.deleteLater.assert_called()
+
+        manager.cleanup()
