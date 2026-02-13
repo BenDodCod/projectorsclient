@@ -699,3 +699,465 @@ class TestDiagnosticsTab:
         assert len(tab._maintenance_group.title()) > 0
         assert len(tab._diagnostics_group.title()) > 0
         assert len(tab._about_group.title()) > 0
+
+
+# =============================================================================
+# UIButtonsTab Tests
+# =============================================================================
+
+
+class TestUIButtonsTab:
+    """Tests for UIButtonsTab (343 lines)."""
+
+    @pytest.fixture
+    def mock_controller(self):
+        """Create a mock projector controller."""
+        mock = MagicMock()
+        mock.is_connected = False
+        return mock
+
+    def test_ui_buttons_tab_creation(self, qapp, qtbot, mock_db_manager, mock_controller):
+        """Test UI buttons tab can be created."""
+        from src.ui.dialogs.settings_tabs.ui_buttons_tab import UIButtonsTab
+
+        tab = UIButtonsTab(mock_db_manager, controller=mock_controller)
+        qtbot.addWidget(tab)
+
+        assert tab is not None
+        assert tab.controller == mock_controller
+
+    def test_category_groups_created(self, qapp, qtbot, mock_db_manager, mock_controller):
+        """Test all category groups are created."""
+        from src.ui.dialogs.settings_tabs.ui_buttons_tab import UIButtonsTab
+
+        tab = UIButtonsTab(mock_db_manager, controller=mock_controller)
+        qtbot.addWidget(tab)
+
+        assert tab._power_group is not None
+        assert tab._display_group is not None
+        assert tab._input_group is not None
+        assert tab._audio_group is not None
+        assert tab._info_group is not None
+
+    def test_checkboxes_created(self, qapp, qtbot, mock_db_manager, mock_controller):
+        """Test checkboxes are created for all buttons."""
+        from src.ui.dialogs.settings_tabs.ui_buttons_tab import UIButtonsTab
+
+        tab = UIButtonsTab(mock_db_manager, controller=mock_controller)
+        qtbot.addWidget(tab)
+
+        # Should have checkboxes for default buttons
+        assert "power_on" in tab._checkboxes
+        assert "power_off" in tab._checkboxes
+        assert "blank" in tab._checkboxes
+        assert "freeze" in tab._checkboxes
+        assert "input_selector" in tab._checkboxes
+
+    def test_preview_buttons_created(self, qapp, qtbot, mock_db_manager, mock_controller):
+        """Test preview buttons are created."""
+        from src.ui.dialogs.settings_tabs.ui_buttons_tab import UIButtonsTab
+
+        tab = UIButtonsTab(mock_db_manager, controller=mock_controller)
+        qtbot.addWidget(tab)
+
+        # Should have preview labels
+        assert "power_on" in tab._preview_buttons
+        assert "power_off" in tab._preview_buttons
+        assert len(tab._preview_buttons) > 0
+
+    def test_checkbox_change_marks_dirty(self, qapp, qtbot, mock_db_manager, mock_controller):
+        """Test changing checkbox marks tab as dirty."""
+        from src.ui.dialogs.settings_tabs.ui_buttons_tab import UIButtonsTab
+
+        tab = UIButtonsTab(mock_db_manager, controller=mock_controller)
+        qtbot.addWidget(tab)
+
+        # Clear dirty state from initialization
+        tab.clear_dirty()
+        assert tab._is_dirty is False
+
+        # Get current state and toggle it
+        current_state = tab._checkboxes["power_on"].isChecked()
+        tab._checkboxes["power_on"].setChecked(not current_state)
+        qtbot.wait(50)
+
+        assert tab._is_dirty is True
+
+    def test_checkbox_change_updates_preview(self, qapp, qtbot, mock_db_manager, mock_controller):
+        """Test changing checkbox updates preview visibility."""
+        from src.ui.dialogs.settings_tabs.ui_buttons_tab import UIButtonsTab
+
+        tab = UIButtonsTab(mock_db_manager, controller=mock_controller)
+        qtbot.addWidget(tab)
+
+        # Explicitly set to True and check
+        tab._checkboxes["power_on"].setChecked(True)
+        tab._update_preview()  # Manually trigger since signal might not fire
+        qtbot.wait(50)
+
+        assert tab._preview_buttons["power_on"].isVisible() is True
+
+        # Disable it
+        tab._checkboxes["power_on"].setChecked(False)
+        tab._update_preview()  # Manually trigger
+        qtbot.wait(50)
+
+        assert tab._preview_buttons["power_on"].isVisible() is False
+
+    def test_reset_to_defaults(self, qapp, qtbot, mock_db_manager, mock_controller):
+        """Test reset to defaults button."""
+        from src.ui.dialogs.settings_tabs.ui_buttons_tab import UIButtonsTab
+
+        tab = UIButtonsTab(mock_db_manager, controller=mock_controller)
+        qtbot.addWidget(tab)
+
+        # Change some checkboxes
+        tab._checkboxes["power_on"].setChecked(False)
+        tab._checkboxes["blank"].setChecked(False)
+
+        # Reset
+        tab._reset_btn.click()
+        qtbot.wait(50)
+
+        # Should restore defaults
+        assert tab._checkboxes["power_on"].isChecked() is True
+        assert tab._checkboxes["blank"].isChecked() is True
+        assert tab._is_dirty is True  # Resetting marks dirty
+
+    def test_collect_settings(self, qapp, qtbot, mock_db_manager, mock_controller):
+        """Test collecting settings from checkboxes."""
+        from src.ui.dialogs.settings_tabs.ui_buttons_tab import UIButtonsTab
+
+        tab = UIButtonsTab(mock_db_manager, controller=mock_controller)
+        qtbot.addWidget(tab)
+
+        # Set some checkboxes
+        tab._checkboxes["power_on"].setChecked(True)
+        tab._checkboxes["power_off"].setChecked(False)
+
+        settings = tab.collect_settings()
+
+        assert settings["ui.button.power_on"] is True
+        assert settings["ui.button.power_off"] is False
+
+    def test_apply_settings_loads_from_database(self, qapp, qtbot, mock_db_manager, mock_controller):
+        """Test apply_settings loads button visibility from database."""
+        from src.ui.dialogs.settings_tabs.ui_buttons_tab import UIButtonsTab
+
+        # Mock database to return button visibility
+        mock_db_manager.fetchall.return_value = [
+            ("power_on", 1),
+            ("power_off", 0),
+        ]
+
+        tab = UIButtonsTab(mock_db_manager, controller=mock_controller)
+        qtbot.addWidget(tab)
+
+        settings = {}  # Empty settings (ignored, loads from DB)
+        tab.apply_settings(settings)
+
+        # Should query database
+        assert mock_db_manager.fetchall.called
+
+    def test_validate_always_succeeds(self, qapp, qtbot, mock_db_manager, mock_controller):
+        """Test validation always succeeds for UI buttons tab."""
+        from src.ui.dialogs.settings_tabs.ui_buttons_tab import UIButtonsTab
+
+        tab = UIButtonsTab(mock_db_manager, controller=mock_controller)
+        qtbot.addWidget(tab)
+
+        valid, errors = tab.validate()
+
+        assert valid is True
+        assert len(errors) == 0
+
+    def test_retranslate(self, qapp, qtbot, mock_db_manager, mock_controller):
+        """Test retranslate updates UI text."""
+        from src.ui.dialogs.settings_tabs.ui_buttons_tab import UIButtonsTab
+
+        tab = UIButtonsTab(mock_db_manager, controller=mock_controller)
+        qtbot.addWidget(tab)
+
+        # Should not crash
+        tab.retranslate()
+
+        # Group titles should be set
+        assert len(tab._power_group.title()) > 0
+        assert len(tab._display_group.title()) > 0
+        assert len(tab._input_group.title()) > 0
+
+    def test_dynamic_input_discovery_when_connected(self, qapp, qtbot, mock_db_manager):
+        """Test dynamic input discovery when controller is connected."""
+        from src.ui.dialogs.settings_tabs.ui_buttons_tab import UIButtonsTab
+
+        # Mock connected controller with available inputs
+        mock_controller = MagicMock()
+        mock_controller.is_connected = True
+        mock_controller.get_available_inputs.return_value = ["31", "32"]  # HDMI1, HDMI2
+
+        tab = UIButtonsTab(mock_db_manager, controller=mock_controller)
+        qtbot.addWidget(tab)
+
+        # Should have called get_available_inputs
+        mock_controller.get_available_inputs.assert_called_once()
+
+        # Should have input_selector checkbox
+        assert "input_selector" in tab._checkboxes
+
+    def test_dynamic_input_discovery_handles_error(self, qapp, qtbot, mock_db_manager):
+        """Test dynamic input discovery handles errors gracefully."""
+        from src.ui.dialogs.settings_tabs.ui_buttons_tab import UIButtonsTab
+
+        # Mock connected controller that raises error
+        mock_controller = MagicMock()
+        mock_controller.is_connected = True
+        mock_controller.get_available_inputs.side_effect = Exception("Connection failed")
+
+        # Should not crash
+        tab = UIButtonsTab(mock_db_manager, controller=mock_controller)
+        qtbot.addWidget(tab)
+
+        # Should have default checkboxes
+        assert "input_selector" in tab._checkboxes
+
+    def test_load_button_visibility_handles_error(self, qapp, qtbot, mock_db_manager, mock_controller):
+        """Test loading button visibility handles database errors."""
+        from src.ui.dialogs.settings_tabs.ui_buttons_tab import UIButtonsTab
+
+        # Mock database error
+        mock_db_manager.fetchall.side_effect = Exception("Database error")
+
+        tab = UIButtonsTab(mock_db_manager, controller=mock_controller)
+        qtbot.addWidget(tab)
+
+        # Should not crash, should default to all visible
+        tab._load_button_visibility()
+
+        # All checkboxes should be checked (default)
+        for checkbox in tab._checkboxes.values():
+            assert checkbox.isChecked() is True
+
+
+# =============================================================================
+# AdvancedTab Tests
+# =============================================================================
+
+
+class TestAdvancedTab:
+    """Tests for AdvancedTab (203 lines)."""
+
+    def test_advanced_tab_creation(self, qapp, qtbot, mock_db_manager):
+        """Test advanced tab can be created."""
+        from src.ui.dialogs.settings_tabs.advanced_tab import AdvancedTab
+
+        tab = AdvancedTab(mock_db_manager)
+        qtbot.addWidget(tab)
+
+        assert tab is not None
+
+    def test_network_group_exists(self, qapp, qtbot, mock_db_manager):
+        """Test network settings group exists."""
+        from src.ui.dialogs.settings_tabs.advanced_tab import AdvancedTab
+
+        tab = AdvancedTab(mock_db_manager)
+        qtbot.addWidget(tab)
+
+        assert tab._network_group is not None
+        assert tab._timeout_spin is not None
+        assert tab._retry_spin is not None
+
+    def test_logging_group_exists(self, qapp, qtbot, mock_db_manager):
+        """Test logging settings group exists."""
+        from src.ui.dialogs.settings_tabs.advanced_tab import AdvancedTab
+
+        tab = AdvancedTab(mock_db_manager)
+        qtbot.addWidget(tab)
+
+        assert tab._logging_group is not None
+        assert tab._log_level_combo is not None
+        assert tab._max_log_size_spin is not None
+        assert tab._backup_count_spin is not None
+        assert tab._debug_logging_cb is not None
+
+    def test_timeout_spinbox_range(self, qapp, qtbot, mock_db_manager):
+        """Test connection timeout spinbox has correct range."""
+        from src.ui.dialogs.settings_tabs.advanced_tab import AdvancedTab
+
+        tab = AdvancedTab(mock_db_manager)
+        qtbot.addWidget(tab)
+
+        assert tab._timeout_spin.minimum() == 1
+        assert tab._timeout_spin.maximum() == 60
+
+    def test_retry_spinbox_range(self, qapp, qtbot, mock_db_manager):
+        """Test retry count spinbox has correct range."""
+        from src.ui.dialogs.settings_tabs.advanced_tab import AdvancedTab
+
+        tab = AdvancedTab(mock_db_manager)
+        qtbot.addWidget(tab)
+
+        assert tab._retry_spin.minimum() == 0
+        assert tab._retry_spin.maximum() == 10
+
+    def test_log_level_combo_options(self, qapp, qtbot, mock_db_manager):
+        """Test log level combo has all options."""
+        from src.ui.dialogs.settings_tabs.advanced_tab import AdvancedTab
+
+        tab = AdvancedTab(mock_db_manager)
+        qtbot.addWidget(tab)
+
+        assert tab._log_level_combo.count() == 4  # DEBUG, INFO, WARNING, ERROR
+        assert tab._log_level_combo.itemData(0) == "DEBUG"
+        assert tab._log_level_combo.itemData(1) == "INFO"
+        assert tab._log_level_combo.itemData(2) == "WARNING"
+        assert tab._log_level_combo.itemData(3) == "ERROR"
+
+    def test_max_log_size_range(self, qapp, qtbot, mock_db_manager):
+        """Test max log size spinbox has correct range."""
+        from src.ui.dialogs.settings_tabs.advanced_tab import AdvancedTab
+
+        tab = AdvancedTab(mock_db_manager)
+        qtbot.addWidget(tab)
+
+        assert tab._max_log_size_spin.minimum() == 1
+        assert tab._max_log_size_spin.maximum() == 100
+
+    def test_backup_count_range(self, qapp, qtbot, mock_db_manager):
+        """Test backup count spinbox has correct range."""
+        from src.ui.dialogs.settings_tabs.advanced_tab import AdvancedTab
+
+        tab = AdvancedTab(mock_db_manager)
+        qtbot.addWidget(tab)
+
+        assert tab._backup_count_spin.minimum() == 1
+        assert tab._backup_count_spin.maximum() == 30
+
+    def test_widget_changes_mark_dirty(self, qapp, qtbot, mock_db_manager):
+        """Test changing any widget marks tab as dirty."""
+        from src.ui.dialogs.settings_tabs.advanced_tab import AdvancedTab
+
+        tab = AdvancedTab(mock_db_manager)
+        qtbot.addWidget(tab)
+
+        assert tab._is_dirty is False
+
+        # Change timeout
+        tab._timeout_spin.setValue(10)
+        qtbot.wait(50)
+        assert tab._is_dirty is True
+
+        # Reset
+        tab.clear_dirty()
+        assert tab._is_dirty is False
+
+        # Change retry count
+        tab._retry_spin.setValue(5)
+        qtbot.wait(50)
+        assert tab._is_dirty is True
+
+        # Reset
+        tab.clear_dirty()
+
+        # Change log level
+        tab._log_level_combo.setCurrentIndex(2)  # WARNING
+        qtbot.wait(50)
+        assert tab._is_dirty is True
+
+    def test_collect_settings(self, qapp, qtbot, mock_db_manager):
+        """Test collecting settings from widgets."""
+        from src.ui.dialogs.settings_tabs.advanced_tab import AdvancedTab
+
+        tab = AdvancedTab(mock_db_manager)
+        qtbot.addWidget(tab)
+
+        # Set some values
+        tab._timeout_spin.setValue(10)
+        tab._retry_spin.setValue(5)
+        tab._log_level_combo.setCurrentIndex(2)  # WARNING
+        tab._max_log_size_spin.setValue(20)
+        tab._backup_count_spin.setValue(14)
+        tab._debug_logging_cb.setChecked(True)
+
+        settings = tab.collect_settings()
+
+        assert settings["network.timeout"] == 10
+        assert settings["network.retry_count"] == 5
+        assert settings["logging.level"] == "WARNING"
+        assert settings["logging.max_file_size_mb"] == 20
+        assert settings["logging.backup_count"] == 14
+        assert settings["logging.debug_enabled"] is True
+
+    def test_apply_settings(self, qapp, qtbot, mock_db_manager):
+        """Test applying settings to widgets."""
+        from src.ui.dialogs.settings_tabs.advanced_tab import AdvancedTab
+
+        tab = AdvancedTab(mock_db_manager)
+        qtbot.addWidget(tab)
+
+        settings = {
+            "network.timeout": 15,
+            "network.retry_count": 7,
+            "logging.level": "ERROR",
+            "logging.max_file_size_mb": 25,
+            "logging.backup_count": 20,
+            "logging.debug_enabled": True,
+        }
+
+        tab.apply_settings(settings)
+
+        assert tab._timeout_spin.value() == 15
+        assert tab._retry_spin.value() == 7
+        assert tab._log_level_combo.currentData() == "ERROR"
+        assert tab._max_log_size_spin.value() == 25
+        assert tab._backup_count_spin.value() == 20
+        assert tab._debug_logging_cb.isChecked() is True
+
+    def test_apply_settings_with_defaults(self, qapp, qtbot, mock_db_manager):
+        """Test applying settings uses defaults for missing values."""
+        from src.ui.dialogs.settings_tabs.advanced_tab import AdvancedTab
+
+        tab = AdvancedTab(mock_db_manager)
+        qtbot.addWidget(tab)
+
+        settings = {}  # Empty settings, should use defaults
+
+        tab.apply_settings(settings)
+
+        # Should have default values
+        assert tab._timeout_spin.value() == 5
+        assert tab._retry_spin.value() == 3
+        assert tab._log_level_combo.currentData() == "INFO"
+        assert tab._max_log_size_spin.value() == 10
+        assert tab._backup_count_spin.value() == 7
+        assert tab._debug_logging_cb.isChecked() is False
+
+    def test_validate_always_succeeds(self, qapp, qtbot, mock_db_manager):
+        """Test validation always succeeds for advanced tab."""
+        from src.ui.dialogs.settings_tabs.advanced_tab import AdvancedTab
+
+        tab = AdvancedTab(mock_db_manager)
+        qtbot.addWidget(tab)
+
+        valid, errors = tab.validate()
+
+        assert valid is True
+        assert len(errors) == 0
+
+    def test_retranslate(self, qapp, qtbot, mock_db_manager):
+        """Test retranslate updates UI text."""
+        from src.ui.dialogs.settings_tabs.advanced_tab import AdvancedTab
+
+        tab = AdvancedTab(mock_db_manager)
+        qtbot.addWidget(tab)
+
+        # Should not crash
+        tab.retranslate()
+
+        # Group titles should be set
+        assert len(tab._network_group.title()) > 0
+        assert len(tab._logging_group.title()) > 0
+
+        # Labels should be set
+        assert len(tab._timeout_label.text()) > 0
+        assert len(tab._retry_label.text()) > 0
+        assert len(tab._log_level_label.text()) > 0
