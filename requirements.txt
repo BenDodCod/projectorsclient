@@ -35,3 +35,6 @@ tenacity==8.2.3
 
 # Logging - Structured JSON logging
 python-json-logger==2.0.7
+
+# Markdown Rendering - Help system content rendering
+markdown==3.5.1

@@ -198,6 +198,8 @@ class TestGetTopic:
         topics_dir.mkdir(parents=True)
 
         help_manager._topics_dir = tmp_path / "topics"
+        # Set language explicitly to avoid TranslationManager import in tests
+        help_manager._current_language = "en"
 
         assert help_manager.topics_loaded is False
         help_manager.get_topic("any-id")
@@ -209,6 +211,8 @@ class TestGetTopic:
         topics_dir.mkdir(parents=True)
 
         help_manager._topics_dir = tmp_path / "topics"
+        # Set language explicitly to avoid TranslationManager import in tests
+        help_manager._current_language = "en"
 
         topic = help_manager.get_topic("non-existent")
         assert topic is None
@@ -236,6 +240,8 @@ class TestSearchTopics:
         topics_dir = tmp_path / "topics" / "en"
         topics_dir.mkdir(parents=True)
         help_manager._topics_dir = tmp_path / "topics"
+        # Set language explicitly to avoid TranslationManager import in tests
+        help_manager._current_language = "en"
 
         results = help_manager.search_topics("")
         assert results == []
@@ -324,6 +330,8 @@ class TestGetTopicsByCategory:
         topics_dir = tmp_path / "topics" / "en"
         topics_dir.mkdir(parents=True)
         help_manager._topics_dir = tmp_path / "topics"
+        # Set language explicitly to avoid TranslationManager import in tests
+        help_manager._current_language = "en"
 
         results = help_manager.get_topics_by_category("invalid")
         assert results == []

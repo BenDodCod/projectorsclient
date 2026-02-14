@@ -815,3 +815,315 @@ QPushButton#control_button[active="true"]:hover {
     background-color: #1976d2;
 }
 
+/* ============================================================================
+   Help System Components
+   ============================================================================ */
+
+/* ===== HelpPanel (QDockWidget) ===== */
+#help_panel {
+    background-color: #ffffff;
+    border: 1px solid #E0E0E0;
+}
+
+/* Help search input */
+#help_search {
+    background-color: #ffffff;
+    color: #212121;
+    border: 1px solid #BDBDBD;
+    border-radius: 4px;
+    padding: 8px 32px 8px 8px; /* Right padding for clear button */
+    font-size: 9pt;
+    min-height: 28px;
+}
+
+#help_search:focus {
+    border: 2px solid #2196F3;
+    padding: 7px 31px 7px 7px;
+}
+
+#help_search::placeholder {
+    color: #9E9E9E;
+}
+
+/* Help category list */
+#help_category_list {
+    background-color: #ffffff;
+    border: 1px solid #E0E0E0;
+    border-radius: 4px;
+    outline: none;
+    padding: 4px;
+    min-width: 150px;
+}
+
+#help_category_list::item {
+    padding: 10px 8px;
+    border-radius: 4px;
+    border-bottom: 1px solid #F5F5F5;
+}
+
+#help_category_list::item:selected {
+    background-color: #E3F2FD;
+    color: #1565C0;
+    font-weight: bold;
+}
+
+#help_category_list::item:hover:!selected {
+    background-color: #F5F5F5;
+}
+
+#help_category_list:focus {
+    border: 2px solid #1976D2; /* 3:1 contrast for keyboard focus */
+}
+
+/* Help topic list */
+#help_topic_list {
+    background-color: #ffffff;
+    border: 1px solid #E0E0E0;
+    border-radius: 4px;
+    outline: none;
+    padding: 4px;
+}
+
+#help_topic_list::item {
+    padding: 8px;
+    border-radius: 4px;
+    border-bottom: 1px solid #F5F5F5;
+}
+
+#help_topic_list::item:selected {
+    background-color: #E3F2FD;
+    color: #1565C0;
+    font-weight: bold;
+}
+
+#help_topic_list::item:hover:!selected {
+    background-color: #F5F5F5;
+}
+
+#help_topic_list:focus {
+    border: 2px solid #1976D2; /* 3:1 contrast for keyboard focus */
+}
+
+/* Help content display (QTextEdit) */
+#help_content {
+    background-color: #ffffff;
+    color: #212121;
+    border: 1px solid #E0E0E0;
+    border-radius: 4px;
+    padding: 16px;
+    font-size: 9pt;
+    line-height: 1.6;
+}
+
+/* Related topics frame */
+#related_topics_frame {
+    background-color: #F8F9FA;
+    border: 1px solid #E0E0E0;
+    border-radius: 6px;
+    padding: 12px;
+}
+
+/* Related topics list */
+#help_related_list {
+    background-color: transparent;
+    border: none;
+    outline: none;
+}
+
+#help_related_list::item {
+    padding: 6px 8px;
+    border-radius: 3px;
+    color: #2196F3;
+}
+
+#help_related_list::item:hover {
+    background-color: #E3F2FD;
+    text-decoration: underline;
+}
+
+#help_related_list::item:selected {
+    background-color: #BBDEFB;
+    color: #1565C0;
+}
+
+#help_related_list:focus {
+    border: 2px solid #1976D2; /* 3:1 contrast for keyboard focus */
+    border-radius: 4px;
+}
+
+/* Section labels (Categories, Topics, Related Topics) */
+.section_label {
+    color: #424242;
+    font-weight: bold;
+    font-size: 10pt;
+    padding: 4px 0px;
+}
+
+/* ===== HelpTooltip (Custom QWidget) ===== */
+#help_tooltip {
+    background-color: transparent;
+}
+
+#tooltip_frame {
+    background-color: #ffffff;
+    border: 1px solid #cbd5e1;
+    border-radius: 6px;
+    padding: 0px;
+}
+
+#tooltip_title {
+    color: #0f172a;
+    font-weight: bold;
+    font-size: 10pt;
+    padding: 8px 12px 4px 12px;
+}
+
+#tooltip_text {
+    color: #334155;
+    font-size: 9pt;
+    padding: 4px 12px 8px 12px;
+}
+
+/* ===== ShortcutsDialog (QDialog) ===== */
+#shortcuts_dialog {
+    background-color: #ffffff;
+    min-width: 600px;
+    min-height: 500px;
+}
+
+#shortcuts_dialog #dialog_title {
+    color: #1565C0;
+    font-size: 14pt;
+    font-weight: bold;
+    padding: 16px 24px 8px 24px;
+}
+
+/* Shortcuts search input */
+#shortcuts_search {
+    background-color: #ffffff;
+    color: #212121;
+    border: 1px solid #BDBDBD;
+    border-radius: 4px;
+    padding: 8px;
+    font-size: 9pt;
+    min-height: 32px;
+    margin: 0px 24px 16px 24px;
+}
+
+#shortcuts_search:focus {
+    border: 2px solid #2196F3;
+    padding: 7px;
+}
+
+#shortcuts_search::placeholder {
+    color: #9E9E9E;
+}
+
+/* Shortcuts table */
+#shortcuts_table {
+    background-color: #ffffff;
+    gridline-color: #E0E0E0;
+    border: 1px solid #E0E0E0;
+    border-radius: 4px;
+    margin: 0px 24px;
+    font-size: 9pt;
+}
+
+#shortcuts_table::item {
+    padding: 8px;
+}
+
+#shortcuts_table::item:selected {
+    background-color: #E3F2FD;
+    color: #1565C0;
+}
+
+#shortcuts_table::item:alternate {
+    background-color: #F8F9FA;
+}
+
+#shortcuts_table:focus {
+    border: 2px solid #1976D2; /* 3:1 contrast for keyboard focus */
+}
+
+#shortcuts_table QHeaderView::section {
+    background-color: #F5F5F5;
+    color: #424242;
+    padding: 10px 8px;
+    border: none;
+    border-right: 1px solid #E0E0E0;
+    border-bottom: 2px solid #2196F3;
+    font-weight: bold;
+    font-size: 10pt;
+}
+
+/* Shortcuts notes label */
+#shortcuts_notes {
+    color: #616161;
+    font-size: 8pt;
+    font-style: italic;
+    padding: 12px 24px 16px 24px;
+}
+
+/* ===== WhatsNewDialog (QDialog) ===== */
+#whats_new_dialog {
+    background-color: #ffffff;
+    min-width: 700px;
+    min-height: 600px;
+}
+
+#whats_new_dialog #dialog_title {
+    color: #1565C0;
+    font-size: 14pt;
+    font-weight: bold;
+    padding: 16px 24px 4px 24px;
+}
+
+#whats_new_dialog #dialog_subtitle {
+    color: #616161;
+    font-size: 10pt;
+    padding: 0px 24px 16px 24px;
+}
+
+/* Version list */
+#version_list {
+    background-color: #ffffff;
+    border: 1px solid #E0E0E0;
+    border-radius: 4px;
+    outline: none;
+    padding: 4px;
+    min-width: 150px;
+    max-width: 200px;
+}
+
+#version_list::item {
+    padding: 10px 8px;
+    border-radius: 4px;
+    border-bottom: 1px solid #F5F5F5;
+}
+
+#version_list::item:selected {
+    background-color: #E3F2FD;
+    color: #1565C0;
+    font-weight: bold;
+}
+
+#version_list::item:hover:!selected {
+    background-color: #F5F5F5;
+}
+
+#version_list:focus {
+    border: 2px solid #1976D2; /* 3:1 contrast for keyboard focus */
+}
+
+/* Release notes content display */
+#release_notes_content {
+    background-color: #ffffff;
+    color: #212121;
+    border: 1px solid #E0E0E0;
+    border-radius: 4px;
+    padding: 16px;
+    font-size: 9pt;
+    line-height: 1.6;
+}
+

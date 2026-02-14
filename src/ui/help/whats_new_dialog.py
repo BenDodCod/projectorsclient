@@ -34,6 +34,15 @@ from src.resources.translations import t
 
 logger = logging.getLogger(__name__)
 
+# Module-level cache for what's new data
+_whats_new_cache: Optional[Dict] = None
+
+
+def _clear_whats_new_cache() -> None:
+    """Clear the module-level what's new cache (for testing)."""
+    global _whats_new_cache
+    _whats_new_cache = None
+
 
 class WhatsNewDialog(QDialog):
     """
@@ -96,7 +105,15 @@ class WhatsNewDialog(QDialog):
         logger.debug("WhatsNewDialog initialized")
 
     def _load_whats_new(self) -> None:
-        """Load what's new data from JSON file."""
+        """Load what's new data from JSON file (with module-level caching)."""
+        global _whats_new_cache
+
+        # Return cached data if available
+        if _whats_new_cache is not None:
+            self._whats_new_data = _whats_new_cache
+            logger.debug("Using cached what's new data")
+            return
+
         try:
             # Determine path (PyInstaller-aware)
             if getattr(sys, 'frozen', False) and hasattr(sys, '_MEIPASS'):
@@ -109,9 +126,13 @@ class WhatsNewDialog(QDialog):
             logger.info(f"Loading what's new from: {whats_new_path}")
 
             with open(whats_new_path, 'r', encoding='utf-8') as f:
-                self._whats_new_data = json.load(f)
+                data = json.load(f)
 
-            logger.info(f"Loaded {len(self._whats_new_data.get('releases', []))} release entries")
+            logger.info(f"Loaded {len(data.get('releases', []))} release entries")
+
+            # Cache the data for future use
+            _whats_new_cache = data
+            self._whats_new_data = data
 
         except FileNotFoundError:
             logger.error(f"What's new file not found: {whats_new_path}")
@@ -173,6 +194,10 @@ class WhatsNewDialog(QDialog):
         button_box = QDialogButtonBox(QDialogButtonBox.StandardButton.Close)
         button_box.rejected.connect(self.reject)
         layout.addWidget(button_box)
+
+        # Set explicit tab order for accessibility (HIGH priority)
+        self.setTabOrder(self.version_list, self.content_display)
+        self.setTabOrder(self.content_display, button_box)
 
         # Populate version list
         self._populate_versions()
@@ -236,6 +261,13 @@ class WhatsNewDialog(QDialog):
         self.content_display.setObjectName("release_notes_content")
         self.content_display.setReadOnly(True)
         self.content_display.setOpenExternalLinks(False)
+        # Accessibility attributes (MEDIUM priority)
+        self.content_display.setAccessibleName(
+            t('help.release_notes_accessible_name', 'Release notes content')
+        )
+        self.content_display.setAccessibleDescription(
+            t('help.release_notes_accessible_desc', 'Displays release notes with features, improvements, and bug fixes')
+        )
         layout.addWidget(self.content_display)
 
         return panel
@@ -414,6 +446,15 @@ class WhatsNewDialog(QDialog):
 
     def retranslate(self) -> None:
         """Retranslate all UI text after language change."""
+        # Update layout direction for RTL support (HIGH priority)
+        from src.resources.translations import get_translation_manager
+        lang = get_translation_manager().current_language
+
+        if lang == 'he':
+            self.setLayoutDirection(Qt.LayoutDirection.RightToLeft)
+        else:
+            self.setLayoutDirection(Qt.LayoutDirection.LeftToRight)
+
         # Update window title
         self.setWindowTitle(t('help.whats_new_title', "What's New"))
 

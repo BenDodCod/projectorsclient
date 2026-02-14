@@ -28,6 +28,13 @@ pytestmark = [pytest.mark.unit]
 def clean_registry():
     """Automatically clear registry before and after each test."""
     ProtocolRegistry.clear()
+
+    # Re-import protocols to re-register them after clearing
+    # This is necessary because @register_protocol decorator only runs on import
+    import importlib
+    import src.network.protocols.pjlink as pjlink_module
+    importlib.reload(pjlink_module)
+
     yield
     ProtocolRegistry.clear()
 
@@ -373,7 +380,8 @@ class TestProtocolDetection:
     @patch('src.network.protocol_factory._try_detect_protocol')
     def test_detect_protocol_skips_unregistered(self, mock_try_detect):
         """Test detect_protocol skips unregistered protocols in default list."""
-        # Don't register any protocols
+        # Explicitly clear registry to ensure no protocols are registered
+        ProtocolRegistry.clear()
 
         result = ProtocolFactory.detect_protocol("192.168.1.100")
 

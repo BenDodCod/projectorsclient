@@ -34,6 +34,7 @@ from src.ui.widgets.controls_panel import ControlsPanel
 from src.ui.widgets.history_panel import HistoryPanel
 from src.ui.dialogs.settings_dialog import SettingsDialog
 from src.core.projector_controller import ProjectorController
+from src.ui.help import HelpPanel, ShortcutsDialog, WhatsNewDialog
 
 logger = logging.getLogger(__name__)
 
@@ -111,6 +112,9 @@ class MainWindow(QMainWindow):
 
         # Setup auto-compact timer
         self._setup_compact_timer()
+
+        # Setup help system
+        self._setup_help_system()
 
         logger.info("Main window initialized")
 
@@ -389,6 +393,10 @@ class MainWindow(QMainWindow):
 
         # Settings shortcut
         QShortcut(QKeySequence("Ctrl+,"), self, self.settings_requested.emit)
+
+        # Help shortcuts
+        QShortcut(QKeySequence("F1"), self, self._toggle_help_panel)
+        QShortcut(QKeySequence("Ctrl+K"), self, self._show_shortcuts_dialog)
 
         logger.info("Keyboard shortcuts configured")
 
@@ -851,9 +859,31 @@ class MainWindow(QMainWindow):
         he_action = lang_menu.addAction("עברית")
         he_action.triggered.connect(lambda: self._set_language('he'))
 
-        # About action
+        # Help submenu
         menu.addSeparator()
-        about_action = menu.addAction(t('menu.about', 'About'))
+        help_menu = menu.addMenu(
+            IconLibrary.get_icon('help') if IconLibrary.has_icon('help') else QIcon(),
+            t('menu.help', 'Help')
+        )
+
+        # Help Panel
+        help_panel_action = help_menu.addAction(t('menu.help_panel', 'Help Panel'))
+        help_panel_action.setShortcut("F1")
+        help_panel_action.triggered.connect(self._toggle_help_panel)
+
+        # Keyboard Shortcuts
+        shortcuts_action = help_menu.addAction(t('menu.help_shortcuts', 'Keyboard Shortcuts'))
+        shortcuts_action.setShortcut("Ctrl+K")
+        shortcuts_action.triggered.connect(self._show_shortcuts_dialog)
+
+        # What's New
+        whats_new_action = help_menu.addAction(t('menu.help_whats_new', "What's New"))
+        whats_new_action.triggered.connect(self._show_whats_new_dialog)
+
+        help_menu.addSeparator()
+
+        # About (in Help submenu now)
+        about_action = help_menu.addAction(t('menu.about', 'About'))
         about_action.triggered.connect(self._show_about_dialog)
 
         # Show menu below button
@@ -879,6 +909,53 @@ class MainWindow(QMainWindow):
             t('menu.about', 'About'),
             t('settings.copyright', 'Projector Control Application') + "\n\nVersion 2.0.0-rc1"
         )
+
+    def _setup_help_system(self) -> None:
+        """Setup the help system with HelpPanel QDockWidget."""
+        # Create HelpPanel as a QDockWidget
+        self.help_panel = HelpPanel()
+        self.help_panel.setObjectName("help_panel_dock")
+
+        # Add as dock widget (right side by default)
+        self.addDockWidget(Qt.DockWidgetArea.RightDockWidgetArea, self.help_panel)
+
+        # Hide by default (user can press F1 to show)
+        self.help_panel.hide()
+
+        logger.info("Help system initialized")
+
+    def _toggle_help_panel(self) -> None:
+        """Toggle help panel visibility."""
+        if self.help_panel.isVisible():
+            self.help_panel.hide()
+            logger.info("Help panel hidden")
+        else:
+            self.help_panel.show()
+            logger.info("Help panel shown")
+
+    def _show_shortcuts_dialog(self) -> None:
+        """Show keyboard shortcuts reference dialog."""
+        dialog = ShortcutsDialog(self)
+        dialog.exec()
+        logger.info("Shortcuts dialog shown")
+
+    def _show_whats_new_dialog(self) -> None:
+        """Show What's New dialog."""
+        from src.config.settings import SettingsManager
+
+        # Get current app version
+        app_version = "2.0.0"  # TODO: Load from version file
+
+        dialog = WhatsNewDialog(self, current_version=app_version)
+        dialog.exec()
+
+        # Save last viewed version
+        try:
+            settings = SettingsManager(self.db)
+            settings.set("help.last_whats_new_version", app_version)
+            logger.info(f"What's New dialog shown for version {app_version}")
+        except Exception as e:
+            logger.warning(f"Failed to save last viewed version: {e}")
 
     def _update_theme_button_icon(self) -> None:
         """Update the theme button icon based on current theme."""

@@ -1,287 +1,164 @@
 {
-  "version": "1.0",
-  "last_updated": "2026-02-13",
-  "releases": {
-    "2.1.0": {
+  "releases": [
+    {
       "version": "2.1.0",
-      "release_date": "2026-03-15",
-      "status": "planned",
-      "highlights": {
+      "date": "2026-03-15",
+      "title": {
+        "en": "In-App Help System",
+        "he": "מערכת עזרה בתוך היישום"
+      },
+      "features": {
         "en": [
-          "New in-app help system with searchable documentation",
-          "Keyboard shortcuts reference dialog",
-          "Context-aware tooltips for better discoverability",
-          "What's New dialog to highlight updates"
+          "Help Panel: Access 78 searchable help topics without leaving the app (Press F1)",
+          "Keyboard Shortcuts Dialog: Quick reference for all shortcuts organized by category (Press Ctrl+K)",
+          "Context-Aware Tooltips: Enhanced tooltips with rich formatting appear when hovering over controls",
+          "What's New Dialog: Automatically shows new features after version updates"
         ],
         "he": [
-          "מערכת עזרה חדשה בתוך היישום עם תיעוד ניתן לחיפוש",
-          "חלון קיצורי מקלדת",
-          "טיפים הקשריים לגילוי תכונות טוב יותר",
-          "חלון 'מה חדש' להדגשת עדכונים"
+          "פאנל עזרה: גישה ל-78 נושאי עזרה הניתנים לחיפוש מבלי לעזוב את היישום (לחץ F1)",
+          "חלון קיצורי מקלדת: מדריך מהיר לכל הקיצורים מאורגנים לפי קטגוריה (לחץ Ctrl+K)",
+          "טיפים הקשריים: טיפים משופרים עם עיצוב עשיר מופיעים בעת ריחוף מעל פקדים",
+          "חלון 'מה חדש': מציג אוטומטית תכונות חדשות לאחר עדכוני גרסה"
         ]
       },
-      "features": [
-        {
-          "title": {
-            "en": "Help Panel",
-            "he": "פאנל עזרה"
-          },
-          "description": {
-            "en": "Access comprehensive help documentation without leaving the app. Press F1 to toggle the help panel with 78 searchable help topics in English and Hebrew.",
-            "he": "גישה לתיעוד עזרה מקיף מבלי לעזוב את היישום. לחץ F1 להצגת פאנל עזרה עם 78 נושאי עזרה הניתנים לחיפוש באנגלית ועברית."
-          },
-          "icon": "help"
-        },
-        {
-          "title": {
-            "en": "Keyboard Shortcuts Dialog",
-            "he": "חלון קיצורי מקלדת"
-          },
-          "description": {
-            "en": "Quick reference for all keyboard shortcuts organized by category. Press Ctrl+K to open the shortcuts dialog.",
-            "he": "מדריך מהיר לכל קיצורי המקלדת מאורגנים לפי קטגוריה. לחץ Ctrl+K לפתיחת חלון הקיצורים."
-          },
-          "icon": "keyboard"
-        },
-        {
-          "title": {
-            "en": "Context-Aware Tooltips",
-            "he": "טיפים הקשריים"
-          },
-          "description": {
-            "en": "Enhanced tooltips with rich formatting and helpful hints appear when hovering over controls and features.",
-            "he": "טיפים משופרים עם עיצוב עשיר ורמזים שימושיים מופיעים בעת ריחוף מעל פקדים ותכונות."
-          },
-          "icon": "tooltip"
-        },
-        {
-          "title": {
-            "en": "What's New Dialog",
-            "he": "חלון 'מה חדש'"
-          },
-          "description": {
-            "en": "Automatically shows new features and improvements after updating to a new version.",
-            "he": "מציג אוטומטית תכונות חדשות ושיפורים לאחר עדכון לגרסה חדשה."
-          },
-          "icon": "new"
-        }
-      ],
-      "improvements": [
-        {
-          "en": "Faster help content loading with lazy initialization",
-          "he": "טעינת תוכן עזרה מהירה יותר עם אתחול עצל"
-        },
-        {
-          "en": "Full RTL layout support in help panel for Hebrew",
-          "he": "תמיכה מלאה בפריסת RTL בפאנל עזרה עבור עברית"
-        },
-        {
-          "en": "Markdown rendering for rich help content formatting",
-          "he": "עיבוד Markdown לעיצוב עשיר של תוכן עזרה"
-        },
-        {
-          "en": "Category-based navigation for easier topic discovery",
-          "he": "ניווט מבוסס קטגוריות לגילוי נושאים קל יותר"
-        }
-      ],
-      "fixes": []
-    },
-    "2.0.0": {
-      "version": "2.0.0",
-      "release_date": "2026-02-01",
-      "status": "released",
-      "highlights": {
+      "improvements": {
         "en": [
-          "Production-ready release with 1,542 passing tests",
-          "Complete Hebrew translation and RTL support",
-          "Comprehensive documentation for end users and IT administrators",
-          "Build optimization reducing deployment size by 52%"
+          "Faster help content loading with lazy initialization",
+          "Full RTL layout support in help panel for Hebrew",
+          "Markdown rendering for rich help content formatting",
+          "Category-based navigation for easier topic discovery"
         ],
         "he": [
-          "גרסת ייצור מוכנה עם 1,542 בדיקות עוברות",
-          "תרגום עברי מלא ותמיכת RTL",
-          "תיעוד מקיף למשתמשי קצה ומנהלי IT",
-          "אופטימיזציית build המפחיתה גודל deployment ב-52%"
+          "טעינת תוכן עזרה מהירה יותר עם אתחול עצל",
+          "תמיכה מלאה בפריסת RTL בפאנל עזרה עבור עברית",
+          "עיבוד Markdown לעיצוב עשיר של תוכן עזרה",
+          "ניווט מבוסס קטגוריות לגילוי נושאים קל יותר"
         ]
       },
-      "features": [
-        {
-          "title": {
-            "en": "First-Run Wizard",
-            "he": "אשף הפעלה ראשונה"
-          },
-          "description": {
-            "en": "Step-by-step setup wizard guides new users through initial configuration including language selection, admin password, database mode, and projector setup.",
-            "he": "אשף הגדרה שלב-אחר-שלב מדריך משתמשים חדשים דרך תצורה ראשונית כולל בחירת שפה, סיסמת מנהל, מצב מסד נתונים והגדרת מקרן."
-          },
-          "icon": "wizard"
-        },
-        {
-          "title": {
-            "en": "Hebrew Language Support",
-            "he": "תמיכה בשפה העברית"
-          },
-          "description": {
-            "en": "Full Hebrew translation with proper RTL (Right-to-Left) layout, mirrored UI elements, and Hebrew-aware text rendering.",
-            "he": "תרגום עברי מלא עם פריסת RTL (ימין-לשמאל) נכונה, רכיבי UI משוקפים ועיבוד טקסט מודע עברית."
-          },
-          "icon": "language"
-        },
-        {
-          "title": {
-            "en": "Dual Database Modes",
-            "he": "מצבי מסד נתונים כפולים"
-          },
-          "description": {
-            "en": "Choose between Standalone (SQLite) for single users or Enterprise (SQL Server) for centralized multi-computer deployments.",
-            "he": "בחר בין Standalone (SQLite) למשתמשים בודדים או Enterprise (SQL Server) לפריסות מרכזיות מרובות מחשבים."
-          },
-          "icon": "database"
-        },
-        {
-          "title": {
-            "en": "System Tray Integration",
-            "he": "אינטגרציית מגש מערכת"
-          },
-          "description": {
-            "en": "Run in background with quick actions accessible from system tray icon including power control, input switching, and status check.",
-            "he": "הרצה ברקע עם פעולות מהירות נגישות מסמל מגש מערכת כולל שליטה בהפעלה, החלפת קלט ובדיקת סטטוס."
-          },
-          "icon": "tray"
-        },
-        {
-          "title": {
-            "en": "Backup and Restore",
-            "he": "גיבוי ושחזור"
-          },
-          "description": {
-            "en": "Encrypted backup and restore functionality with DPAPI protection for sensitive credentials and configuration data.",
-            "he": "פונקציונליות גיבוי ושחזור מוצפנת עם הגנת DPAPI לאישורים רגישים ונתוני תצורה."
-          },
-          "icon": "backup"
-        }
-      ],
-      "improvements": [
-        {
-          "en": "Startup time optimized to 0.9 seconds (from 2.5s)",
-          "he": "זמן הפעלה אופטימלי ל-0.9 שניות (מ-2.5 שניות)"
-        },
-        {
-          "en": "Memory usage reduced to 165MB baseline (target <200MB)",
-          "he": "שימוש זיכרון מופחת ל-165MB בסיס (יעד <200MB)"
-        },
-        {
-          "en": "Build size reduced by 52% through dependency optimization",
-          "he": "גודל build מופחת ב-52% דרך אופטימיזציית תלויות"
-        },
-        {
-          "en": "Test coverage improved to 94% (1,542 passing tests)",
-          "he": "כיסוי בדיקות משופר ל-94% (1,542 בדיקות עוברות)"
-        },
-        {
-          "en": "Enhanced DPI scaling support (100%-400%)",
-          "he": "תמיכה משופרת בקנה מידת DPI (100%-400%)"
-        },
-        {
-          "en": "Connection pooling and circuit breaker patterns for reliability",
-          "he": "דפוסי connection pooling ו-circuit breaker לאמינות"
-        }
-      ],
-      "fixes": [
-        {
-          "en": "Fixed SQL Server mode protocol type storage bug",
-          "he": "תוקן באג אחסון סוג פרוטוקול במצב SQL Server"
-        },
-        {
-          "en": "Resolved single-instance application conflicts",
-          "he": "פתרון קונפליקטים של יישום single-instance"
-        },
-        {
-          "en": "Fixed smoke test GUI timeout issue on Windows",
-          "he": "תוקנה בעיית timeout של GUI במבחני smoke ב-Windows"
-        },
-        {
-          "en": "Corrected SQL injection false positive in security tests",
-          "he": "תוקן false positive של SQL injection בבדיקות אבטחה"
-        },
-        {
-          "en": "Fixed RTL layout issues in Hebrew mode dialogs",
-          "he": "תוקנו בעיות פריסת RTL בחלונות במצב עברית"
-        }
-      ],
-      "breaking_changes": {
+      "bug_fixes": {
         "en": [],
         "he": []
       },
-      "migration_notes": {
+      "known_issues": {
+        "en": [],
+        "he": []
+      }
+    },
+    {
+      "version": "2.0.0",
+      "date": "2026-02-01",
+      "title": {
+        "en": "Production Release",
+        "he": "גרסת ייצור"
+      },
+      "features": {
         "en": [
-          "First-time users will see the setup wizard automatically",
-          "Existing installations from beta versions should backup data before upgrading",
-          "Database schema v2 includes automatic migration from v1"
+          "First-Run Wizard: Step-by-step setup with language selection, admin password, database mode, and projector configuration",
+          "Hebrew Language Support: Full translation with RTL layout, mirrored UI elements, and Hebrew-aware text rendering",
+          "Dual Database Modes: Choose between Standalone (SQLite) or Enterprise (SQL Server) for centralized deployments",
+          "System Tray Integration: Run in background with quick actions for power control, input switching, and status checks",
+          "Backup and Restore: Encrypted backup functionality with DPAPI protection for sensitive credentials"
         ],
         "he": [
-          "משתמשים חדשים יראו את אשף ההגדרה אוטומטית",
-          "התקנות קיימות מגרסאות בטא צריכות לגבות נתונים לפני שדרוג",
-          "schema v2 של מסד הנתונים כולל migration אוטומטי מ-v1"
+          "אשף הפעלה ראשונה: הגדרה שלב-אחר-שלב עם בחירת שפה, סיסמת מנהל, מצב מסד נתונים והגדרת מקרן",
+          "תמיכה בשפה העברית: תרגום מלא עם פריסת RTL, רכיבי UI משוקפים ועיבוד טקסט מודע עברית",
+          "מצבי מסד נתונים כפולים: בחירה בין Standalone (SQLite) או Enterprise (SQL Server) לפריסות מרכזיות",
+          "אינטגרציית מגש מערכת: הרצה ברקע עם פעולות מהירות לשליטה בהפעלה, החלפת קלט ובדיקת סטטוס",
+          "גיבוי ושחזור: פונקציונליות גיבוי מוצפנת עם הגנת DPAPI לאישורים רגישים"
+        ]
+      },
+      "improvements": {
+        "en": [
+          "Startup time optimized to 0.9 seconds (from 2.5s)",
+          "Memory usage reduced to 165MB baseline (target <200MB)",
+          "Build size reduced by 52% through dependency optimization",
+          "Test coverage improved to 94% (1,542 passing tests)",
+          "Enhanced DPI scaling support (100%-400%)",
+          "Connection pooling and circuit breaker patterns for reliability"
+        ],
+        "he": [
+          "זמן הפעלה אופטימלי ל-0.9 שניות (מ-2.5 שניות)",
+          "שימוש זיכרון מופחת ל-165MB בסיס (יעד <200MB)",
+          "גודל build מופחת ב-52% דרך אופטימיזציית תלויות",
+          "כיסוי בדיקות משופר ל-94% (1,542 בדיקות עוברות)",
+          "תמיכה משופרת בקנה מידת DPI (100%-400%)",
+          "דפוסי connection pooling ו-circuit breaker לאמינות"
+        ]
+      },
+      "bug_fixes": {
+        "en": [
+          "Fixed SQL Server mode protocol type storage bug",
+          "Resolved single-instance application conflicts",
+          "Fixed smoke test GUI timeout issue on Windows",
+          "Corrected SQL injection false positive in security tests",
+          "Fixed RTL layout issues in Hebrew mode dialogs"
+        ],
+        "he": [
+          "תוקן באג אחסון סוג פרוטוקול במצב SQL Server",
+          "פתרון קונפליקטים של יישום single-instance",
+          "תוקנה בעיית timeout של GUI במבחני smoke ב-Windows",
+          "תוקן false positive של SQL injection בבדיקות אבטחה",
+          "תוקנו בעיות פריסת RTL בחלונות במצב עברית"
+        ]
+      },
+      "known_issues": {
+        "en": [
+          "Database schema v2 requires migration from v1 for existing installations",
+          "First-time users will see the setup wizard automatically"
+        ],
+        "he": [
+          "schema v2 של מסד הנתונים דורש migration מ-v1 להתקנות קיימות",
+          "משתמשים חדשים יראו את אשף ההגדרה אוטומטית"
         ]
       }
     },
-    "1.5.0": {
+    {
       "version": "1.5.0",
-      "release_date": "2026-01-15",
-      "status": "archived",
-      "highlights": {
+      "date": "2026-01-15",
+      "title": {
+        "en": "Beta Release",
+        "he": "גרסת בטא"
+      },
+      "features": {
         "en": [
-          "Beta release with core functionality",
-          "PJLink protocol support for major brands",
-          "SQLite standalone mode",
-          "Basic English UI"
+          "PJLink Control: Support for PJLink Class 1 & 2 protocol with power, input, and status commands",
+          "Multi-Projector Support: Configure and control multiple projectors with quick switching",
+          "SQLite standalone mode for single-user deployments",
+          "Basic English UI with essential projector controls"
         ],
         "he": [
-          "גרסת בטא עם פונקציונליות ליבה",
-          "תמיכה בפרוטוקול PJLink למותגים עיקריים",
-          "מצב standalone של SQLite",
-          "UI אנגלי בסיסי"
+          "שליטת PJLink: תמיכה בפרוטוקול PJLink Class 1 & 2 עם פקודות הפעלה, קלט וסטטוס",
+          "תמיכה במקרנים מרובים: הגדרה ושליטה במקרנים מרובים עם החלפה מהירה",
+          "מצב standalone של SQLite לפריסות משתמש יחיד",
+          "UI אנגלי בסיסי עם פקדי מקרן חיוניים"
         ]
       },
-      "features": [
-        {
-          "title": {
-            "en": "PJLink Control",
-            "he": "שליטת PJLink"
-          },
-          "description": {
-            "en": "Support for PJLink Class 1 & 2 protocol with power, input, and status commands.",
-            "he": "תמיכה בפרוטוקול PJLink Class 1 & 2 עם פקודות הפעלה, קלט וסטטוס."
-          },
-          "icon": "projector"
-        },
-        {
-          "title": {
-            "en": "Multi-Projector Support",
-            "he": "תמיכה במקרנים מרובים"
-          },
-          "description": {
-            "en": "Configure and control multiple projectors with quick switching.",
-            "he": "הגדר ושלוט במקרנים מרובים עם החלפה מהירה."
-          },
-          "icon": "multi"
-        }
-      ],
-      "improvements": [],
-      "fixes": [],
-      "breaking_changes": {
+      "improvements": {
+        "en": [
+          "Core PJLink functionality established",
+          "Basic database persistence with SQLite"
+        ],
+        "he": [
+          "פונקציונליות PJLink ליבה הוקמה",
+          "התמדה בסיסית במסד נתונים עם SQLite"
+        ]
+      },
+      "bug_fixes": {
         "en": [],
         "he": []
+      },
+      "known_issues": {
+        "en": [
+          "Hebrew language support not yet implemented",
+          "SQL Server mode not yet available",
+          "System tray integration incomplete"
+        ],
+        "he": [
+          "תמיכה בשפה העברית טרם יושמה",
+          "מצב SQL Server טרם זמין",
+          "אינטגרציה עם מגש המערכת לא מושלמת"
+        ]
       }
     }
-  },
-  "display_settings": {
-    "show_on_version_change": true,
-    "show_major_minor_only": true,
-    "show_highlights_first": true,
-    "max_versions_to_show": 3,
-    "allow_dismiss": true,
-    "remember_dismissed": true
-  }
+  ]
 }

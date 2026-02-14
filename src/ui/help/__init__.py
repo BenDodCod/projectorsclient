@@ -23,18 +23,20 @@ Version: 1.0.0
 
 # Import all help components
 # These will be implemented in subsequent phases
-# from .help_manager import HelpManager
-# from .help_panel import HelpPanel
-# from .help_tooltip import HelpTooltip
-# from .shortcuts_dialog import ShortcutsDialog
-# from .whats_new_dialog import WhatsNewDialog
+from .help_manager import HelpManager, get_help_manager
+from .help_panel import HelpPanel
+from .help_tooltip import HelpTooltip, show_help_tooltip
+from .shortcuts_dialog import ShortcutsDialog
+from .whats_new_dialog import WhatsNewDialog
 
 __all__ = [
-    # 'HelpManager',
-    # 'HelpPanel',
-    # 'HelpTooltip',
-    # 'ShortcutsDialog',
-    # 'WhatsNewDialog',
+    'HelpManager',
+    'get_help_manager',
+    'HelpPanel',
+    'HelpTooltip',
+    'show_help_tooltip',
+    'ShortcutsDialog',
+    'WhatsNewDialog',
 ]
 
 __version__ = "1.0.0"
