@@ -28,6 +28,16 @@ from src.network.protocol_factory import (
 )
 from src.network.protocols.pjlink import PJLinkProtocol
 
+# Ensure all protocols are registered before tests run
+# This fixes test isolation issues during full suite execution
+from src.network.protocols import (
+    HitachiProtocol,
+    SonyProtocol,
+    BenQProtocol,
+    NECProtocol,
+    JVCProtocol,
+)
+
 
 class TestProtocolRegistry:
     """Tests for ProtocolRegistry class."""
