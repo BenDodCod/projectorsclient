@@ -1,0 +1,6 @@
+{
+  "version": "0.0.0",
+  "rollout_percentage": 100,
+  "min_version": "1.0.0",
+  "block_versions": []
+}

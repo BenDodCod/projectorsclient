@@ -272,6 +272,68 @@ DEFAULT_SETTINGS: Dict[str, SettingDefinition] = {
         setting_type=SettingType.BOOLEAN,
         description="Whether interactive tour has been completed (Phase 2 feature)"
     ),
+
+    # Auto-Update settings
+    "update.check_enabled": SettingDefinition(
+        key="update.check_enabled",
+        default=True,
+        setting_type=SettingType.BOOLEAN,
+        description="Enable automatic update checking"
+    ),
+    "update.check_interval_hours": SettingDefinition(
+        key="update.check_interval_hours",
+        default=24,
+        setting_type=SettingType.INTEGER,
+        description="Interval between update checks in hours"
+    ),
+    "update.last_check_timestamp": SettingDefinition(
+        key="update.last_check_timestamp",
+        default=0,
+        setting_type=SettingType.INTEGER,
+        description="Unix timestamp of last update check"
+    ),
+    "update.skipped_versions": SettingDefinition(
+        key="update.skipped_versions",
+        default=[],
+        setting_type=SettingType.JSON,
+        description="List of version strings user has chosen to skip"
+    ),
+    "update.pending_installer_path": SettingDefinition(
+        key="update.pending_installer_path",
+        default="",
+        setting_type=SettingType.STRING,
+        description="File path to downloaded update installer"
+    ),
+    "update.pending_version": SettingDefinition(
+        key="update.pending_version",
+        default="",
+        setting_type=SettingType.STRING,
+        description="Version string of pending update"
+    ),
+    "update.rollout_group_id": SettingDefinition(
+        key="update.rollout_group_id",
+        default="",
+        setting_type=SettingType.STRING,
+        description="Stable UUID for staged rollout assignment"
+    ),
+    "update.download_resume_info": SettingDefinition(
+        key="update.download_resume_info",
+        default={},
+        setting_type=SettingType.JSON,
+        description="Download resume metadata (bytes downloaded, checksum, etc.)"
+    ),
+    "update.auto_download": SettingDefinition(
+        key="update.auto_download",
+        default=False,
+        setting_type=SettingType.BOOLEAN,
+        description="Automatically download updates when available"
+    ),
+    "update.channel": SettingDefinition(
+        key="update.channel",
+        default="stable",
+        setting_type=SettingType.STRING,
+        description="Update channel: stable, beta, or alpha"
+    ),
 }
 
 
