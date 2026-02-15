@@ -1052,7 +1052,7 @@ class MainWindow(QMainWindow):
 
             # Create update checker
             update_checker = UpdateChecker(
-                settings=self.settings,
+                settings=self._settings,
                 github_repo="BenDodCod/projectorsclient",
                 github_client=github_client
             )
