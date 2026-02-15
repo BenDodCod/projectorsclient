@@ -887,7 +887,6 @@ class MainWindow(QMainWindow):
             self
         )
         check_updates_action.triggered.connect(self._manual_update_check)
-        check_updates_action.setAccessibleName(t('menu.help_check_updates_accessible', 'Check for updates'))
         help_menu.addAction(check_updates_action)
 
         help_menu.addSeparator()
