@@ -862,7 +862,7 @@ class MainWindow(QMainWindow):
         # Help submenu
         menu.addSeparator()
         help_menu = menu.addMenu(
-            IconLibrary.get_icon('help') if IconLibrary.has_icon('help') else QIcon(),
+            IconLibrary.get_icon('help'),
             t('menu.help', 'Help')
         )
 

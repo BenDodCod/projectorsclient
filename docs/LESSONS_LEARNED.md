@@ -41,6 +41,18 @@
   - When fixing data corruption bugs, use defense-in-depth: fix root cause + runtime normalization + migration
   - Test both standalone and SQL Server modes for data persistence bugs
 
+### PyInstaller exe crashes when opening menu with help options
+- **Date:** 2026-02-15
+- **Symptom:** Built exe crashes immediately when clicking the "3 dots" menu button in main window. Application runs fine in development mode. Two separate issues: (1) Log shows: "ERROR - Topics directory not found: C:\Users\...\AppData\Local\Temp\_MEI...\resources\help\topics\en" (2) Console shows: "AttributeError: type object 'IconLibrary' has no attribute 'has_icon'"
+- **Root Cause:** Two issues: (1) Help resources directory (`src/resources/help`) was not included in PyInstaller `app_datas` list in `projector_control.spec`. (2) Code called non-existent `IconLibrary.has_icon()` method in `main_window.py:865`
+- **Fix:** (1) Added `('src/resources/help', 'resources/help')` to `app_datas` list in `projector_control.spec` (line 96). (2) Removed call to non-existent `has_icon()` method - `get_icon()` already returns fallback icons gracefully
+- **Prevention:**
+  - When adding new resource directories (icons, translations, help, etc.), ALWAYS add them to PyInstaller spec file
+  - Test built exe thoroughly, not just in development mode
+  - Enable console mode (`console=True`) temporarily during debugging to see error messages
+  - Check logs at `%APPDATA%\ProjectorControl\logs\` for exe runtime errors
+  - Don't call methods that don't exist - check class implementation before use
+
 ---
 
 ## Gotchas

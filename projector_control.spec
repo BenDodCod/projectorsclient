@@ -92,6 +92,8 @@ app_datas = [
     ('src/resources/translations', 'resources/translations'),
     # Stylesheets
     ('src/resources/qss', 'resources/qss'),
+    # Help resources
+    ('src/resources/help', 'resources/help'),
 ]
 
 # Only include existing directories
