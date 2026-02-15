@@ -396,10 +396,15 @@ class WhatsNewDialog(QDialog):
         # Combine and set HTML
         html_content = ''.join(html_parts)
 
-        # Wrap in full HTML document with styling
+        # Get current language for RTL detection
+        from src.resources.translations import get_translation_manager
+        current_lang = get_translation_manager().current_language
+        text_direction = 'rtl' if current_lang == 'he' else 'ltr'
+
+        # Wrap in full HTML document with styling and RTL support
         full_html = f"""
         <!DOCTYPE html>
-        <html>
+        <html dir="{text_direction}">
         <head>
             <meta charset="UTF-8">
             <style>
@@ -409,6 +414,8 @@ class WhatsNewDialog(QDialog):
                     line-height: 1.6;
                     color: #1e293b;
                     padding: 16px;
+                    max-width: 95%;
+                    margin: 0 auto;
                 }}
                 h1 {{
                     font-size: 18pt;
@@ -427,7 +434,7 @@ class WhatsNewDialog(QDialog):
                 ul {{
                     margin-top: 8px;
                     margin-bottom: 16px;
-                    padding-left: 24px;
+                    padding-{'right' if text_direction == 'rtl' else 'left'}: 24px;
                 }}
                 li {{
                     margin-bottom: 6px;
@@ -442,7 +449,7 @@ class WhatsNewDialog(QDialog):
 
         self.content_display.setHtml(full_html)
 
-        logger.debug(f"Rendered release notes for version {version}")
+        logger.debug(f"Rendered release notes for version {version} in {text_direction} mode")
 
     def retranslate(self) -> None:
         """Retranslate all UI text after language change."""
@@ -467,6 +474,14 @@ class WhatsNewDialog(QDialog):
 
         # Reload version list with new language
         self._populate_versions()
+
+        # Re-render currently selected version with new language/direction
+        current_item = self.version_list.currentItem()
+        if current_item:
+            version = current_item.data(Qt.ItemDataRole.UserRole)
+            if version:
+                self._render_release_notes(version)
+                logger.debug(f"Re-rendered current version {version} after language change")
 
         logger.info("WhatsNewDialog retranslated")
 

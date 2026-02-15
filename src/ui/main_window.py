@@ -911,18 +911,37 @@ class MainWindow(QMainWindow):
         )
 
     def _setup_help_system(self) -> None:
-        """Setup the help system with HelpPanel QDockWidget."""
+        """Setup the help system with HelpPanel as floating window."""
         # Create HelpPanel as a QDockWidget
         self.help_panel = HelpPanel()
         self.help_panel.setObjectName("help_panel_dock")
 
-        # Add as dock widget (right side by default)
+        # Add as dock widget (required for QDockWidget, but we'll make it float)
         self.addDockWidget(Qt.DockWidgetArea.RightDockWidgetArea, self.help_panel)
+
+        # CRITICAL: Make it float and disable docking to prevent UI squeezing
+        self.help_panel.setFloating(True)  # Always float as separate window
+        self.help_panel.setAllowedAreas(Qt.DockWidgetArea.NoDockWidgetArea)  # Disable docking
+
+        # Set reasonable default size for floating window
+        self.help_panel.resize(700, 600)  # Width: 700px, Height: 600px
+
+        # Disable dock widget features that allow docking
+        from PyQt6.QtWidgets import QDockWidget
+        features = (
+            QDockWidget.DockWidgetFeature.DockWidgetClosable |  # Allow closing
+            QDockWidget.DockWidgetFeature.DockWidgetMovable     # Allow moving
+            # Explicitly NOT including DockWidgetFloatable to prevent re-docking
+        )
+        self.help_panel.setFeatures(features)
+
+        # Connect signal to enforce floating whenever docking is attempted
+        self.help_panel.topLevelChanged.connect(self._enforce_help_floating)
 
         # Hide by default (user can press F1 to show)
         self.help_panel.hide()
 
-        logger.info("Help system initialized")
+        logger.info("Help system initialized in floating mode (docking disabled)")
 
     def _toggle_help_panel(self) -> None:
         """Toggle help panel visibility."""
@@ -932,6 +951,12 @@ class MainWindow(QMainWindow):
         else:
             self.help_panel.show()
             logger.info("Help panel shown")
+
+    def _enforce_help_floating(self, is_floating: bool) -> None:
+        """Ensure help panel always stays floating."""
+        if not is_floating:
+            self.help_panel.setFloating(True)
+            logger.debug("Help panel forced back to floating mode")
 
     def _show_shortcuts_dialog(self) -> None:
         """Show keyboard shortcuts reference dialog."""
@@ -1357,6 +1382,11 @@ class MainWindow(QMainWindow):
             input_source = self.status_panel._input_source
             lamp_hours = self.status_panel._lamp_hours
             self.status_panel.update_compact_status(power, input_source, lamp_hours, self._is_connected)
+
+        # Retranslate help panel if it exists
+        if hasattr(self, 'help_panel') and hasattr(self.help_panel, 'retranslate'):
+            self.help_panel.retranslate()
+            logger.debug("Help panel retranslated")
 
         # Emit language changed signal
         self.language_changed.emit(language)

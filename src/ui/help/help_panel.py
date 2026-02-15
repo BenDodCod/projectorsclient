@@ -274,8 +274,8 @@ class HelpPanel(QDockWidget):
         self.related_frame.setVisible(False)  # Hidden until topic is selected
 
         related_layout = QVBoxLayout(self.related_frame)
-        related_layout.setContentsMargins(12, 8, 12, 8)
-        related_layout.setSpacing(6)
+        related_layout.setContentsMargins(8, 6, 8, 6)  # Narrower edges
+        related_layout.setSpacing(4)
 
         # Related topics label
         related_label = QLabel(t('help.related_topics', 'Related Topics'))
@@ -289,7 +289,8 @@ class HelpPanel(QDockWidget):
         # Related topics list
         self.related_list = QListWidget()
         self.related_list.setObjectName("help_related_list")
-        self.related_list.setMaximumHeight(100)
+        # Dynamic height based on content - will be set when topics are loaded
+        self.related_list.setSizeAdjustPolicy(QListWidget.SizeAdjustPolicy.AdjustToContents)
         self.related_list.currentItemChanged.connect(self._on_related_topic_clicked)
         self.related_list.setAccessibleName(t('help.related_topics_accessible_name', 'Related topics'))
         self.related_list.setAccessibleDescription(
@@ -568,6 +569,14 @@ class HelpPanel(QDockWidget):
                 item = QListWidgetItem(related_topic.get('title', 'Untitled'))
                 item.setData(Qt.ItemDataRole.UserRole, related_id)
                 self.related_list.addItem(item)
+
+        # Set dynamic height based on number of items (max 5 items visible without scroll)
+        item_count = self.related_list.count()
+        item_height = self.related_list.sizeHintForRow(0) if item_count > 0 else 25
+        max_visible_items = min(item_count, 5)  # Show max 5 items without scrolling
+        dynamic_height = (max_visible_items * item_height) + 4  # +4 for padding
+        self.related_list.setMaximumHeight(dynamic_height)
+        self.related_list.setMinimumHeight(min(dynamic_height, item_height + 4))
 
         # Show related topics frame
         self.related_frame.setVisible(True)
