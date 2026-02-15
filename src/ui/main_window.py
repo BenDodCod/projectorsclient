@@ -957,10 +957,30 @@ class MainWindow(QMainWindow):
             import json
             try:
                 geometry_dict = json.loads(saved_position)
-                from PyQt6.QtCore import QPoint, QSize
+                from PyQt6.QtCore import QPoint, QSize, QRect
                 self.help_panel.move(QPoint(geometry_dict['x'], geometry_dict['y']))
                 self.help_panel.resize(QSize(geometry_dict['width'], geometry_dict['height']))
                 logger.debug(f"Restored help panel position: {geometry_dict}")
+
+                # Safety check: Ensure window is visible on screen
+                # (handles resolution changes, disconnected monitors, etc.)
+                from PyQt6.QtWidgets import QApplication
+                screen_geometry = QApplication.primaryScreen().availableGeometry()
+                help_geometry = self.help_panel.geometry()
+
+                # If help window is completely off-screen or mostly off-screen, reposition it
+                if not screen_geometry.intersects(help_geometry):
+                    # Completely off-screen - center it
+                    center_point = screen_geometry.center() - help_geometry.center()
+                    self.help_panel.move(center_point)
+                    logger.info("Help panel was off-screen, repositioned to center")
+                elif not screen_geometry.contains(help_geometry):
+                    # Partially off-screen - adjust position to be fully visible
+                    new_x = max(screen_geometry.left(), min(help_geometry.left(), screen_geometry.right() - help_geometry.width()))
+                    new_y = max(screen_geometry.top(), min(help_geometry.top(), screen_geometry.bottom() - help_geometry.height()))
+                    self.help_panel.move(new_x, new_y)
+                    logger.info(f"Help panel partially off-screen, adjusted to ({new_x}, {new_y})")
+
             except Exception as e:
                 logger.warning(f"Failed to restore help panel position: {e}")
 
@@ -972,13 +992,9 @@ class MainWindow(QMainWindow):
     def _toggle_help_panel(self) -> None:
         """Toggle help panel visibility."""
         if self.help_panel.isVisible():
-            # Save geometry before hiding so position is remembered
-            import base64
-            geometry = self.help_panel.saveGeometry()
-            geometry_b64 = base64.b64encode(bytes(geometry)).decode('utf-8')
-            self._settings.set("ui.help_panel_geometry", geometry_b64)
             self.help_panel.hide()
-            logger.info("Help panel hidden (geometry saved)")
+            logger.info("Help panel hidden")
+            # Note: Position is saved automatically by help_panel.hideEvent()
         else:
             self.help_panel.show()
             logger.info("Help panel shown")
