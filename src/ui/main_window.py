@@ -17,6 +17,8 @@ import logging
 import time
 from typing import Optional
 
+from src import __version__
+
 from PyQt6.QtWidgets import (
     QMainWindow, QWidget, QVBoxLayout, QHBoxLayout,
     QLabel, QPushButton, QSystemTrayIcon, QMenu, QStatusBar,
@@ -916,7 +918,7 @@ class MainWindow(QMainWindow):
         QMessageBox.about(
             self,
             t('menu.about', 'About'),
-            t('settings.copyright', 'Projector Control Application') + "\n\nVersion 2.0.0-rc1"
+            t('settings.copyright', 'Projector Control Application') + f"\n\nVersion {__version__.__version__}"
         )
 
     def _setup_help_system(self) -> None:
@@ -1025,7 +1027,7 @@ class MainWindow(QMainWindow):
         from src.config.settings import SettingsManager
 
         # Get current app version
-        app_version = "2.0.0"  # TODO: Load from version file
+        app_version = __version__.__version__
 
         dialog = WhatsNewDialog(self, current_version=app_version)
         dialog.exec()
