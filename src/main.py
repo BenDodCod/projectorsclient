@@ -916,6 +916,48 @@ def show_main_window(db: "DatabaseManager") -> "QMainWindow":
     return window
 
 
+def launch_pending_installer(settings: "SettingsManager") -> None:
+    """Launch pending installer if one exists."""
+    import os
+    logger = logging.getLogger(__name__)
+
+    try:
+        installer_path = settings.get_str("update.pending_installer_path", "")
+        pending_version = settings.get_str("update.pending_version", "")
+
+        if installer_path and os.path.exists(installer_path):
+            logger.info(f"Launching pending installer: {installer_path} (v{pending_version})")
+
+            # Launch installer in detached process
+            if sys.platform == "win32":
+                # Windows: Use subprocess.Popen with DETACHED_PROCESS
+                import subprocess
+                DETACHED_PROCESS = 0x00000008
+                subprocess.Popen(
+                    [installer_path],
+                    creationflags=DETACHED_PROCESS,
+                    close_fds=True
+                )
+            else:
+                # Linux/Mac: Use os.spawnl
+                os.spawnl(os.P_NOWAIT, installer_path)
+
+            # Clear pending installer settings
+            settings.set("update.pending_installer_path", "")
+            settings.set("update.pending_version", "")
+
+            logger.info("Installer launched successfully")
+        else:
+            if installer_path and not os.path.exists(installer_path):
+                logger.warning(f"Pending installer not found: {installer_path}")
+                # Clear invalid settings
+                settings.set("update.pending_installer_path", "")
+                settings.set("update.pending_version", "")
+
+    except Exception as e:
+        logger.error(f"Failed to launch pending installer: {e}", exc_info=True)
+
+
 def main() -> int:
     """
     Main application entry point.
@@ -985,6 +1027,10 @@ def main() -> int:
         logger.warning(f"Could not load language setting: {e}, defaulting to English")
         get_translation_manager()
 
+    # Register exit handler for pending installer
+    import atexit
+    atexit.register(lambda: launch_pending_installer(settings))
+
     # Check if first run
     if check_first_run(db):
         logger.info("First run detected, showing setup wizard")
@@ -1012,6 +1058,69 @@ def main() -> int:
 
     # Show main window
     main_window = show_main_window(db)
+
+    # ===== Auto-Update Check (Non-blocking) =====
+    try:
+        from src.update.update_checker import UpdateChecker
+        from src.update.update_worker import UpdateCheckWorker
+        from src.update.github_client import GitHubClient
+
+        # Create GitHub client
+        github_client = GitHubClient("BenDodCod/projectorsclient")
+
+        # Create update checker
+        update_checker = UpdateChecker(
+            settings=settings,
+            github_repo="BenDodCod/projectorsclient",
+            github_client=github_client
+        )
+
+        # Only check if interval elapsed
+        if update_checker.should_check_now():
+            logger.info("Starting background update check")
+            update_worker = UpdateCheckWorker(update_checker)
+
+            def on_update_available(result):
+                """Handle update check result."""
+                if result.update_available:
+                    logger.info(f"Update available: v{result.version}")
+                    from src.ui.dialogs.update_notification_dialog import UpdateNotificationDialog
+
+                    # Show update notification dialog
+                    dialog = UpdateNotificationDialog(
+                        main_window,
+                        result.version,
+                        result.release_notes,
+                        result.download_url,
+                        result.sha256,
+                        settings
+                    )
+                    dialog.exec()
+                else:
+                    logger.info("No updates available")
+                    if result.error_message:
+                        logger.warning(f"Update check completed with warning: {result.error_message}")
+
+            def on_update_error(error_msg):
+                """Handle update check error."""
+                logger.warning(f"Update check failed: {error_msg}")
+                # Don't show error to user - updates are non-critical
+
+            # Connect signals
+            update_worker.check_complete.connect(on_update_available)
+            update_worker.check_error.connect(on_update_error)
+
+            # Start worker
+            update_worker.start()
+
+            # Keep reference to prevent garbage collection
+            main_window._update_worker = update_worker
+        else:
+            logger.debug("Skipping update check (interval not elapsed)")
+
+    except Exception as e:
+        # Never let update system crash the app
+        logger.warning(f"Failed to initialize update system: {e}", exc_info=True)
 
     # Wire up single instance handler to bring window to front
     def bring_window_to_front():

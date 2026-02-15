@@ -40,7 +40,7 @@ class GitHubClient:
     MAX_RETRIES = 3
     CHUNK_SIZE = 8192  # 8KB chunks for download
 
-    def __init__(self, repo: str, token: Optional[str] = None):
+    def __init__(self, repo: str, token: Optional[str] = None, api_base: Optional[str] = None):
         """
         Initialize GitHub API client.
 
@@ -48,8 +48,11 @@ class GitHubClient:
             repo: Repository path in format "owner/repo" (e.g., "BenDodCod/projectorsclient")
             token: Optional GitHub personal access token for authenticated requests
                    (increases rate limit from 60 to 5000 requests/hour)
+            api_base: Optional custom API base URL (default: "https://api.github.com")
+                      Used for testing with mock servers
         """
         self.repo = repo
+        self.api_base = api_base or self.API_BASE  # Use custom base or default
         self.session = requests.Session()
 
         # Set standard GitHub API headers
@@ -94,7 +97,7 @@ class GitHubClient:
             ...     print(f"Latest version: {release['tag_name']}")
             ...     print(f"Published: {release['published_at']}")
         """
-        url = f"{self.API_BASE}/repos/{self.repo}/releases/latest"
+        url = f"{self.api_base}/repos/{self.repo}/releases/latest"
         logger.info(f"Fetching latest release from: {url}")
 
         for attempt in range(self.MAX_RETRIES):

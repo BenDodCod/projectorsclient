@@ -103,12 +103,36 @@ This file is PERMANENT and accumulates across ALL sessions.
 - Connection pooling, circuit breaker, resilient controller patterns
 - Database migrations (v1-v2) with backup/restore (DPAPI encrypted)
 - System tray integration with quick actions
+- Auto-update system with GitHub Releases, staged rollouts, and SHA-256 verification
 
 ## Quality Gates (All Met)
 - Test coverage: 94%+ (target: 85%)
 - Performance: Startup 0.9s (<2s), Commands 18ms (<5s), Memory 165MB (<200MB)
 - Security: 0 critical/high vulnerabilities
 - Compatibility: Windows 10/11, DPI 1x-4x, PJLink Class 1 & 2
+
+## Auto-Update System (Production)
+
+**All future updates to the application are released using the auto-update system.**
+
+Key Features:
+- GitHub Releases integration for hosting
+- Non-blocking startup checks (QThread workers)
+- SHA-256 checksum verification
+- Staged rollouts (25% → 100%)
+- User control: download, skip, rollback
+- Resume capability for interrupted downloads
+- Support for stable/beta/alpha channels
+
+Documentation:
+- User guide: `docs/README_UPDATES.md`
+- Release process: `docs/RELEASE_PROCESS.md` (created in Wave 1)
+- Technical details: See `src/update/` module
+
+Update Schedule:
+- Check on startup (configurable interval, default: 24 hours)
+- Manual check: Help → Check for Updates
+- Settings: Settings → Updates tab
 
 ## Workflow for any task
 

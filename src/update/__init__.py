@@ -15,7 +15,7 @@ Key Components:
 Example Usage:
     from src.update import UpdateChecker, UpdateCheckWorker
 
-    checker = UpdateChecker(settings, "owner/repo")
+    checker = UpdateChecker(settings, "BenDodCod/projectorsclient")
     worker = UpdateCheckWorker(checker)
     worker.check_complete.connect(on_update_available)
     worker.start()

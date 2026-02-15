@@ -473,3 +473,76 @@ def pytest_collection_modifyitems(config, items):
             item.add_marker(pytest.mark.integration)
         elif "/e2e/" in str(item.fspath) or "\\e2e\\" in str(item.fspath):
             item.add_marker(pytest.mark.e2e)
+
+
+# =============================================================================
+# Update System Fixtures
+# =============================================================================
+
+
+@pytest.fixture
+def mock_github_server():
+    """
+    Create a mock GitHub API server for testing auto-update functionality.
+
+    Yields:
+        MockGitHubServer instance that is started and will be stopped after test.
+
+    Example:
+        def test_update_check(mock_github_server):
+            server = mock_github_server
+            server.set_version('v2.1.0')
+            # Test update checker against server
+            assert server.port > 0
+    """
+    from tests.mocks.mock_github_api import MockGitHubServer
+
+    server = MockGitHubServer(port=8888)
+    server.start()
+    yield server
+    server.stop()
+
+
+@pytest.fixture
+def update_checker(mock_db_manager):
+    """
+    Create an UpdateChecker instance with mocked dependencies.
+
+    Args:
+        mock_db_manager: Mock DatabaseManager fixture
+
+    Returns:
+        UpdateChecker instance configured for testing
+    """
+    from src.config.settings import SettingsManager
+    from src.update.github_client import GitHubClient
+    from src.update.update_checker import UpdateChecker
+
+    settings = SettingsManager(mock_db_manager)
+    github = GitHubClient("http://localhost:8888")
+    checker = UpdateChecker(settings, "test/repo", github)
+
+    return checker
+
+
+@pytest.fixture
+def update_downloader(temp_dir, mock_db_manager):
+    """
+    Create an UpdateDownloader instance with temporary download directory.
+
+    Args:
+        temp_dir: Temporary directory fixture
+        mock_db_manager: Mock DatabaseManager fixture
+
+    Returns:
+        UpdateDownloader instance configured for testing
+    """
+    from src.config.settings import SettingsManager
+    from src.update.github_client import GitHubClient
+    from src.update.update_downloader import UpdateDownloader
+
+    settings = SettingsManager(mock_db_manager)
+    github = GitHubClient("http://localhost:8888")
+    downloader = UpdateDownloader(github, settings, download_dir=temp_dir)
+
+    return downloader

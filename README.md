@@ -36,6 +36,23 @@
 
 ---
 
+## Auto-Update System
+
+This application includes a built-in auto-update system that keeps your installation current:
+
+- **Automatic Checks**: Updates are checked on startup (configurable interval)
+- **User Control**: You choose when to download and install updates
+- **Staged Rollouts**: New versions released gradually for safety
+- **Secure**: SHA-256 checksum verification for all downloads
+- **Resume Support**: Interrupted downloads can be resumed
+- **Release Notes**: See what's new before updating
+
+**Manual Check:** Help → Check for Updates
+
+For detailed information about the update system, see [docs/README_UPDATES.md](docs/README_UPDATES.md).
+
+---
+
 ## System Requirements
 
 | Component | Requirement |

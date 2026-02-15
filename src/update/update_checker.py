@@ -317,14 +317,18 @@ class UpdateChecker:
             )
 
         # Step 4: Check skipped versions list
-        skipped_versions_json = self.settings.get("update.skipped_versions", default="[]")
-        try:
-            skipped_versions = json.loads(skipped_versions_json)
-            if not isinstance(skipped_versions, list):
-                logger.warning("update.skipped_versions is not a list, resetting to []")
+        skipped_versions_raw = self.settings.get("update.skipped_versions", default=[])
+        # Handle both string (JSON) and list (already parsed) formats
+        if isinstance(skipped_versions_raw, str):
+            try:
+                skipped_versions = json.loads(skipped_versions_raw)
+            except json.JSONDecodeError as e:
+                logger.warning(f"Failed to parse skipped_versions: {e}, resetting to []")
                 skipped_versions = []
-        except json.JSONDecodeError as e:
-            logger.warning(f"Failed to parse skipped_versions: {e}, resetting to []")
+        elif isinstance(skipped_versions_raw, list):
+            skipped_versions = skipped_versions_raw
+        else:
+            logger.warning(f"update.skipped_versions has unexpected type {type(skipped_versions_raw)}, resetting to []")
             skipped_versions = []
 
         if latest_version_str in skipped_versions:

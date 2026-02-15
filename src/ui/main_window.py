@@ -880,6 +880,16 @@ class MainWindow(QMainWindow):
         whats_new_action = help_menu.addAction(t('menu.help_whats_new', "What's New"))
         whats_new_action.triggered.connect(self._show_whats_new_dialog)
 
+        # Check for Updates
+        check_updates_action = QAction(
+            IconLibrary.get_icon("refresh"),
+            t('menu.help_check_updates', 'Check for Updates'),
+            self
+        )
+        check_updates_action.triggered.connect(self._manual_update_check)
+        check_updates_action.setAccessibleName(t('menu.help_check_updates_accessible', 'Check for updates'))
+        help_menu.addAction(check_updates_action)
+
         help_menu.addSeparator()
 
         # About (in Help submenu now)
@@ -1028,6 +1038,101 @@ class MainWindow(QMainWindow):
             logger.info(f"What's New dialog shown for version {app_version}")
         except Exception as e:
             logger.warning(f"Failed to save last viewed version: {e}")
+
+    def _manual_update_check(self) -> None:
+        """Manually trigger update check (Help → Check for Updates)."""
+        try:
+            from src.update.update_checker import UpdateChecker
+            from src.update.update_worker import UpdateCheckWorker
+            from src.update.github_client import GitHubClient
+
+            logger.info("Manual update check triggered by user")
+
+            # Create GitHub client
+            github_client = GitHubClient("BenDodCod/projectorsclient")
+
+            # Create update checker
+            update_checker = UpdateChecker(
+                settings=self.settings,
+                github_repo="BenDodCod/projectorsclient",
+                github_client=github_client
+            )
+
+            # Create worker
+            worker = UpdateCheckWorker(update_checker)
+
+            def on_complete(result):
+                """Handle check completion."""
+                if result.update_available:
+                    logger.info(f"Manual check: Update available - v{result.version}")
+                    from src.ui.dialogs.update_notification_dialog import UpdateNotificationDialog
+
+                    # Show update notification
+                    dialog = UpdateNotificationDialog(
+                        self,
+                        result.version,
+                        result.release_notes,
+                        result.download_url,
+                        result.sha256,
+                        self.settings
+                    )
+                    dialog.exec()
+                else:
+                    # No update available
+                    logger.info("Manual check: No updates available")
+                    from PyQt6.QtWidgets import QMessageBox
+
+                    if result.error_message:
+                        # Error occurred
+                        QMessageBox.warning(
+                            self,
+                            t('update.check_failed_title', 'Update Check Failed'),
+                            t('update.check_failed_message', 'Could not check for updates: {error}').format(
+                                error=result.error_message
+                            )
+                        )
+                    else:
+                        # Up to date
+                        QMessageBox.information(
+                            self,
+                            t('update.up_to_date_title', 'Up to Date'),
+                            t('update.up_to_date_message', 'You have the latest version.')
+                        )
+
+            def on_error(error_msg):
+                """Handle check error."""
+                logger.error(f"Manual update check failed: {error_msg}")
+                from PyQt6.QtWidgets import QMessageBox
+
+                QMessageBox.critical(
+                    self,
+                    t('update.check_error_title', 'Error'),
+                    t('update.check_error_message', 'Failed to check for updates: {error}').format(
+                        error=error_msg
+                    )
+                )
+
+            # Connect signals
+            worker.check_complete.connect(on_complete)
+            worker.check_error.connect(on_error)
+
+            # Start worker
+            worker.start()
+
+            # Keep reference to prevent garbage collection
+            self._manual_update_worker = worker
+
+            logger.debug("Manual update check worker started")
+
+        except Exception as e:
+            logger.error(f"Failed to start manual update check: {e}", exc_info=True)
+            from PyQt6.QtWidgets import QMessageBox
+
+            QMessageBox.critical(
+                self,
+                t('update.error_title', 'Error'),
+                t('update.error_message', 'An error occurred while checking for updates.')
+            )
 
     def _update_theme_button_icon(self) -> None:
         """Update the theme button icon based on current theme."""
