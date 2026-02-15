@@ -1,24 +1,42 @@
 # Latest Session Context
 
 **Last Updated:** 2026-02-15
-**Session:** exe-crash-fix
+**Session:** dev-environment-setup
+**Full Review:** [2026-02-15-session.md](2026/2026-02-15-session.md)
 
 ## Quick Summary
 
-Fixed critical PyInstaller exe crash when clicking 3 dots menu. Two issues:
-1. Help resources not bundled in exe
-2. Invalid `IconLibrary.has_icon()` method call
+Helped user set up development environment to run app without building. Fixed `ModuleNotFoundError` by recommending editable install (`pip install -e .`). Created convenience scripts (`run.bat`, `run.ps1`) for easy app launching.
 
 ## Files Changed
 
-- `projector_control.spec` - Added help resources to build
-- `src/ui/main_window.py` - Fixed invalid method call
-- `docs/LESSONS_LEARNED.md` - Documented fixes
+- `run.bat` - Created batch script to run app in dev mode
+- `run.ps1` - Created PowerShell script to run app in dev mode
+- `docs/REVIEWS/2026/2026-02-15-session.md` - Session documentation
 
 ## Status
 
-✅ **RESOLVED** - Exe works correctly, no console window, all menu options functional
+✅ **Setup Complete** - User has three methods to run app without building
+- Recommended: `pip install -e .` then `python src/main.py`
+- Alternative: Use `run.ps1` or `run.bat` scripts
+- Temporary: Set PYTHONPATH environment variable
 
 ## Next Session
 
-No blocking issues. Exe ready for distribution.
+User will test editable install and verify app launches. No blocking issues.
+
+---
+
+## How to Run the App (Quick Reference)
+```powershell
+# Method 1: Editable install (recommended, one-time)
+pip install -e .
+python src/main.py
+
+# Method 2: Use scripts
+.\run.ps1  # or .\run.bat
+
+# Method 3: Temporary PYTHONPATH
+$env:PYTHONPATH = "D:\projectorsclient"
+python src/main.py
+```
