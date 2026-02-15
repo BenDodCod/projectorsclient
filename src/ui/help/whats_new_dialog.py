@@ -149,46 +149,67 @@ class WhatsNewDialog(QDialog):
         self.setMinimumSize(800, 600)
         self.resize(900, 700)
 
-        # Main layout
+        # Main layout with 20px margins on all sides
         layout = QVBoxLayout(self)
-        layout.setSpacing(16)
-        layout.setContentsMargins(24, 24, 24, 24)
+        layout.setSpacing(0)  # We'll handle spacing manually
+        layout.setContentsMargins(20, 20, 20, 20)
 
-        # Title
+        # Horizontal layout for left column and release notes
+        content_layout = QHBoxLayout()
+        content_layout.setSpacing(0)  # We'll add spacing between columns
+
+        # Left column (fixed 251px width)
+        left_column = QWidget()
+        left_column.setFixedWidth(251)
+        left_layout = QVBoxLayout(left_column)
+        left_layout.setContentsMargins(0, 0, 0, 0)
+        left_layout.setSpacing(0)  # Manual spacing with addSpacing
+
+        # Title (251px width)
         self.title_label = QLabel()
         self.title_label.setObjectName("dialog_title")
         font = QFont()
         font.setPointSize(14)
         font.setBold(True)
         self.title_label.setFont(font)
-        layout.addWidget(self.title_label)
+        self.title_label.setFixedWidth(251)
+        left_layout.addWidget(self.title_label)
 
-        # Subtitle with current version
+        # 25px space between title and subtitle
+        left_layout.addSpacing(25)
+
+        # Subtitle with current version (251px width)
         self.subtitle_label = QLabel()
         self.subtitle_label.setObjectName("dialog_subtitle")
         font = QFont()
         font.setPointSize(10)
         self.subtitle_label.setFont(font)
         self.subtitle_label.setStyleSheet("color: #64748b;")
-        layout.addWidget(self.subtitle_label)
+        self.subtitle_label.setFixedWidth(251)
+        left_layout.addWidget(self.subtitle_label)
 
-        # Splitter for version list and content
-        splitter = QSplitter(Qt.Orientation.Horizontal)
-        splitter.setChildrenCollapsible(False)
+        # 25px space between subtitle and version list
+        left_layout.addSpacing(25)
 
-        # Left panel - Version list
-        left_panel = self._create_version_panel()
-        splitter.addWidget(left_panel)
+        # Version list panel (fills remaining height)
+        version_panel = self._create_version_panel()
+        left_layout.addWidget(version_panel)
 
-        # Right panel - Release notes content
+        # Add left column to content layout
+        content_layout.addWidget(left_column)
+
+        # Add spacing between left column and release notes (20px)
+        content_layout.addSpacing(20)
+
+        # Right panel - Release notes content (expands to fill remaining space)
         right_panel = self._create_content_panel()
-        splitter.addWidget(right_panel)
+        content_layout.addWidget(right_panel, 1)  # Stretch factor 1 to expand
 
-        # Set splitter proportions (30% left, 70% right)
-        splitter.setStretchFactor(0, 3)
-        splitter.setStretchFactor(1, 7)
+        # Add content layout to main layout
+        layout.addLayout(content_layout)
 
-        layout.addWidget(splitter)
+        # Add spacing before button box
+        layout.addSpacing(20)
 
         # Button box
         button_box = QDialogButtonBox(QDialogButtonBox.StandardButton.Close)
@@ -212,7 +233,7 @@ class WhatsNewDialog(QDialog):
         panel = QWidget()
         layout = QVBoxLayout(panel)
         layout.setContentsMargins(0, 0, 0, 0)
-        layout.setSpacing(8)
+        layout.setSpacing(6)  # Reduced from 8 to 6
 
         # Versions label
         versions_label = QLabel(t('help.versions_label', 'Versions'))
@@ -245,18 +266,10 @@ class WhatsNewDialog(QDialog):
         panel = QWidget()
         layout = QVBoxLayout(panel)
         layout.setContentsMargins(0, 0, 0, 0)
-        layout.setSpacing(8)
-
-        # Content label
-        content_label = QLabel(t('help.release_notes_label', 'Release Notes'))
-        content_label.setObjectName("section_label")
-        font = content_label.font()
-        font.setBold(True)
-        font.setPointSize(10)
-        content_label.setFont(font)
-        layout.addWidget(content_label)
+        layout.setSpacing(0)  # No spacing needed
 
         # Content display (read-only text browser for Markdown HTML)
+        # Note: "Release Notes" label removed to align content with left panel labels
         self.content_display = QTextBrowser()
         self.content_display.setObjectName("release_notes_content")
         self.content_display.setReadOnly(True)
@@ -334,6 +347,27 @@ class WhatsNewDialog(QDialog):
         # Render release notes
         self._render_release_notes(release)
 
+    def _is_dark_mode(self) -> bool:
+        """
+        Detect if the application is in dark mode.
+
+        Returns:
+            True if dark mode is active, False otherwise
+        """
+        try:
+            from PyQt6.QtWidgets import QApplication
+            app = QApplication.instance()
+            if app:
+                # Check palette background color luminance
+                palette = app.palette()
+                bg_color = palette.color(palette.ColorRole.Window)
+                # Calculate luminance (perceived brightness)
+                luminance = (0.299 * bg_color.red() + 0.587 * bg_color.green() + 0.114 * bg_color.blue())
+                return luminance < 128  # Dark if luminance is low
+        except Exception as e:
+            logger.debug(f"Failed to detect dark mode: {e}")
+        return False  # Default to light mode
+
     def _render_release_notes(self, release: Dict) -> None:
         """
         Render release notes for a specific version.
@@ -401,6 +435,30 @@ class WhatsNewDialog(QDialog):
         current_lang = get_translation_manager().current_language
         text_direction = 'rtl' if current_lang == 'he' else 'ltr'
 
+        # Detect dark mode and set appropriate colors
+        is_dark = self._is_dark_mode()
+
+        if is_dark:
+            # Dark mode colors
+            text_color = '#e2e8f0'  # Light gray text
+            h1_color = '#f1f5f9'  # Lighter heading
+            h2_color = '#cbd5e1'  # Medium light heading
+            date_color = '#94a3b8'  # Light gray for date
+        else:
+            # Light mode colors
+            text_color = '#1e293b'  # Dark text
+            h1_color = '#0f172a'  # Very dark heading
+            h2_color = '#334155'  # Dark heading
+            date_color = '#64748b'  # Gray for date
+
+        # Update inline date color in HTML parts if present
+        if date and html_parts:
+            # Replace the date line with dynamic color
+            html_parts[1] = f'<p style="color: {date_color}; font-size: 10pt;">{date}</p>'
+
+        # Recombine HTML content after color update
+        html_content = ''.join(html_parts)
+
         # Wrap in full HTML document with styling and RTL support
         full_html = f"""
         <!DOCTYPE html>
@@ -412,22 +470,22 @@ class WhatsNewDialog(QDialog):
                     font-family: 'Segoe UI', Arial, sans-serif;
                     font-size: 10pt;
                     line-height: 1.6;
-                    color: #1e293b;
-                    padding: 16px;
+                    color: {text_color};
+                    padding: 12px;
                     max-width: 95%;
                     margin: 0 auto;
                 }}
                 h1 {{
                     font-size: 18pt;
                     font-weight: bold;
-                    color: #0f172a;
+                    color: {h1_color};
                     margin-top: 0;
                     margin-bottom: 8px;
                 }}
                 h2 {{
                     font-size: 12pt;
                     font-weight: bold;
-                    color: #334155;
+                    color: {h2_color};
                     margin-top: 20px;
                     margin-bottom: 10px;
                 }}

@@ -912,19 +912,32 @@ class MainWindow(QMainWindow):
 
     def _setup_help_system(self) -> None:
         """Setup the help system with HelpPanel as floating window."""
-        # Create HelpPanel as a QDockWidget
-        self.help_panel = HelpPanel()
+        # Create HelpPanel as a QDockWidget with this window as parent
+        # NOTE: We do NOT call addDockWidget() to avoid position constraints
+        self.help_panel = HelpPanel(self)
         self.help_panel.setObjectName("help_panel_dock")
 
-        # Add as dock widget (required for QDockWidget, but we'll make it float)
-        self.addDockWidget(Qt.DockWidgetArea.RightDockWidgetArea, self.help_panel)
-
-        # CRITICAL: Make it float and disable docking to prevent UI squeezing
+        # CRITICAL: Make it float as independent window (no docking)
         self.help_panel.setFloating(True)  # Always float as separate window
         self.help_panel.setAllowedAreas(Qt.DockWidgetArea.NoDockWidgetArea)  # Disable docking
 
         # Set reasonable default size for floating window
-        self.help_panel.resize(700, 600)  # Width: 700px, Height: 600px
+        self.help_panel.resize(800, 770)  # Width: 800px, Height: 770px
+
+        # Set normal window flags - help window should NOT block main app
+        from PyQt6.QtCore import Qt as QtCore
+        # Set explicit window flags for normal, non-modal, non-blocking behavior
+        window_flags = (
+            QtCore.WindowType.Window |  # Normal window
+            QtCore.WindowType.WindowTitleHint |  # Show title bar
+            QtCore.WindowType.WindowSystemMenuHint |  # Show system menu
+            QtCore.WindowType.WindowMinMaxButtonsHint |  # Show min/max buttons
+            QtCore.WindowType.WindowCloseButtonHint  # Show close button
+            # Explicitly NOT including:
+            # - WindowStaysOnTopHint (would block main app)
+            # - WindowModal (would block main app)
+        )
+        self.help_panel.setWindowFlags(window_flags)
 
         # Disable dock widget features that allow docking
         from PyQt6.QtWidgets import QDockWidget
@@ -938,6 +951,19 @@ class MainWindow(QMainWindow):
         # Connect signal to enforce floating whenever docking is attempted
         self.help_panel.topLevelChanged.connect(self._enforce_help_floating)
 
+        # Restore saved position and size if available
+        saved_position = self._settings.get_str("ui.help_panel_position", "")
+        if saved_position:
+            import json
+            try:
+                geometry_dict = json.loads(saved_position)
+                from PyQt6.QtCore import QPoint, QSize
+                self.help_panel.move(QPoint(geometry_dict['x'], geometry_dict['y']))
+                self.help_panel.resize(QSize(geometry_dict['width'], geometry_dict['height']))
+                logger.debug(f"Restored help panel position: {geometry_dict}")
+            except Exception as e:
+                logger.warning(f"Failed to restore help panel position: {e}")
+
         # Hide by default (user can press F1 to show)
         self.help_panel.hide()
 
@@ -946,8 +972,13 @@ class MainWindow(QMainWindow):
     def _toggle_help_panel(self) -> None:
         """Toggle help panel visibility."""
         if self.help_panel.isVisible():
+            # Save geometry before hiding so position is remembered
+            import base64
+            geometry = self.help_panel.saveGeometry()
+            geometry_b64 = base64.b64encode(bytes(geometry)).decode('utf-8')
+            self._settings.set("ui.help_panel_geometry", geometry_b64)
             self.help_panel.hide()
-            logger.info("Help panel hidden")
+            logger.info("Help panel hidden (geometry saved)")
         else:
             self.help_panel.show()
             logger.info("Help panel shown")

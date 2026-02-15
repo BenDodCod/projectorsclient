@@ -106,6 +106,37 @@ class HelpPanel(QDockWidget):
             else:
                 logger.debug("Help panel lazy loading complete")
 
+    def closeEvent(self, event) -> None:
+        """Save geometry when window is closed."""
+        self._save_geometry()
+        super().closeEvent(event)
+
+    def hideEvent(self, event) -> None:
+        """Save geometry when window is hidden."""
+        self._save_geometry()
+        super().hideEvent(event)
+
+    def _save_geometry(self) -> None:
+        """Save the current window position and size to settings."""
+        try:
+            # Get parent window (MainWindow) to access settings
+            main_window = self.parent()
+            if main_window and hasattr(main_window, '_settings'):
+                # Save position and size separately (more reliable than saveGeometry for floating docks)
+                pos = self.pos()
+                size = self.size()
+                geometry_dict = {
+                    'x': pos.x(),
+                    'y': pos.y(),
+                    'width': size.width(),
+                    'height': size.height()
+                }
+                import json
+                main_window._settings.set("ui.help_panel_position", json.dumps(geometry_dict))
+                logger.debug(f"Help panel position saved: {geometry_dict}")
+        except Exception as e:
+            logger.debug(f"Failed to save help panel position: {e}")
+
     def _init_ui(self) -> None:
         """Initialize the user interface."""
         # Configure dock widget properties
@@ -467,6 +498,30 @@ class HelpPanel(QDockWidget):
             extensions=['extra', 'nl2br', 'sane_lists']
         )
 
+        # Detect dark mode and set appropriate colors
+        is_dark = self._is_dark_mode()
+
+        if is_dark:
+            # Dark mode colors
+            text_color = '#e2e8f0'  # Light gray text
+            h1_color = '#f1f5f9'  # Lighter heading
+            h2_color = '#cbd5e1'  # Medium light heading
+            border_color = '#475569'  # Darker border
+            code_bg = '#1e293b'  # Dark code background
+            link_color = '#60a5fa'  # Lighter blue for links
+            blockquote_color = '#94a3b8'  # Light gray for quotes
+            blockquote_border = '#475569'  # Dark border for quotes
+        else:
+            # Light mode colors
+            text_color = '#1e293b'  # Dark text
+            h1_color = '#0f172a'  # Very dark heading
+            h2_color = '#334155'  # Dark heading
+            border_color = '#e2e8f0'  # Light border
+            code_bg = '#f1f5f9'  # Light code background
+            link_color = '#2563eb'  # Blue links
+            blockquote_color = '#64748b'  # Gray for quotes
+            blockquote_border = '#cbd5e1'  # Light border for quotes
+
         # Build full HTML with styling
         html = f"""
         <html>
@@ -475,20 +530,20 @@ class HelpPanel(QDockWidget):
                 body {{
                     font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
                     line-height: 1.6;
-                    color: #1e293b;
+                    color: {text_color};
                     padding: 16px;
                 }}
                 h1 {{
-                    color: #0f172a;
+                    color: {h1_color};
                     font-size: 24px;
                     font-weight: 600;
                     margin-top: 0;
                     margin-bottom: 16px;
-                    border-bottom: 2px solid #e2e8f0;
+                    border-bottom: 2px solid {border_color};
                     padding-bottom: 8px;
                 }}
                 h2 {{
-                    color: #334155;
+                    color: {h2_color};
                     font-size: 18px;
                     font-weight: 600;
                     margin-top: 24px;
@@ -505,30 +560,30 @@ class HelpPanel(QDockWidget):
                     margin: 6px 0;
                 }}
                 code {{
-                    background-color: #f1f5f9;
+                    background-color: {code_bg};
                     padding: 2px 6px;
                     border-radius: 3px;
                     font-family: 'Courier New', Courier, monospace;
                     font-size: 0.9em;
                 }}
                 pre {{
-                    background-color: #f1f5f9;
+                    background-color: {code_bg};
                     padding: 12px;
                     border-radius: 6px;
                     overflow-x: auto;
                 }}
                 a {{
-                    color: #2563eb;
+                    color: {link_color};
                     text-decoration: none;
                 }}
                 a:hover {{
                     text-decoration: underline;
                 }}
                 blockquote {{
-                    border-left: 4px solid #cbd5e1;
+                    border-left: 4px solid {blockquote_border};
                     margin: 16px 0;
                     padding-left: 16px;
-                    color: #64748b;
+                    color: {blockquote_color};
                 }}
             </style>
         </head>
@@ -572,6 +627,8 @@ class HelpPanel(QDockWidget):
 
         # Set dynamic height based on number of items (max 5 items visible without scroll)
         item_count = self.related_list.count()
+        self.related_frame.setVisible(False)  # Hidden until topic is selected
+        self.related_frame.setMaximumHeight(200)  # Limit entire section height
         item_height = self.related_list.sizeHintForRow(0) if item_count > 0 else 25
         max_visible_items = min(item_count, 5)  # Show max 5 items without scrolling
         dynamic_height = (max_visible_items * item_height) + 4  # +4 for padding
@@ -617,6 +674,27 @@ class HelpPanel(QDockWidget):
             # External link - open in browser (if needed in future)
             logger.info(f"External link clicked: {url_string}")
 
+    def _is_dark_mode(self) -> bool:
+        """
+        Detect if the application is in dark mode.
+
+        Returns:
+            True if dark mode is active, False otherwise
+        """
+        try:
+            from PyQt6.QtWidgets import QApplication
+            app = QApplication.instance()
+            if app:
+                # Check palette background color luminance
+                palette = app.palette()
+                bg_color = palette.color(palette.ColorRole.Window)
+                # Calculate luminance (perceived brightness)
+                luminance = (0.299 * bg_color.red() + 0.587 * bg_color.green() + 0.114 * bg_color.blue())
+                return luminance < 128  # Dark if luminance is low
+        except Exception as e:
+            logger.debug(f"Failed to detect dark mode: {e}")
+        return False  # Default to light mode
+
     def _get_welcome_html(self) -> str:
         """
         Get the welcome/default HTML content.
@@ -624,6 +702,16 @@ class HelpPanel(QDockWidget):
         Returns:
             HTML string for welcome message
         """
+        is_dark = self._is_dark_mode()
+
+        # Color scheme based on theme
+        if is_dark:
+            text_color = '#e2e8f0'  # Light gray for dark mode
+            heading_color = '#f1f5f9'  # Lighter for headings
+        else:
+            text_color = '#64748b'  # Dark gray for light mode
+            heading_color = '#0f172a'  # Very dark for headings
+
         return f"""
         <html>
         <head>
@@ -631,12 +719,12 @@ class HelpPanel(QDockWidget):
                 body {{
                     font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
                     line-height: 1.6;
-                    color: #64748b;
+                    color: {text_color};
                     padding: 24px;
                     text-align: center;
                 }}
                 h2 {{
-                    color: #0f172a;
+                    color: {heading_color};
                     font-size: 20px;
                     font-weight: 600;
                     margin-bottom: 12px;
