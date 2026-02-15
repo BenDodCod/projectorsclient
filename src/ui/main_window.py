@@ -17,7 +17,7 @@ import logging
 import time
 from typing import Optional
 
-from src import __version__
+from src.__version__ import __version__ as app_version
 
 from PyQt6.QtWidgets import (
     QMainWindow, QWidget, QVBoxLayout, QHBoxLayout,
@@ -918,7 +918,7 @@ class MainWindow(QMainWindow):
         QMessageBox.about(
             self,
             t('menu.about', 'About'),
-            t('settings.copyright', 'Projector Control Application') + f"\n\nVersion {__version__.__version__}"
+            t('settings.copyright', 'Projector Control Application') + f"\n\nVersion {app_version}"
         )
 
     def _setup_help_system(self) -> None:
@@ -1026,9 +1026,7 @@ class MainWindow(QMainWindow):
         """Show What's New dialog."""
         from src.config.settings import SettingsManager
 
-        # Get current app version
-        app_version = __version__.__version__
-
+        # Use app version from __version__ module (imported at top)
         dialog = WhatsNewDialog(self, current_version=app_version)
         dialog.exec()
 
