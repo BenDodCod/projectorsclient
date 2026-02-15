@@ -1073,7 +1073,7 @@ class MainWindow(QMainWindow):
                         result.release_notes,
                         result.download_url,
                         result.sha256,
-                        self.settings
+                        self._settings
                     )
                     dialog.exec()
                 else:
