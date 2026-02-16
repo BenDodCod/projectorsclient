@@ -341,6 +341,9 @@ def apply_config_to_database(
     settings.set("app.first_run_complete", config.first_run_complete)
     settings.set("app.language", config.language)
 
+    # Mark as web deployment to lock database mode switching
+    settings.set("app.deployment_source", "web_deployment")
+
     # SQL Server settings
     settings.set("sql.server", config.sql_server)
     settings.set("sql.port", config.sql_port)

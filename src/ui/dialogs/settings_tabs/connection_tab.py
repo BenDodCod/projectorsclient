@@ -624,6 +624,29 @@ class ConnectionTab(BaseSettingsTab):
         # Update auth-dependent fields
         self._on_auth_type_changed()
 
+        # Lock SQL Server settings if deployed via web
+        deployment_source = settings.get("app.deployment_source", "manual")
+        is_locked = (deployment_source == "web_deployment")
+        if is_locked and self._operation_mode == "sql_server":
+            # Disable all SQL Server configuration fields
+            self._sql_server_edit.setReadOnly(True)
+            self._sql_port_spin.setReadOnly(True)
+            self._sql_database_edit.setReadOnly(True)
+            self._sql_auth_combo.setEnabled(False)
+            self._sql_username_edit.setReadOnly(True)
+            self._sql_password_edit.setReadOnly(True)
+            self._test_sql_btn.setEnabled(False)
+
+            # Add tooltip explaining lock
+            lock_tooltip = t("settings.sql_locked_tooltip",
+                           "SQL Server configuration is locked by administrator.")
+            self._sql_server_edit.setToolTip(lock_tooltip)
+            self._sql_port_spin.setToolTip(lock_tooltip)
+            self._sql_database_edit.setToolTip(lock_tooltip)
+            self._sql_auth_combo.setToolTip(lock_tooltip)
+            self._sql_username_edit.setToolTip(lock_tooltip)
+            self._sql_password_edit.setToolTip(lock_tooltip)
+
         # Load projectors
         self._load_projectors()
 
@@ -635,6 +658,24 @@ class ConnectionTab(BaseSettingsTab):
         else:
             self._mode_display.setText(t("settings.mode_standalone", "Standalone (SQLite)"))
             self._sql_group.setVisible(False)
+
+        # Check if mode is locked by web deployment
+        deployment_source = self._settings.get("app.deployment_source", "manual")
+        if deployment_source == "web_deployment":
+            # Show lock indicator and tooltip
+            lock_msg = t("settings.mode_locked_by_admin",
+                        "⚠️ Operation mode locked by administrator. Deployed via web management system.")
+            self._mode_note.setText(lock_msg)
+            self._mode_note.setStyleSheet("color: #FF6B35; font-size: 9pt; font-weight: bold;")
+            self._mode_display.setToolTip(t("settings.mode_locked_tooltip",
+                                           "This application was deployed centrally. "
+                                           "Operation mode cannot be changed by end users."))
+        else:
+            # Clear lock message for manual deployments
+            self._mode_note.setText(t("settings.mode_change_note",
+                                     "Operation mode was set during initial setup."))
+            self._mode_note.setStyleSheet("color: #666666; font-size: 9pt;")
+            self._mode_display.setToolTip("")
 
     def validate(self) -> Tuple[bool, List[str]]:
         """Validate settings."""

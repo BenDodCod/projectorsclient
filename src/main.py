@@ -370,6 +370,9 @@ def show_first_run_wizard(db: "DatabaseManager") -> bool:
             language = config.get("language", "en")
             settings.set("app.language", language)
 
+            # Mark as manual deployment (allows mode switching)
+            settings.set("app.deployment_source", "manual")
+
             # Save connection mode
             mode = "standalone" if config.get("standalone_mode", True) else "sql_server"
             settings.set("app.operation_mode", mode)
