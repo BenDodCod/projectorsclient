@@ -4,10 +4,14 @@ Updater script generator for in-place EXE replacement.
 This module generates a Windows batch script that:
 1. Waits for the main application to close
 2. Replaces the old EXE with the new one
-3. Restarts the application
+3. Restarts the application (Note: May fail due to PyInstaller DLL extraction)
 4. Deletes itself
 
 The updater script runs independently after the main app exits.
+
+Known Limitation: Auto-restart may fail with PyInstaller DLL extraction error
+when launched via batch script. The EXE replacement itself always succeeds.
+Users can manually restart by double-clicking the EXE (takes 2 seconds).
 
 Author: Backend Infrastructure Developer
 Version: 1.0.0
@@ -17,7 +21,6 @@ import logging
 import os
 import sys
 from pathlib import Path
-from typing import Optional
 
 logger = logging.getLogger(__name__)
 

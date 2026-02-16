@@ -6,12 +6,14 @@ Complete guide to the auto-update system for Enhanced Projector Control Applicat
 
 **What It Does:**
 - Checks GitHub for new releases at startup (default: every 24 hours)
-- Downloads installers with SHA-256 verification
+- Downloads EXE files with SHA-256 verification
+- Performs in-place EXE replacement (no installer needed)
 - Supports staged rollouts (25% → 50% → 100% of users)
 - User controls when to download and install
 
 **Key Features:**
 - HTTPS-only, SHA-256 verified, downgrade protection
+- In-place EXE replacement with automatic backup
 - Resume interrupted downloads, retry on failure
 - Download/Skip/Remind Later options
 - Background threads (non-blocking UI)
@@ -43,14 +45,18 @@ Shows: Version number, release notes, three action buttons
 - Failure → Delete corrupted file, prompt retry
 
 ### Installation Options
-**Install Now**: Launch installer immediately, close app
+**Install Now**: Launch updater script, replace EXE, and attempt auto-restart
 **Install on Exit**: Install when user closes app
 **Cancel**: Keep downloaded file, prompt again next startup
 
-Installer launches as separate process:
-```bash
-start "" "%TEMP%\ProjectorControl_Updates\installer.exe"
-```
+Update process:
+1. Batch script waits for app to close (2 seconds)
+2. Backs up old EXE (creates .backup file)
+3. Moves new EXE to installation location
+4. Attempts to restart application automatically
+5. Cleans up backup and self-destructs
+
+**Note**: Auto-restart may fail due to PyInstaller DLL extraction. If this happens, the EXE replacement is still successful - simply double-click the EXE to restart manually (takes 2 seconds).
 
 ---
 
@@ -88,9 +94,12 @@ UpdateReadyDialog → Install
 2. Update `CHANGELOG.md`: Add release section
 3. Update `src/resources/help/whats_new.json`: Add release entry
 
-### Build Installer
+### Build EXE
 ```bash
+# Build with PyInstaller
 pyinstaller projector_control.spec --clean
+
+# Generate SHA-256 checksum
 cd dist
 certutil -hashfile ProjectorControl.exe SHA256 > checksums.txt
 ```
@@ -100,6 +109,8 @@ certutil -hashfile ProjectorControl.exe SHA256 > checksums.txt
 abc123def...  ProjectorControl.exe
 ```
 (64 hex chars, two spaces, filename)
+
+**Note**: Upload the raw ProjectorControl.exe file, not an installer. The update system performs in-place EXE replacement.
 
 ### Create GitHub Release
 ```bash
@@ -114,7 +125,7 @@ git push origin v2.1.0
 4. Attach: `ProjectorControl.exe` + `checksums.txt`
 5. Publish
 
-**Verify:** Run app, check Help → Check for Updates
+**Verify:** Run previous version, check Help → Check for Updates, test full update flow
 
 ---
 
@@ -158,7 +169,7 @@ git push origin v2.1.0
 **HTTPS-Only:** All API/downloads use HTTPS, HTTP rejected
 
 **SHA-256 Verification:**
-- Every installer verified against checksums.txt
+- Every downloaded EXE verified against checksums.txt
 - Corrupted files auto-deleted, retry prompted
 - 64 hex character checksum required
 
@@ -211,6 +222,7 @@ git push origin v2.1.0
 | **Update check fails** | Network issues, rate limit (60/hr), GitHub outage | Try Help → Check for Updates (Ctrl+U), wait 1 hour if rate limited, check logs in %APPDATA%\ProjectorControl\logs\ |
 | **Download fails** | Network interruption, disk space, antivirus | Click Retry (auto-resume), free ~100 MB in %TEMP%, add antivirus exception for %TEMP%\ProjectorControl_Updates\ |
 | **Checksum fails** | Corrupted download, bad checksums.txt | Retry (auto-deletes bad file), if 3x fail check GitHub release checksums.txt, report bug if missing |
+| **Auto-restart fails** | PyInstaller DLL extraction issue | EXE replacement succeeded - manually double-click ProjectorControl.exe to restart (2 seconds). This is a known limitation of PyInstaller when launched via batch script. |
 | **Rate limited** | 60 requests/hour limit (unauthenticated) | Wait 1 hour, maintainers: set GITHUB_TOKEN (5000/hr), manual: download from GitHub UI |
 
 ---
