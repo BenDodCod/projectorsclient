@@ -117,8 +117,11 @@ echo Update successful!
 
     # Add restart command if requested
     if restart_after_update:
+        # Get the directory containing the EXE
+        exe_dir = old_exe.parent
         script_content += f"""
 echo Restarting application...
+cd /d "{exe_dir}"
 start "" "{old_exe}"
 """
 
