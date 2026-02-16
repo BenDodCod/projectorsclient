@@ -917,45 +917,49 @@ def show_main_window(db: "DatabaseManager") -> "QMainWindow":
 
 
 def launch_pending_installer(settings: "SettingsManager") -> None:
-    """Launch pending installer if one exists."""
+    """Launch updater script to replace EXE in-place if pending update exists."""
     import os
+    from src.update.updater_script import (
+        is_running_as_exe,
+        create_and_launch_updater
+    )
     logger = logging.getLogger(__name__)
 
     try:
-        installer_path = settings.get_str("update.pending_installer_path", "")
+        new_exe_path = settings.get_str("update.pending_installer_path", "")
         pending_version = settings.get_str("update.pending_version", "")
 
-        if installer_path and os.path.exists(installer_path):
-            logger.info(f"Launching pending installer: {installer_path} (v{pending_version})")
+        if new_exe_path and os.path.exists(new_exe_path):
+            logger.info(f"Launching pending update: {new_exe_path} (v{pending_version})")
 
-            # Launch installer in detached process
-            if sys.platform == "win32":
-                # Windows: Use subprocess.Popen with DETACHED_PROCESS
-                import subprocess
-                DETACHED_PROCESS = 0x00000008
-                subprocess.Popen(
-                    [installer_path],
-                    creationflags=DETACHED_PROCESS,
-                    close_fds=True
-                )
+            # Check if running as EXE (updater only works in production)
+            if not is_running_as_exe():
+                logger.warning("Not running as EXE - cannot launch updater")
+                return
+
+            # Create and launch updater script
+            success = create_and_launch_updater(
+                new_exe_path=new_exe_path,
+                restart_after_update=True
+            )
+
+            if success:
+                # Clear pending update settings
+                settings.set("update.pending_installer_path", "")
+                settings.set("update.pending_version", "")
+                logger.info("Updater script launched successfully")
             else:
-                # Linux/Mac: Use os.spawnl
-                os.spawnl(os.P_NOWAIT, installer_path)
+                logger.error("Failed to launch updater script")
 
-            # Clear pending installer settings
-            settings.set("update.pending_installer_path", "")
-            settings.set("update.pending_version", "")
-
-            logger.info("Installer launched successfully")
         else:
-            if installer_path and not os.path.exists(installer_path):
-                logger.warning(f"Pending installer not found: {installer_path}")
+            if new_exe_path and not os.path.exists(new_exe_path):
+                logger.warning(f"Pending update file not found: {new_exe_path}")
                 # Clear invalid settings
                 settings.set("update.pending_installer_path", "")
                 settings.set("update.pending_version", "")
 
     except Exception as e:
-        logger.error(f"Failed to launch pending installer: {e}", exc_info=True)
+        logger.error(f"Failed to launch updater: {e}", exc_info=True)
 
 
 def main() -> int:

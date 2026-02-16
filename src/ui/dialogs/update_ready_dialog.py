@@ -23,6 +23,7 @@ Version: 1.0.0
 
 import logging
 import os
+import sys
 from typing import Optional
 
 from PyQt6.QtWidgets import (
@@ -34,6 +35,11 @@ from PyQt6.QtCore import Qt
 from src.config.settings import SettingsManager
 from src.resources.icons import IconLibrary
 from src.resources.translations import t, get_translation_manager
+from src.update.updater_script import (
+    is_running_as_exe,
+    create_and_launch_updater,
+    get_executable_path
+)
 
 logger = logging.getLogger(__name__)
 
@@ -201,23 +207,67 @@ class UpdateReadyDialog(QDialog):
             self.setLayoutDirection(Qt.LayoutDirection.LeftToRight)
 
     def _install_now(self) -> None:
-        """Handle Install Now button - save installer path and exit app."""
-        # Save installer path for immediate launch
-        self.settings.set("update.pending_installer_path", self.installer_path)
-        self.settings.set("update.pending_version", self.version)
-
+        """Handle Install Now button - launch updater script and exit app."""
         logger.info(f"User chose to install update {self.version} now")
+
+        # Check if running as EXE (updater only works in production)
+        if not is_running_as_exe():
+            QMessageBox.warning(
+                self,
+                t('update.not_exe_title', 'Development Mode'),
+                t('update.not_exe_message',
+                  'In-place updates only work when running the compiled executable. '
+                  'You are running from source code.')
+            )
+            return
+
+        # Create and launch updater script
+        try:
+            success = create_and_launch_updater(
+                new_exe_path=self.installer_path,
+                restart_after_update=True
+            )
+
+            if not success:
+                QMessageBox.critical(
+                    self,
+                    t('update.updater_failed_title', 'Update Failed'),
+                    t('update.updater_failed_message',
+                      'Failed to launch updater. Please try again or install manually.')
+                )
+                return
+
+        except Exception as e:
+            logger.error(f"Failed to create updater: {e}", exc_info=True)
+            QMessageBox.critical(
+                self,
+                t('update.updater_error_title', 'Update Error'),
+                t('update.updater_error_message',
+                  f'Error creating updater: {e}')
+            )
+            return
 
         # Close dialog with accept
         self.accept()
 
-        # Request application exit
+        # Request application exit (updater will replace EXE and restart)
         from PyQt6.QtWidgets import QApplication
         QApplication.instance().quit()
 
     def _install_on_exit(self) -> None:
         """Handle Install on Exit button - schedule installation for later."""
-        # Save installer path for launch on normal exit
+        # Check if running as EXE (updater only works in production)
+        if not is_running_as_exe():
+            QMessageBox.warning(
+                self,
+                t('update.not_exe_title', 'Development Mode'),
+                t('update.not_exe_message',
+                  'In-place updates only work when running the compiled executable. '
+                  'You are running from source code.')
+            )
+            return
+
+        # Save new EXE path for launch on normal exit
         self.settings.set("update.pending_installer_path", self.installer_path)
         self.settings.set("update.pending_version", self.version)
 

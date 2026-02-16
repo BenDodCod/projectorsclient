@@ -27,6 +27,13 @@ from .update_worker import UpdateCheckWorker, UpdateDownloadWorker
 from .rollout_manager import RolloutManager
 from .version_utils import Version, is_newer_version
 from .github_client import GitHubClient
+from .updater_script import (
+    is_running_as_exe,
+    get_executable_path,
+    create_and_launch_updater,
+    generate_updater_script,
+    launch_updater
+)
 
 __all__ = [
     'UpdateChecker',
@@ -38,6 +45,11 @@ __all__ = [
     'Version',
     'is_newer_version',
     'GitHubClient',
+    'is_running_as_exe',
+    'get_executable_path',
+    'create_and_launch_updater',
+    'generate_updater_script',
+    'launch_updater',
 ]
 
 __version__ = '1.0.0'

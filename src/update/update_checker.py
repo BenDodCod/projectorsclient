@@ -7,7 +7,7 @@ This module provides the core update checking logic that:
 - Handles version comparison
 - Manages skipped versions
 - Applies staged rollout logic
-- Validates installer checksums
+- Validates executable checksums
 
 Example:
     >>> from src.config.settings import SettingsManager
@@ -52,7 +52,7 @@ class UpdateCheckResult:
         update_available: True if a newer version is available and passes all checks
         version: Version string of the available update (e.g., "2.1.0")
         release_notes: Markdown-formatted release notes from GitHub
-        download_url: HTTPS URL to download the installer
+        download_url: HTTPS URL to download the executable
         sha256: SHA-256 checksum of the installer for verification
         error_message: Human-readable error message if check failed
 
@@ -90,7 +90,7 @@ class UpdateChecker:
     3. Compares versions
     4. Checks skipped versions list
     5. Applies staged rollout logic
-    6. Finds installer asset and validates checksum
+    6. Finds executable asset and validates checksum
     7. Returns comprehensive result
 
     Attributes:
@@ -217,7 +217,7 @@ class UpdateChecker:
         3. Compares versions (skip if current >= latest)
         4. Checks skipped versions list
         5. Applies staged rollout logic
-        6. Finds installer asset (.exe or .msi)
+        6. Finds executable asset (ProjectorControl.exe)
         7. Extracts SHA-256 checksum
         8. Returns comprehensive result
 
@@ -356,7 +356,7 @@ class UpdateChecker:
             # Log warning but continue (rollout failure should not block updates)
             logger.warning(f"Rollout check failed: {e}, assuming 100% rollout")
 
-        # Step 6: Find installer asset
+        # Step 6: Find executable asset (ProjectorControl.exe)
         assets = release.get('assets', [])
         if not assets:
             error_msg = f"No assets found in release {latest_version_str}"
@@ -366,42 +366,34 @@ class UpdateChecker:
                 error_message=error_msg
             )
 
-        # Prefer .exe over .msi
-        installer_asset = None
+        # Look specifically for ProjectorControl.exe (raw executable, not installer)
+        exe_asset = None
         for asset in assets:
-            asset_name = asset.get('name', '').lower()
-            if asset_name.endswith('.exe'):
-                installer_asset = asset
+            asset_name = asset.get('name', '')
+            if asset_name == 'ProjectorControl.exe':
+                exe_asset = asset
                 break
 
-        # Fall back to .msi if no .exe found
-        if not installer_asset:
-            for asset in assets:
-                asset_name = asset.get('name', '').lower()
-                if asset_name.endswith('.msi'):
-                    installer_asset = asset
-                    break
-
-        if not installer_asset:
-            error_msg = f"No installer (.exe or .msi) found in release {latest_version_str}"
+        if not exe_asset:
+            error_msg = f"ProjectorControl.exe not found in release {latest_version_str}"
             logger.error(error_msg)
             return UpdateCheckResult(
                 update_available=False,
                 error_message=error_msg
             )
 
-        installer_name = installer_asset.get('name', '')
-        installer_url = installer_asset.get('browser_download_url', '')
+        exe_name = exe_asset.get('name', '')
+        exe_url = exe_asset.get('browser_download_url', '')
 
-        if not installer_url:
-            error_msg = f"Installer asset '{installer_name}' has no download URL"
+        if not exe_url:
+            error_msg = f"Executable asset '{exe_name}' has no download URL"
             logger.error(error_msg)
             return UpdateCheckResult(
                 update_available=False,
                 error_message=error_msg
             )
 
-        logger.info(f"Found installer: {installer_name} at {installer_url}")
+        logger.info(f"Found executable: {exe_name} at {exe_url}")
 
         # Step 7: Extract SHA-256 checksum
         checksums_url = None
@@ -453,13 +445,13 @@ class UpdateChecker:
             checksum = parts[0]
             filename = parts[-1]  # Take last part as filename
 
-            # Match installer filename (case-insensitive)
-            if filename.lower() == installer_name.lower():
+            # Match executable filename (case-insensitive)
+            if filename.lower() == exe_name.lower():
                 sha256_hash = checksum
                 break
 
         if not sha256_hash:
-            error_msg = f"Checksum for '{installer_name}' not found in checksums.txt"
+            error_msg = f"Checksum for '{exe_name}' not found in checksums.txt"
             logger.error(error_msg)
             return UpdateCheckResult(
                 update_available=False,
@@ -475,7 +467,7 @@ class UpdateChecker:
                 error_message=error_msg
             )
 
-        logger.info(f"Found checksum for {installer_name}: {sha256_hash}")
+        logger.info(f"Found checksum for {exe_name}: {sha256_hash}")
 
         # Step 8: Return success result
         release_notes = release.get('body', '')
@@ -489,6 +481,6 @@ class UpdateChecker:
             update_available=True,
             version=latest_version_str,
             release_notes=release_notes,
-            download_url=installer_url,
+            download_url=exe_url,
             sha256=sha256_hash
         )
