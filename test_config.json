@@ -1,0 +1,30 @@
+{
+  "version": "1.0",
+  "deployment": {
+    "source": "web_management_system",
+    "deployed_at": "2026-02-16T15:30:00Z",
+    "deployed_by": "admin@example.com"
+  },
+  "app": {
+    "operation_mode": "sql_server",
+    "first_run_complete": true,
+    "language": "en"
+  },
+  "database": {
+    "sql": {
+      "server": "RTA-SCCM",
+      "port": 1433,
+      "database": "PrintersAndProjectorsDB",
+      "authentication": "sql",
+      "username": "app_unified_svc",
+      "password": "mpIrtDUqbCqaAJqUO0vfpWZB/xkJUyDIfsA+vpptjFYBHmLlWVs="
+    }
+  },
+  "security": {
+    "admin_password": "$2b$14$hZ60bT.CoVKw7X8IkJFCyOndZlaA7plN0OjwxtjZ4cPbnDMnOnUUG"
+  },
+  "update": {
+    "check_enabled": false,
+    "note": "Auto-updates disabled for web-managed deployments"
+  }
+}

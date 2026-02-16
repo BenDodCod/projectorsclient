@@ -120,6 +120,132 @@ For detailed information about the update system, see [docs/README_UPDATES.md](d
    - Single-point configuration management
    - Automatic schema migrations across all clients
 
+### Silent Installation (Unattended Deployment)
+
+**Perfect for:** Enterprise-wide rollout, Group Policy deployment, automated configuration
+
+**Prerequisites:**
+- Configuration JSON file with pre-set settings
+- SQL Server connection details (for enterprise deployments)
+- Network connectivity to SQL Server
+
+**Command-Line Usage:**
+
+```bash
+# Silent installation with config file
+ProjectorControl.exe --silent --config-file "C:\deploy\config.json"
+
+# Check version
+ProjectorControl.exe --version
+
+# View help
+ProjectorControl.exe --help
+```
+
+**Exit Codes:**
+- `0` = Success (installation completed)
+- `1` = Configuration error (invalid config.json)
+- `2` = Database connection error (SQL Server unreachable)
+- `3` = Validation error (invalid values)
+- `4` = Config file not found
+- `5` = Config validation failed
+- `6` = Encryption/decryption failure
+
+**Configuration File Format:**
+
+Create a `config.json` file with your deployment settings:
+
+```json
+{
+  "version": "1.0",
+  "app": {
+    "operation_mode": "sql_server",
+    "first_run_complete": true,
+    "language": "en"
+  },
+  "database": {
+    "sql": {
+      "server": "sql-server.domain.com",
+      "port": 1433,
+      "database": "ProjectorControl",
+      "authentication": "sql",
+      "username": "app_user",
+      "password": "<encrypted_password>"
+    }
+  },
+  "security": {
+    "admin_password": "<bcrypt_hash>"
+  },
+  "update": {
+    "check_enabled": false
+  }
+}
+```
+
+**Installation Process:**
+
+The silent installer performs these steps automatically:
+
+1. **Load Configuration** - Parse and validate config.json
+2. **Test SQL Connection** - Verify database connectivity
+3. **Initialize Database** - Create local SQLite database
+4. **Apply Settings** - Write all configuration to database
+5. **Re-encrypt Credentials** - Convert to machine-specific encryption
+6. **Clean Up** - Delete config.json for security
+
+**Logging:**
+
+Installation logs are written to:
+```
+%APPDATA%\ProjectorControl\logs\install.log
+```
+
+**Example Deployment Script:**
+
+```batch
+@echo off
+REM Deploy ProjectorControl silently to workstation
+
+SET APP_PATH=\\fileserver\software\ProjectorControl\ProjectorControl.exe
+SET CONFIG_PATH=\\fileserver\software\ProjectorControl\config.json
+
+REM Copy files to local machine
+xcopy "%APP_PATH%" "%TEMP%\" /Y
+xcopy "%CONFIG_PATH%" "%TEMP%\" /Y
+
+REM Run silent installation
+"%TEMP%\ProjectorControl.exe" --silent --config-file "%TEMP%\config.json"
+
+REM Check exit code
+IF %ERRORLEVEL% EQU 0 (
+    echo Installation successful
+    exit /B 0
+) ELSE (
+    echo Installation failed with exit code %ERRORLEVEL%
+    echo Check install.log for details
+    exit /B %ERRORLEVEL%
+)
+```
+
+**Security Notes:**
+
+- Credentials in config.json are encrypted with deployment-specific entropy
+- After import, credentials are re-encrypted with machine-specific entropy
+- Config.json is automatically deleted after successful installation
+- All operations are logged for audit purposes
+
+**Troubleshooting:**
+
+If silent installation fails:
+
+1. Check exit code to identify the error
+2. Review `install.log` for detailed error messages
+3. Verify SQL Server connectivity from the workstation
+4. Ensure config.json is valid JSON and contains all required fields
+5. Test SQL credentials manually before deployment
+
+For more details, see [docs/SILENT_INSTALL_GUIDE.md](docs/SILENT_INSTALL_GUIDE.md)
+
 ### Network Configuration
 
 **Recommended Firewall Rules:**

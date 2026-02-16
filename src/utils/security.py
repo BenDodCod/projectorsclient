@@ -749,6 +749,82 @@ def verify_password(password: str, hash_str: str) -> bool:
     return get_password_hasher().verify_password(password, hash_str)
 
 
+def decrypt_credential_with_fixed_entropy(
+    ciphertext: str,
+    fixed_entropy: str
+) -> str:
+    """Decrypt a credential using a fixed entropy string.
+
+    This function is used during remote deployment where credentials
+    are encrypted with a fixed, shared entropy instead of machine-specific
+    entropy. After decryption, credentials should be re-encrypted with
+    machine-specific entropy for security.
+
+    Args:
+        ciphertext: Base64-encoded encrypted credential.
+        fixed_entropy: Fixed entropy string (e.g., "ProjectorControlWebDeployment").
+
+    Returns:
+        Decrypted plaintext credential.
+
+    Raises:
+        DecryptionError: If decryption fails.
+
+    Example:
+        >>> encrypted = "xK8x9vZ..."  # From config.json
+        >>> plaintext = decrypt_credential_with_fixed_entropy(
+        ...     encrypted,
+        ...     "ProjectorControlWebDeployment"
+        ... )
+        >>> # Re-encrypt with machine-specific entropy
+        >>> re_encrypted = encrypt_credential(plaintext, app_data_dir)
+    """
+    if not ciphertext:
+        return ""
+
+    try:
+        # Decode from base64
+        encrypted = base64.b64decode(ciphertext.encode('ascii'))
+
+        # Extract nonce (first 12 bytes) and ciphertext (remaining bytes)
+        if len(encrypted) < 12:
+            raise ValueError("Encrypted data too short")
+
+        nonce = encrypted[:12]
+        ciphertext_with_tag = encrypted[12:]
+
+        # Derive key from fixed entropy using same parameters as encryption
+        from cryptography.hazmat.primitives.kdf.pbkdf2 import PBKDF2HMAC
+        from cryptography.hazmat.primitives import hashes
+        from cryptography.hazmat.primitives.ciphers.aead import AESGCM
+
+        kdf = PBKDF2HMAC(
+            algorithm=hashes.SHA256(),
+            length=32,  # 256 bits for AES-256
+            salt=b"ProjectorControl.CredentialEncryption.v1",
+            iterations=100000,
+        )
+        key = kdf.derive(fixed_entropy.encode('utf-8'))
+
+        # Decrypt with AES-GCM (authentication happens automatically)
+        aesgcm = AESGCM(key)
+        plaintext = aesgcm.decrypt(
+            nonce,
+            ciphertext_with_tag,
+            None  # No additional authenticated data
+        )
+
+        return plaintext.decode('utf-8')
+
+    except Exception as e:
+        # This occurs when key is wrong, data is corrupted, or authentication fails
+        logger.error("Decryption with fixed entropy failed: %s", type(e).__name__)
+        raise DecryptionError(
+            "Failed to decrypt credential with fixed entropy. "
+            "The credential may be corrupted or encrypted with different entropy."
+        ) from e
+
+
 # Reset singleton instances (primarily for testing)
 def _reset_singletons() -> None:
     """Reset singleton instances. For testing only."""

@@ -5,12 +5,17 @@ This module initializes the application, sets up logging,
 configures the database, and shows the appropriate UI based on
 whether this is a first run or subsequent launch.
 
+Supports two modes:
+- Normal mode: GUI-based application for end users
+- Silent mode: Unattended installation for remote deployment
+
 Author: Frontend UI Developer
 Version: 1.0.0
 """
 
 import sys
 import logging
+import argparse
 from pathlib import Path
 from typing import Optional
 
@@ -962,13 +967,237 @@ def launch_pending_installer(settings: "SettingsManager") -> None:
         logger.error(f"Failed to launch updater: {e}", exc_info=True)
 
 
+def parse_arguments() -> argparse.Namespace:
+    """Parse command-line arguments.
+
+    Returns:
+        Parsed arguments namespace.
+    """
+    parser = argparse.ArgumentParser(
+        prog="ProjectorControl",
+        description="Enhanced Projector Control Application",
+        formatter_class=argparse.RawDescriptionHelpFormatter,
+        epilog="""
+Examples:
+  Normal mode (GUI):
+    ProjectorControl.exe
+
+  Silent installation:
+    ProjectorControl.exe --silent --config-file "C:\\deploy\\config.json"
+
+  Check version:
+    ProjectorControl.exe --version
+
+Exit Codes (Silent Mode):
+  0 = Success (installation completed)
+  1 = Configuration error (invalid config.json)
+  2 = Database connection error (SQL Server unreachable)
+  3 = Validation error (invalid values)
+  4 = Config file not found
+  5 = Config validation failed
+  6 = Encryption/decryption failure
+        """
+    )
+
+    parser.add_argument(
+        "--version",
+        action="version",
+        version=f"%(prog)s {APP_VERSION}"
+    )
+
+    parser.add_argument(
+        "--silent",
+        action="store_true",
+        help="Run in silent installation mode (no GUI, requires --config-file)"
+    )
+
+    parser.add_argument(
+        "--config-file",
+        "--config",
+        type=str,
+        metavar="PATH",
+        help="Path to configuration JSON file (required for --silent mode)"
+    )
+
+    return parser.parse_args()
+
+
+def run_silent_installation(config_file_path: str) -> int:
+    """Run silent installation with provided configuration.
+
+    Args:
+        config_file_path: Path to config.json file.
+
+    Returns:
+        Exit code (0 for success, 1-6 for various errors).
+    """
+    from src.config.deployment_config import (
+        DeploymentConfigLoader,
+        apply_config_to_database,
+        test_sql_connection,
+        delete_config_file,
+        DeploymentConfigError,
+        EXIT_SUCCESS,
+        EXIT_DB_CONNECTION_ERROR
+    )
+
+    # Get app data directory
+    app_data_dir = get_app_data_dir()
+
+    # Setup logging to file (silent mode = no GUI)
+    install_log_path = setup_silent_logging(app_data_dir)
+    logger = logging.getLogger(__name__)
+
+    logger.info("=" * 80)
+    logger.info("SILENT INSTALLATION MODE")
+    logger.info(f"{APP_NAME} v{APP_VERSION}")
+    logger.info(f"Config file: {config_file_path}")
+    logger.info("=" * 80)
+
+    try:
+        # Step 1: Load and validate configuration
+        logger.info("Step 1/5: Loading configuration file...")
+        loader = DeploymentConfigLoader()
+        config = loader.load_config(config_file_path)
+        logger.info(f"Configuration loaded successfully (version {config.version})")
+
+        # Step 2: Test SQL Server connection
+        logger.info("Step 2/5: Testing SQL Server connection...")
+        success, error_msg = test_sql_connection(config)
+        if not success:
+            logger.error(f"SQL Server connection test FAILED: {error_msg}")
+            logger.error(f"Silent installation completed with exit code {EXIT_DB_CONNECTION_ERROR}: Database connection error")
+            return EXIT_DB_CONNECTION_ERROR
+
+        logger.info(f"SQL Server connection test: SUCCESS ({config.sql_server}:{config.sql_port})")
+
+        # Step 3: Initialize database
+        logger.info("Step 3/5: Initializing local database...")
+        db_path = get_database_path(app_data_dir)
+        db = initialize_database(db_path)
+
+        if not db:
+            logger.error("Database initialization failed")
+            logger.error(f"Silent installation completed with exit code {EXIT_DB_CONNECTION_ERROR}: Database initialization failed")
+            return EXIT_DB_CONNECTION_ERROR
+
+        logger.info(f"Database initialized: {db_path}")
+
+        # Step 4: Apply configuration to database
+        logger.info("Step 4/5: Applying configuration to database...")
+        apply_config_to_database(config, db)
+        logger.info("Configuration applied successfully")
+        logger.info("Credentials re-encrypted with machine-specific entropy")
+
+        # Step 5: Delete config file (security)
+        logger.info("Step 5/5: Cleaning up configuration file...")
+        delete_config_file(config)
+
+        # Success!
+        logger.info("=" * 80)
+        logger.info(f"Silent installation completed with exit code {EXIT_SUCCESS}: Success")
+        logger.info(f"SQL Server connection: {config.sql_server}:{config.sql_port}")
+        logger.info(f"Database: {config.sql_database}")
+        logger.info(f"Operation mode: {config.operation_mode}")
+        logger.info(f"Install log: {install_log_path}")
+        logger.info("=" * 80)
+
+        return EXIT_SUCCESS
+
+    except DeploymentConfigError as e:
+        # Known deployment errors with specific exit codes
+        logger.error(f"Deployment error: {e}")
+        logger.error(f"Silent installation completed with exit code {e.exit_code}: {type(e).__name__}")
+        logger.error(f"Install log: {install_log_path}")
+        return e.exit_code
+
+    except Exception as e:
+        # Unexpected errors
+        logger.error(f"Unexpected error during silent installation: {e}", exc_info=True)
+        logger.error("Silent installation completed with exit code 1: Unexpected error")
+        logger.error(f"Install log: {install_log_path}")
+        return 1
+
+
+def setup_silent_logging(app_data_dir: str) -> str:
+    """Setup logging for silent installation mode.
+
+    Args:
+        app_data_dir: Application data directory.
+
+    Returns:
+        Path to install.log file.
+    """
+    import logging.handlers
+    from datetime import datetime
+
+    # Create logs directory
+    log_dir = Path(app_data_dir) / "logs"
+    log_dir.mkdir(parents=True, exist_ok=True)
+
+    # Install log path
+    install_log_path = log_dir / "install.log"
+
+    # Configure root logger for silent mode
+    logger = logging.getLogger()
+    logger.setLevel(logging.DEBUG)
+
+    # Remove any existing handlers
+    logger.handlers.clear()
+
+    # File handler with detailed format
+    file_handler = logging.FileHandler(install_log_path, mode='a', encoding='utf-8')
+    file_handler.setLevel(logging.DEBUG)
+
+    # Detailed format with timestamp
+    formatter = logging.Formatter(
+        '[%(asctime)s] [%(levelname)s] %(name)s: %(message)s',
+        datefmt='%Y-%m-%d %H:%M:%S'
+    )
+    file_handler.setFormatter(formatter)
+
+    logger.addHandler(file_handler)
+
+    # Also add console handler for immediate feedback (if run from command line)
+    console_handler = logging.StreamHandler(sys.stdout)
+    console_handler.setLevel(logging.INFO)
+    console_handler.setFormatter(formatter)
+    logger.addHandler(console_handler)
+
+    # Log separator for new installation attempt
+    logger.info("")
+    logger.info("=" * 80)
+    logger.info(f"New silent installation attempt: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
+    logger.info("=" * 80)
+
+    return str(install_log_path)
+
+
 def main() -> int:
     """
     Main application entry point.
 
+    Supports two modes:
+    - Normal mode: GUI-based application
+    - Silent mode: Unattended installation (--silent --config-file)
+
     Returns:
         Exit code (0 for success)
     """
+    # Parse command-line arguments
+    args = parse_arguments()
+
+    # Handle silent installation mode
+    if args.silent:
+        if not args.config_file:
+            print("ERROR: --silent mode requires --config-file argument", file=sys.stderr)
+            print("Usage: ProjectorControl.exe --silent --config-file <path>", file=sys.stderr)
+            return 1
+
+        # Run silent installation (no GUI)
+        return run_silent_installation(args.config_file)
+
+    # Normal GUI mode continues below...
     # Enable high DPI scaling
     QApplication.setHighDpiScaleFactorRoundingPolicy(
         Qt.HighDpiScaleFactorRoundingPolicy.PassThrough
