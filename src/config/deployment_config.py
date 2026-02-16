@@ -214,8 +214,14 @@ class DeploymentConfigLoader:
                 f"Invalid database type: {db_type}. Must be 'sql_server' or 'standalone'"
             )
 
-        # If SQL Server auth (not Windows auth), username and password_encrypted are required
+        # Validate use_windows_auth is boolean
         use_windows_auth = database.get("use_windows_auth", False)
+        if not isinstance(use_windows_auth, bool):
+            raise ConfigValidationError(
+                f"Config validation failed: 'use_windows_auth' must be boolean, got {type(use_windows_auth).__name__}"
+            )
+
+        # If SQL Server auth (not Windows auth), username and password_encrypted are required
         if not use_windows_auth:
             if "username" not in database or not database["username"]:
                 raise ConfigValidationError("SQL authentication requires 'username'")
@@ -385,6 +391,7 @@ def test_sql_connection(config: DeploymentConfig) -> Tuple[bool, str]:
         import pyodbc
 
         # Build connection string
+        # Security: Encrypt=yes with TrustServerCertificate=no validates SQL Server certificate
         if config.sql_use_windows_auth:
             conn_str = (
                 f"DRIVER={{ODBC Driver 18 for SQL Server}};"
@@ -392,7 +399,7 @@ def test_sql_connection(config: DeploymentConfig) -> Tuple[bool, str]:
                 f"DATABASE={config.sql_database};"
                 f"Trusted_Connection=yes;"
                 f"Encrypt=yes;"
-                f"TrustServerCertificate=yes;"
+                f"TrustServerCertificate=no;"  # Validate server certificate (prevents MITM)
             )
         else:
             conn_str = (
@@ -402,7 +409,7 @@ def test_sql_connection(config: DeploymentConfig) -> Tuple[bool, str]:
                 f"UID={config.sql_username};"
                 f"PWD={config.sql_password};"
                 f"Encrypt=yes;"
-                f"TrustServerCertificate=yes;"
+                f"TrustServerCertificate=no;"  # Validate server certificate (prevents MITM)
             )
 
         # Attempt connection

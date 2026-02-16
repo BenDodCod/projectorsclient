@@ -23,7 +23,7 @@ from src.config.deployment_config import (
     DeploymentConfigLoader,
     DeploymentConfig,
     apply_config_to_database,
-    test_sql_connection,
+    test_sql_connection as verify_sql_connection,  # Renamed to avoid pytest pickup
     delete_config_file,
     ConfigNotFoundError,
     ConfigValidationError,
@@ -41,29 +41,26 @@ class TestDeploymentConfigLoader:
 
     @pytest.fixture
     def valid_config_data(self):
-        """Provide valid configuration data for tests."""
+        """Provide valid configuration data for tests (Agent 2 compatible schema)."""
         return {
             "version": "1.0",
             "app": {
                 "operation_mode": "sql_server",
                 "first_run_complete": True,
-                "language": "en"
+                "language": "en",
+                "update_check_enabled": False
             },
             "database": {
-                "sql": {
-                    "server": "RTA-SCCM",
-                    "port": 1433,
-                    "database": "PrintersAndProjectorsDB",
-                    "authentication": "sql",
-                    "username": "app_unified_svc",
-                    "password": "encrypted_password_here"
-                }
+                "type": "sql_server",
+                "host": "RTA-SCCM",
+                "port": 1433,
+                "database": "PrintersAndProjectorsDB",
+                "use_windows_auth": False,
+                "username": "app_unified_svc",
+                "password_encrypted": "encrypted_password_here"
             },
             "security": {
-                "admin_password": "$2b$14$abcdefghijklmnopqrstuvwxyz1234567890ABCDEFGHIJKLMNOP"
-            },
-            "update": {
-                "check_enabled": False
+                "admin_password_hash": "$2b$14$abcdefghijklmnopqrstuvwxyz1234567890ABCDEFGHIJKLMNOP"
             }
         }
 
@@ -168,11 +165,12 @@ class TestDeploymentConfigLoader:
             Path(temp_path).unlink(missing_ok=True)
 
     def test_validate_invalid_authentication_type(self, temp_config_file):
-        """Test validation fails with invalid authentication type."""
+        """Test validation fails with invalid use_windows_auth value."""
         with open(temp_config_file, 'r') as f:
             config_data = json.load(f)
 
-        config_data["database"]["sql"]["authentication"] = "invalid_auth"
+        # Invalid value for use_windows_auth (should be boolean)
+        config_data["database"]["use_windows_auth"] = "invalid_value"
 
         with tempfile.NamedTemporaryFile(mode='w', suffix='.json', delete=False) as f:
             json.dump(config_data, f)
@@ -184,7 +182,7 @@ class TestDeploymentConfigLoader:
             with pytest.raises(ConfigValidationError) as exc_info:
                 loader.load_config(temp_path)
 
-            assert "Invalid authentication type" in str(exc_info.value)
+            assert "Config validation failed" in str(exc_info.value)
         finally:
             Path(temp_path).unlink(missing_ok=True)
 
@@ -193,7 +191,8 @@ class TestDeploymentConfigLoader:
         with open(temp_config_file, 'r') as f:
             config_data = json.load(f)
 
-        del config_data["database"]["sql"]["username"]
+        # Remove username (required when use_windows_auth=false)
+        del config_data["database"]["username"]
 
         with tempfile.NamedTemporaryFile(mode='w', suffix='.json', delete=False) as f:
             json.dump(config_data, f)
@@ -214,7 +213,7 @@ class TestDeploymentConfigLoader:
         with open(temp_config_file, 'r') as f:
             config_data = json.load(f)
 
-        config_data["security"]["admin_password"] = "invalid_hash"
+        config_data["security"]["admin_password_hash"] = "invalid_hash"
 
         with tempfile.NamedTemporaryFile(mode='w', suffix='.json', delete=False) as f:
             json.dump(config_data, f)
@@ -226,7 +225,7 @@ class TestDeploymentConfigLoader:
             with pytest.raises(ConfigValidationError) as exc_info:
                 loader.load_config(temp_path)
 
-            assert "Invalid admin_password format" in str(exc_info.value)
+            assert "Invalid admin_password_hash format" in str(exc_info.value)
             assert "bcrypt" in str(exc_info.value)
         finally:
             Path(temp_path).unlink(missing_ok=True)
@@ -236,9 +235,10 @@ class TestDeploymentConfigLoader:
         with open(temp_config_file, 'r') as f:
             config_data = json.load(f)
 
-        config_data["database"]["sql"]["authentication"] = "windows"
-        del config_data["database"]["sql"]["username"]
-        del config_data["database"]["sql"]["password"]
+        # Set Windows authentication and remove credentials
+        config_data["database"]["use_windows_auth"] = True
+        del config_data["database"]["username"]
+        del config_data["database"]["password_encrypted"]
 
         with tempfile.NamedTemporaryFile(mode='w', suffix='.json', delete=False) as f:
             json.dump(config_data, f)
@@ -295,7 +295,7 @@ class TestSQLConnectionTesting:
         mock_conn = MagicMock()
         mock_connect.return_value = mock_conn
 
-        success, error_msg = test_sql_connection(sql_config)
+        success, error_msg = verify_sql_connection(sql_config)
 
         assert success is True
         assert error_msg == ""
@@ -307,7 +307,7 @@ class TestSQLConnectionTesting:
         """Test SQL Server connection failure."""
         mock_connect.side_effect = Exception("Connection refused")
 
-        success, error_msg = test_sql_connection(sql_config)
+        success, error_msg = verify_sql_connection(sql_config)
 
         assert success is False
         assert "Connection refused" in error_msg
@@ -322,7 +322,7 @@ class TestSQLConnectionTesting:
         mock_conn = MagicMock()
         mock_connect.return_value = mock_conn
 
-        success, error_msg = test_sql_connection(sql_config)
+        success, error_msg = verify_sql_connection(sql_config)
 
         assert success is True
         # Verify connection string uses Windows auth

@@ -161,23 +161,20 @@ Create a `config.json` file with your deployment settings:
   "app": {
     "operation_mode": "sql_server",
     "first_run_complete": true,
-    "language": "en"
+    "language": "en",
+    "update_check_enabled": false
   },
   "database": {
-    "sql": {
-      "server": "sql-server.domain.com",
-      "port": 1433,
-      "database": "ProjectorControl",
-      "authentication": "sql",
-      "username": "app_user",
-      "password": "<encrypted_password>"
-    }
+    "type": "sql_server",
+    "host": "sql-server.domain.com",
+    "port": 1433,
+    "database": "ProjectorControl",
+    "use_windows_auth": false,
+    "username": "app_user",
+    "password_encrypted": "<base64_encrypted_password>"
   },
   "security": {
-    "admin_password": "<bcrypt_hash>"
-  },
-  "update": {
-    "check_enabled": false
+    "admin_password_hash": "$2y$14$<bcrypt_hash>"
   }
 }
 ```
