@@ -121,8 +121,8 @@ echo Update successful!
         exe_dir = old_exe.parent
         script_content += f"""
 echo Restarting application...
-cd /d "{exe_dir}"
-start "" "{old_exe}"
+timeout /t 2 /nobreak >nul
+start /D "{exe_dir}" "" "{old_exe}"
 """
 
     # Add cleanup command
