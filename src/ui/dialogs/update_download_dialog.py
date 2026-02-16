@@ -121,7 +121,7 @@ class UpdateDownloadDialog(QDialog):
 
     def _init_ui(self) -> None:
         """Initialize the user interface."""
-        self.setFixedSize(500, 250)
+        self.setFixedSize(550, 300)
         self.setObjectName("update_download_dialog")
 
         # Main layout
@@ -155,17 +155,17 @@ class UpdateDownloadDialog(QDialog):
 
         # Downloaded bytes label
         self._downloaded_label = QLabel()
-        self._downloaded_label.setStyleSheet("color: #666666;")
+        self._downloaded_label.setStyleSheet("color: #CCCCCC; font-size: 10pt;")
         stats_layout.addWidget(self._downloaded_label)
 
         # Speed label
         self._speed_label = QLabel()
-        self._speed_label.setStyleSheet("color: #666666;")
+        self._speed_label.setStyleSheet("color: #CCCCCC; font-size: 10pt;")
         stats_layout.addWidget(self._speed_label)
 
         # Time remaining label
         self._time_label = QLabel()
-        self._time_label.setStyleSheet("color: #666666;")
+        self._time_label.setStyleSheet("color: #CCCCCC; font-size: 10pt;")
         stats_layout.addWidget(self._time_label)
 
         layout.addLayout(stats_layout)
