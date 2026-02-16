@@ -246,6 +246,34 @@ If silent installation fails:
 
 For more details, see [docs/SILENT_INSTALL_GUIDE.md](docs/SILENT_INSTALL_GUIDE.md)
 
+**After Silent Installation:**
+
+When the application starts after silent installation:
+
+1. **First-Run Wizard Skipped** ✅
+   - The application detects `first_run_complete=True` from the silent install
+   - Setup wizard is automatically bypassed
+   - Application launches directly to the main window
+   - SQL Server connection is already configured and ready
+
+2. **Database Mode Locked** 🔒
+   - Operation mode is locked to SQL Server (no switching to SQLite)
+   - Settings → Connection tab shows orange warning: "⚠️ Operation mode locked by administrator"
+   - SQL Server configuration fields are read-only
+   - Test Connection button is disabled
+   - Tooltip explains: "Deployed via web management system"
+
+3. **Settings Pre-Populated** ✅
+   - All 9 settings from config.json persist across application restarts
+   - Admin password hash validates correctly for Settings access
+   - SQL Server credentials work without re-entry
+   - Projector connectivity uses pre-configured database connection
+
+**Note for Manual Installations:**
+- If configured through the first-run wizard (not silent install), all settings remain fully editable
+- Operation mode can be changed in Settings
+- This flexibility is intended for single-user or pilot deployments
+
 ### Network Configuration
 
 **Recommended Firewall Rules:**
