@@ -126,14 +126,11 @@ class DeploymentConfigLoader:
     # Required app keys
     REQUIRED_APP_KEYS = ["operation_mode", "first_run_complete"]
 
-    # Required database keys
-    REQUIRED_DATABASE_KEYS = ["sql"]
-
-    # Required SQL keys
-    REQUIRED_SQL_KEYS = ["server", "port", "database", "authentication"]
+    # Required database keys (flat structure, no nested "sql")
+    REQUIRED_DATABASE_KEYS = ["type", "host", "port", "database", "use_windows_auth"]
 
     # Required security keys
-    REQUIRED_SECURITY_KEYS = ["admin_password"]
+    REQUIRED_SECURITY_KEYS = ["admin_password_hash"]
 
     def __init__(self):
         """Initialize the config loader."""
@@ -210,27 +207,20 @@ class DeploymentConfigLoader:
                 f"Missing required database keys: {', '.join(missing_db_keys)}"
             )
 
-        # Validate SQL section
-        sql = database.get("sql", {})
-        missing_sql_keys = [key for key in self.REQUIRED_SQL_KEYS if key not in sql]
-        if missing_sql_keys:
+        # Validate database type
+        db_type = database.get("type")
+        if db_type not in ["sql_server", "standalone"]:
             raise ConfigValidationError(
-                f"Missing required SQL keys: {', '.join(missing_sql_keys)}"
+                f"Invalid database type: {db_type}. Must be 'sql_server' or 'standalone'"
             )
 
-        # Validate authentication type
-        auth_type = sql.get("authentication")
-        if auth_type not in ["windows", "sql"]:
-            raise ConfigValidationError(
-                f"Invalid authentication type: {auth_type}. Must be 'windows' or 'sql'"
-            )
-
-        # If SQL auth, username and password are required
-        if auth_type == "sql":
-            if "username" not in sql or not sql["username"]:
+        # If SQL Server auth (not Windows auth), username and password_encrypted are required
+        use_windows_auth = database.get("use_windows_auth", False)
+        if not use_windows_auth:
+            if "username" not in database or not database["username"]:
                 raise ConfigValidationError("SQL authentication requires 'username'")
-            if "password" not in sql or not sql["password"]:
-                raise ConfigValidationError("SQL authentication requires 'password'")
+            if "password_encrypted" not in database or not database["password_encrypted"]:
+                raise ConfigValidationError("SQL authentication requires 'password_encrypted'")
 
         # Validate security section
         security = config.get("security", {})
@@ -241,10 +231,10 @@ class DeploymentConfigLoader:
             )
 
         # Validate admin password hash format (bcrypt)
-        admin_hash = security.get("admin_password", "")
-        if not admin_hash.startswith("$2b$") and not admin_hash.startswith("$2a$"):
+        admin_hash = security.get("admin_password_hash", "")
+        if not admin_hash.startswith("$2b$") and not admin_hash.startswith("$2a$") and not admin_hash.startswith("$2y$"):
             raise ConfigValidationError(
-                "Invalid admin_password format. Must be bcrypt hash (starts with $2b$ or $2a$)"
+                "Invalid admin_password_hash format. Must be bcrypt hash (starts with $2a$, $2b$, or $2y$)"
             )
 
         logger.info("Config schema validation passed")
@@ -264,15 +254,14 @@ class DeploymentConfigLoader:
         """
         app = config["app"]
         database = config["database"]
-        sql = database["sql"]
         security = config["security"]
 
         # Decrypt SQL password if using SQL authentication
         sql_password = None
-        use_windows_auth = sql.get("authentication") == "windows"
+        use_windows_auth = database.get("use_windows_auth", False)
 
         if not use_windows_auth:
-            encrypted_password = sql.get("password", "")
+            encrypted_password = database.get("password_encrypted", "")
             if encrypted_password:
                 try:
                     sql_password = self._decrypt_credential(encrypted_password)
@@ -294,13 +283,13 @@ class DeploymentConfigLoader:
             operation_mode=app["operation_mode"],
             first_run_complete=app["first_run_complete"],
             language=app.get("language", "en"),
-            sql_server=sql["server"],
-            sql_port=sql.get("port", 1433),
-            sql_database=sql["database"],
-            sql_username=sql.get("username"),
+            sql_server=database["host"],
+            sql_port=database.get("port", 1433),
+            sql_database=database["database"],
+            sql_username=database.get("username"),
             sql_password=sql_password,
             sql_use_windows_auth=use_windows_auth,
-            admin_password_hash=security["admin_password"],
+            admin_password_hash=security["admin_password_hash"],
             update_check_enabled=update_check_enabled,
             config_file_path=config_file
         )
