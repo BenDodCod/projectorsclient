@@ -1,0 +1,48 @@
+{
+  "version": {
+    "version": "2.1.0",
+    "build": 1,
+    "full": "2.1.0.1",
+    "version_info": [
+      2,
+      1,
+      0,
+      1
+    ]
+  },
+  "build": {
+    "timestamp": "2026-02-17T05:27:48.419487+00:00",
+    "timestamp_unix": 1771306068,
+    "date": "2026-02-17",
+    "time": "05:27:48 UTC"
+  },
+  "git": {
+    "commit": "76be18c910b15b87c788c520799c6cd6ee0c1226",
+    "short_commit": "76be18c",
+    "branch": "main",
+    "is_clean": false
+  },
+  "executable": {
+    "path": "dist\\ProjectorControl.exe",
+    "name": "ProjectorControl.exe",
+    "size": {
+      "bytes": 47115813,
+      "mb": 44.93,
+      "formatted": "44.93 MB"
+    }
+  },
+  "warnings": {
+    "count": 0,
+    "file_found": false
+  },
+  "environment": {
+    "python_version": "3.12.6",
+    "pyinstaller_version": "6.18.0",
+    "platform": "win32",
+    "architecture": "64-bit"
+  },
+  "tests": {
+    "available": false,
+    "reason": "Tests not run or --skip-tests flag used"
+  }
+}

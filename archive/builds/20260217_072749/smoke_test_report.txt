@@ -1,0 +1,28 @@
+======================================================================
+Smoke Test Report - ProjectorControl.exe
+======================================================================
+
+Test Date: 2026-02-17 07:27:48
+Executable: dist\ProjectorControl.exe
+Expected Version: 2.1.0.1
+
+----------------------------------------------------------------------
+Test Results:
+----------------------------------------------------------------------
+
+OK Executable found: ProjectorControl.exe
+OK Executable size: 44.93 MB (within 40-55 MB range)
+OK Executable header valid (expected version 2.1.0.1)
+OK Size suggests embedded resources present
+OK Executable launches successfully (2.45s startup verified)
+
+----------------------------------------------------------------------
+Summary:
+----------------------------------------------------------------------
+Tests Passed: 5
+Warnings: 0
+Errors: 0
+
+Result: ALL TESTS PASSED
+
+======================================================================
