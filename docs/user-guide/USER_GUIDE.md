@@ -1,8 +1,8 @@
 # Enhanced Projector Control Application - User Guide
 
-**Version:** 1.0
-**Last Updated:** February 12, 2026
-**Application Version:** 2.0.0-rc2
+**Version:** 1.1
+**Last Updated:** February 17, 2026
+**Application Version:** 2.1.0
 
 ---
 
@@ -10,9 +10,11 @@
 
 1. [Introduction](#1-introduction)
 2. [First-Time Setup](#2-first-time-setup)
+   - [2.7 IT-Managed Deployment Mode](#27-it-managed-deployment-mode) *(new in v2.1.0)*
 3. [Understanding the Interface](#3-understanding-the-interface)
 4. [Daily Use](#4-daily-use)
 5. [Advanced Features](#5-advanced-features)
+   - [Automatic Updates](#automatic-updates) *(new in v2.1.0)*
 6. [Settings](#6-settings)
 7. [Tips and Best Practices](#7-tips-and-best-practices)
 8. [Keyboard Shortcuts](#8-keyboard-shortcuts)
@@ -49,6 +51,8 @@ If you need assistance:
 ---
 
 ## 2. First-Time Setup
+
+> **IT-Managed Deployment:** If your IT department installed the application using the silent deployment system, the setup wizard will **not** appear. The app will open directly in the main window, pre-configured with your organization's SQL Server settings and your admin password. Skip to [Section 3](#3-understanding-the-interface) to learn the interface. See [Section 2.7](#27-it-managed-deployment-mode) for details on what this means for you.
 
 When you launch the application for the first time, you'll go through a quick setup wizard that takes about 5 minutes to complete.
 
@@ -207,6 +211,38 @@ You're all set! The wizard is complete.
 2. Click **Finish** to open the main window
 
 > **Congratulations!** You're ready to start controlling your projector!
+
+### 2.7 IT-Managed Deployment Mode
+
+When your IT department deploys the application centrally, the experience is different from a self-setup installation.
+
+**What changes:**
+
+| Feature | Self-Setup | IT-Managed |
+|---------|-----------|------------|
+| First-run wizard | ✅ Shown | ⏭ Skipped |
+| SQL Server database | Optional | Pre-configured |
+| Admin password | You create it | IT sets it |
+| Connection settings | Editable | Read-only |
+| Database mode | Selectable | Locked (SQL Server) |
+
+**What you'll see when you first open the app:**
+- The main window opens directly (no wizard)
+- A **"SQL Server"** mode indicator is visible (not "Standalone")
+- Connection settings in Settings → Connection are grayed out
+- Your projector(s) may already be configured
+
+**Why connection settings are read-only:**
+
+In IT-managed mode, your organization's IT team manages the SQL Server database connection centrally. This prevents accidental misconfiguration across multiple workstations.
+
+> **For end users:** You can still control projectors, view history, and change your personal preferences (language, UI buttons, startup behavior). Only the database connection fields are locked.
+
+> **Need to change SQL Server settings?** Contact your IT administrator. They can redeploy with updated configuration.
+
+**Your admin password:**
+
+IT set an admin password during deployment. If you were not given this password, contact your IT administrator. The admin password is required to access the Security tab in Settings.
 
 ---
 
@@ -665,6 +701,61 @@ Beyond basic power and input control, the application offers advanced features f
 
 ---
 
+### Automatic Updates
+
+The application checks for updates automatically and notifies you when a new version is available.
+
+**How it works:**
+- On startup, the app silently checks for updates in the background (no delay to your workflow)
+- If a new version is available, a notification dialog appears
+- You choose whether to download and install — updates are never forced
+
+**Update notification dialog:**
+
+When an update is available, you'll see a dialog showing:
+- Current version vs. new version
+- What's new (release notes)
+- Download size and estimated time
+- **Update Now** / **Remind Me Later** / **Skip This Version** buttons
+
+**Your update options:**
+
+| Option | What it does |
+|--------|-------------|
+| **Update Now** | Downloads and installs in the background; app restarts when ready |
+| **Remind Me Later** | Dismisses the dialog; will ask again next startup |
+| **Skip This Version** | Suppresses this specific version; won't ask again until a newer release |
+
+**Manual update check:**
+
+1. Open **Settings** (Ctrl+,)
+2. Go to **General** tab
+3. Click **Check Now** in the Updates section
+
+Or from the menu: **Help → Check for Updates**
+
+**Download behavior:**
+- Download runs in the background — you can keep working
+- Progress is shown in the notification area
+- If download is interrupted, it resumes automatically next time
+- SHA-256 checksum is verified before installation (security check)
+
+**Update channels:**
+
+| Channel | Description |
+|---------|-------------|
+| **Stable** (default) | Full releases, thoroughly tested |
+| **Beta** | Pre-release testing, may have minor issues |
+| **Alpha** | Early access, use only if asked by IT |
+
+The channel is configured in **Settings → General → Update Channel** (if your IT admin has enabled this option).
+
+> **IT-Managed Deployments:** Your IT administrator controls update settings. If the update check is disabled, contact IT for version updates — they deploy using the same silent installation process.
+
+> **For more details:** See [README_UPDATES.md](../README_UPDATES.md)
+
+---
+
 ### Testing Connection
 
 You can manually test the connection to your projector at any time.
@@ -750,6 +841,8 @@ Let's explore each tab.
 - Shows currently selected projector details
 - **Edit** - Modify projector configuration
 - **Test** - Run connection test
+
+> **IT-Managed Mode:** If your app was deployed by IT, the Server, Port, Database, and Authentication fields are **read-only** (grayed out). This is expected — your organization manages these settings centrally. Only IT administrators can change the SQL Server connection.
 
 **Network Timeouts:**
 - **Connection Timeout** (3-30 seconds) - How long to wait when connecting
@@ -1402,14 +1495,17 @@ For complete system requirements, see [README.md](../../README.md#system-require
 
 ## Appendix D: Version History
 
-**Version 1.0** (Current)
+**Version 1.1** (Current — February 17, 2026)
+- Corresponds to application version 2.1.0
+- Added: Section 2.7 — IT-Managed Deployment Mode (silent deployment, read-only settings)
+- Added: Automatic Updates section in Advanced Features (update channels, download, skip/defer)
+- Updated: Connection Settings — read-only fields note for IT-managed deployments
+- Updated: Appendix C — system requirements and supported brands
+
+**Version 1.0** (February 12, 2026)
 - Corresponds to application version 2.0.0-rc2
 - First complete user guide
 - Covers all core features
-
-**Future Updates:**
-- This guide will be updated as new application features are added
-- Check [README.md](../../README.md) for latest application version
 
 ---
 
@@ -1421,6 +1517,6 @@ For additional resources:
 - **[README](../../README.md)** - Technical specifications
 - **[Security Documentation](../../SECURITY.md)** - Security architecture
 
-*User Guide Version 1.0*
-*Last Updated: February 12, 2026*
-*Compatible with Enhanced Projector Control Application v2.0.0-rc2 and later*
+*User Guide Version 1.1*
+*Last Updated: February 17, 2026*
+*Compatible with Enhanced Projector Control Application v2.1.0 and later*
