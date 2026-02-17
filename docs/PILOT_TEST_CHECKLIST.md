@@ -13,8 +13,8 @@ Complete all prerequisites before attempting deployment.
 
 ### Infrastructure
 - [ ] PSExec64.exe installed at `C:\Tools\PsExec64.exe` on the deployment server
-- [ ] Network share accessible: `\\fileserv\e$\Remote_Deployment\`
-- [ ] Deployment package at: `\\fileserv\e$\Remote_Deployment\deployment_package\`
+- [ ] Network share accessible: `\\fileserv\e$\Deployments\ProjectorControl\`
+- [ ] Deployment package at: `\\fileserv\e$\Deployments\ProjectorControl\Latest\`
 
 ### Accounts & Permissions
 - [ ] PSExec service account configured (PSEXEC_USER / PSEXEC_PASSWORD env vars set)
@@ -60,7 +60,7 @@ Verify config.json contains:
 
 ```bat
 REM From deployment server, copy files to workstation:
-copy \\fileserv\e$\Remote_Deployment\deployment_package\ProjectorControl.exe \\WORKSTATION\admin$\Temp\
+copy \\fileserv\e$\Deployments\ProjectorControl\Latest\ProjectorControl.exe \\WORKSTATION\admin$\Temp\
 copy config.json \\WORKSTATION\admin$\Temp\
 ```
 
