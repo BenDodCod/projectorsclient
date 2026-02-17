@@ -86,6 +86,8 @@ class DeploymentConfig:
         admin_password_hash: bcrypt hash of admin password
         update_check_enabled: Whether to check for updates
         config_file_path: Original config file path (for deletion)
+        deployment_source: Source of deployment (e.g., "web_push", "manual")
+        deployment_id: Unique deployment ID from web system (optional)
     """
     version: str
     operation_mode: str
@@ -100,6 +102,8 @@ class DeploymentConfig:
     admin_password_hash: str
     update_check_enabled: bool
     config_file_path: Path
+    deployment_source: Optional[str] = None
+    deployment_id: Optional[str] = None
 
 
 class DeploymentConfigLoader:
@@ -120,17 +124,17 @@ class DeploymentConfigLoader:
     # Fixed entropy for deployment (matches web system)
     FIXED_DEPLOYMENT_ENTROPY = "ProjectorControlWebDeployment"
 
-    # Required top-level keys
-    REQUIRED_KEYS = ["version", "app", "database", "security"]
-
-    # Required app keys
+    # Schema format A: Agent 1 internal format (version, app, database, security)
+    REQUIRED_KEYS_V1 = ["version", "app", "database", "security"]
     REQUIRED_APP_KEYS = ["operation_mode", "first_run_complete"]
-
-    # Required database keys (flat structure, no nested "sql")
-    REQUIRED_DATABASE_KEYS = ["type", "host", "port", "database", "use_windows_auth"]
-
-    # Required security keys
     REQUIRED_SECURITY_KEYS = ["admin_password_hash"]
+
+    # Schema format B: Agent 2 web-push format (schema_version, app_settings, database, operation_mode)
+    REQUIRED_KEYS_V2 = ["database", "operation_mode", "app_settings"]
+    REQUIRED_APP_SETTINGS_KEYS = ["first_run_complete", "admin_password_hash"]
+
+    # Required database keys (flat structure, shared by both formats)
+    REQUIRED_DATABASE_KEYS = ["type", "host", "port", "database", "use_windows_auth"]
 
     def __init__(self):
         """Initialize the config loader."""
@@ -175,8 +179,26 @@ class DeploymentConfigLoader:
         # Parse and decrypt
         return self._parse_config(config_data, config_file)
 
+    def _detect_schema_version(self, config: dict) -> str:
+        """Detect which schema format this config uses.
+
+        Detection is based on the presence of 'app_settings', which is unique
+        to Agent 2's web-push format. The v1 internal format uses 'app' instead.
+
+        Returns:
+            "v1" for Agent 1 internal format (app/security keys)
+            "v2" for Agent 2 web-push format (app_settings key present)
+        """
+        if "app_settings" in config:
+            return "v2"
+        return "v1"
+
     def _validate_schema(self, config: dict) -> None:
         """Validate configuration schema.
+
+        Supports two schema formats:
+        - v1: Agent 1 internal format with 'app', 'security', 'version' keys
+        - v2: Agent 2 web-push format with 'app_settings', 'operation_mode' at top level
 
         Args:
             config: Parsed JSON configuration.
@@ -184,8 +206,18 @@ class DeploymentConfigLoader:
         Raises:
             ConfigValidationError: If validation fails.
         """
+        schema_ver = self._detect_schema_version(config)
+        logger.info(f"Detected config schema: {schema_ver}")
+
+        if schema_ver == "v2":
+            self._validate_schema_v2(config)
+        else:
+            self._validate_schema_v1(config)
+
+    def _validate_schema_v1(self, config: dict) -> None:
+        """Validate Agent 1 internal schema (version/app/security keys)."""
         # Check required top-level keys
-        missing_keys = [key for key in self.REQUIRED_KEYS if key not in config]
+        missing_keys = [key for key in self.REQUIRED_KEYS_V1 if key not in config]
         if missing_keys:
             raise ConfigValidationError(
                 f"Missing required keys: {', '.join(missing_keys)}"
@@ -199,8 +231,58 @@ class DeploymentConfigLoader:
                 f"Missing required app keys: {', '.join(missing_app_keys)}"
             )
 
-        # Validate database section
-        database = config.get("database", {})
+        # Validate database section (shared)
+        self._validate_database_section(config.get("database", {}))
+
+        # Validate security section
+        security = config.get("security", {})
+        missing_security_keys = [key for key in self.REQUIRED_SECURITY_KEYS if key not in security]
+        if missing_security_keys:
+            raise ConfigValidationError(
+                f"Missing required security keys: {', '.join(missing_security_keys)}"
+            )
+
+        # Validate admin password hash format (bcrypt)
+        admin_hash = security.get("admin_password_hash", "")
+        self._validate_bcrypt_hash(admin_hash)
+
+        logger.info("Config schema v1 validation passed")
+
+    def _validate_schema_v2(self, config: dict) -> None:
+        """Validate Agent 2 web-push schema (app_settings/operation_mode keys)."""
+        # Check required top-level keys
+        missing_keys = [key for key in self.REQUIRED_KEYS_V2 if key not in config]
+        if missing_keys:
+            raise ConfigValidationError(
+                f"Missing required keys: {', '.join(missing_keys)}"
+            )
+
+        # Validate app_settings section
+        app_settings = config.get("app_settings", {})
+        missing_app_keys = [key for key in self.REQUIRED_APP_SETTINGS_KEYS if key not in app_settings]
+        if missing_app_keys:
+            raise ConfigValidationError(
+                f"Missing required app_settings keys: {', '.join(missing_app_keys)}"
+            )
+
+        # Validate operation_mode
+        operation_mode = config.get("operation_mode")
+        if operation_mode not in ["sql_server", "standalone"]:
+            raise ConfigValidationError(
+                f"Invalid operation_mode: {operation_mode}. Must be 'sql_server' or 'standalone'"
+            )
+
+        # Validate database section (shared)
+        self._validate_database_section(config.get("database", {}))
+
+        # Validate admin password hash format (bcrypt)
+        admin_hash = app_settings.get("admin_password_hash", "")
+        self._validate_bcrypt_hash(admin_hash)
+
+        logger.info("Config schema v2 validation passed")
+
+    def _validate_database_section(self, database: dict) -> None:
+        """Validate the database section (shared between schema versions)."""
         missing_db_keys = [key for key in self.REQUIRED_DATABASE_KEYS if key not in database]
         if missing_db_keys:
             raise ConfigValidationError(
@@ -228,16 +310,8 @@ class DeploymentConfigLoader:
             if "password_encrypted" not in database or not database["password_encrypted"]:
                 raise ConfigValidationError("SQL authentication requires 'password_encrypted'")
 
-        # Validate security section
-        security = config.get("security", {})
-        missing_security_keys = [key for key in self.REQUIRED_SECURITY_KEYS if key not in security]
-        if missing_security_keys:
-            raise ConfigValidationError(
-                f"Missing required security keys: {', '.join(missing_security_keys)}"
-            )
-
-        # Validate admin password hash format (bcrypt)
-        admin_hash = security.get("admin_password_hash", "")
+    def _validate_bcrypt_hash(self, admin_hash: str) -> None:
+        """Validate bcrypt hash format."""
         if not admin_hash.startswith("$2b$") and not admin_hash.startswith("$2a$") and not admin_hash.startswith("$2y$"):
             raise ConfigValidationError(
                 "Invalid admin_password_hash format. Must be bcrypt hash (starts with $2a$, $2b$, or $2y$)"
@@ -247,6 +321,10 @@ class DeploymentConfigLoader:
 
     def _parse_config(self, config: dict, config_file: Path) -> DeploymentConfig:
         """Parse and decrypt configuration.
+
+        Supports both schema formats:
+        - v1: Agent 1 internal format (app/security keys)
+        - v2: Agent 2 web-push format (app_settings/operation_mode at top level)
 
         Args:
             config: Validated JSON configuration.
@@ -258,9 +336,35 @@ class DeploymentConfigLoader:
         Raises:
             DecryptionFailedError: If credential decryption fails.
         """
-        app = config["app"]
+        schema_ver = self._detect_schema_version(config)
         database = config["database"]
-        security = config["security"]
+
+        # Extract fields based on schema version
+        if schema_ver == "v2":
+            # Agent 2 web-push format
+            app_settings = config["app_settings"]
+            operation_mode = config["operation_mode"]
+            first_run_complete = app_settings["first_run_complete"]
+            language = app_settings.get("language", "en")
+            admin_password_hash = app_settings["admin_password_hash"]
+            version = config.get("schema_version", "1.0")
+            deployment_source = config.get("deployment_source")
+            deployment_id = config.get("deployment_id")
+            update_check_enabled = app_settings.get("update_check_enabled", False)
+        else:
+            # Agent 1 internal format (v1)
+            app = config["app"]
+            security = config["security"]
+            operation_mode = app["operation_mode"]
+            first_run_complete = app["first_run_complete"]
+            language = app.get("language", "en")
+            admin_password_hash = security["admin_password_hash"]
+            version = config.get("version", "1.0")
+            deployment_source = app.get("deployment_source")
+            deployment_id = None
+            update = config.get("update", {})
+            update_check_enabled = app.get("update_check_enabled",
+                                           update.get("check_enabled", False))
 
         # Decrypt SQL password if using SQL authentication
         sql_password = None
@@ -279,25 +383,23 @@ class DeploymentConfigLoader:
                         "Ensure config was generated with correct encryption."
                     )
 
-        # Extract update settings (optional, default to disabled)
-        update = config.get("update", {})
-        update_check_enabled = update.get("check_enabled", False)
-
         # Build DeploymentConfig
         return DeploymentConfig(
-            version=config.get("version", "1.0"),
-            operation_mode=app["operation_mode"],
-            first_run_complete=app["first_run_complete"],
-            language=app.get("language", "en"),
+            version=version,
+            operation_mode=operation_mode,
+            first_run_complete=first_run_complete,
+            language=language,
             sql_server=database["host"],
             sql_port=database.get("port", 1433),
             sql_database=database["database"],
             sql_username=database.get("username"),
             sql_password=sql_password,
             sql_use_windows_auth=use_windows_auth,
-            admin_password_hash=security["admin_password_hash"],
+            admin_password_hash=admin_password_hash,
             update_check_enabled=update_check_enabled,
-            config_file_path=config_file
+            config_file_path=config_file,
+            deployment_source=deployment_source,
+            deployment_id=deployment_id,
         )
 
     def _decrypt_credential(self, encrypted: str) -> str:
