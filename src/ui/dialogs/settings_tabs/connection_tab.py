@@ -46,6 +46,8 @@ class ConnectionTab(BaseSettingsTab):
             parent: Optional parent widget
         """
         super().__init__(db_manager, parent)
+        from src.config.settings import SettingsManager
+        self._settings = SettingsManager(db_manager)
         self._operation_mode = "standalone"
         self._projectors: List[Dict] = []
         self._init_ui()

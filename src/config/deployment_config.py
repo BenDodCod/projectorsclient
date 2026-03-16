@@ -104,6 +104,14 @@ class DeploymentConfig:
     config_file_path: Path
     deployment_source: Optional[str] = None
     deployment_id: Optional[str] = None
+    # Optional projector configuration from web deployment
+    projector_name: Optional[str] = None
+    projector_ip: Optional[str] = None
+    projector_port: int = 4352
+    projector_type: str = "pjlink"
+    projector_username: Optional[str] = None
+    projector_password_encrypted: Optional[str] = None
+    projector_location: Optional[str] = None
 
 
 class DeploymentConfigLoader:
@@ -383,6 +391,15 @@ class DeploymentConfigLoader:
                         "Ensure config was generated with correct encryption."
                     )
 
+        # Extract optional projector section
+        projector = config.get("projector", {})
+        projector_ip = projector.get("ip") if projector else None
+
+        # Decrypt projector password if present (AES-GCM with fixed deployment entropy)
+        projector_pass_encrypted = None
+        if projector.get("auth_password_encrypted"):
+            projector_pass_encrypted = projector["auth_password_encrypted"]
+
         # Build DeploymentConfig
         return DeploymentConfig(
             version=version,
@@ -400,6 +417,13 @@ class DeploymentConfigLoader:
             config_file_path=config_file,
             deployment_source=deployment_source,
             deployment_id=deployment_id,
+            projector_name=projector.get("name") if projector_ip else None,
+            projector_ip=projector_ip,
+            projector_port=projector.get("port", 4352),
+            projector_type=projector.get("type", "pjlink"),
+            projector_username=projector.get("auth_username") if projector_ip else None,
+            projector_password_encrypted=projector_pass_encrypted,
+            projector_location=projector.get("location") if projector_ip else None,
         )
 
     def _decrypt_credential(self, encrypted: str) -> str:
@@ -476,6 +500,90 @@ def apply_config_to_database(
     # Update settings
     settings.set("update.check_enabled", config.update_check_enabled)
 
+    # Projector settings (optional - only if projector was selected in deployment)
+    if config.projector_ip:
+        logger.info("Applying projector configuration: %s (%s)", config.projector_name, config.projector_ip)
+        settings.set("projector.name", config.projector_name or "Projector")
+        settings.set("projector.ip", config.projector_ip)
+        settings.set("projector.port", config.projector_port)
+        settings.set("projector.type", config.projector_type)
+        settings.set("projector.username", config.projector_username or "")
+        settings.set("projector.location", config.projector_location or "")
+
+        # Store projector password - decrypt from deployment entropy, re-encrypt with machine entropy
+        if config.projector_password_encrypted:
+            from src.utils.security import decrypt_credential_with_fixed_entropy, encrypt_credential
+            try:
+                plain_pass = decrypt_credential_with_fixed_entropy(
+                    config.projector_password_encrypted,
+                    DeploymentConfigLoader.FIXED_DEPLOYMENT_ENTROPY
+                )
+                app_data_dir = str(Path(db.db_path).parent)
+                machine_encrypted = encrypt_credential(plain_pass, app_data_dir)
+                settings.set_secure("projector.password_encrypted", machine_encrypted)
+                logger.info("Projector password re-encrypted with machine-specific entropy")
+            except Exception as e:
+                logger.warning("Failed to re-encrypt projector password: %s", e)
+                settings.set("projector.password_encrypted", "")
+        else:
+            settings.set("projector.password_encrypted", "")
+
+        # Also save to projector_config table for the connection tab
+        try:
+            from src.utils.security import CredentialManager
+            encrypted_password = None
+            if config.projector_password_encrypted:
+                try:
+                    from src.utils.security import decrypt_credential_with_fixed_entropy
+                    plain_pass = decrypt_credential_with_fixed_entropy(
+                        config.projector_password_encrypted,
+                        DeploymentConfigLoader.FIXED_DEPLOYMENT_ENTROPY
+                    )
+                    app_data_dir = str(Path(db.db_path).parent)
+                    cred_manager = CredentialManager(app_data_dir)
+                    encrypted_password = cred_manager.encrypt_credential(plain_pass)
+                except Exception as e:
+                    logger.warning("Failed to encrypt projector password for projector_config: %s", e)
+
+            # Check if projector already exists
+            existing = db.fetchone(
+                "SELECT id FROM projector_config WHERE proj_ip = ? AND active = 1",
+                (config.projector_ip,)
+            )
+            if existing:
+                db.execute("""
+                    UPDATE projector_config
+                    SET proj_name = ?, proj_port = ?, proj_type = ?, proj_user = ?,
+                        proj_pass_encrypted = ?, location = ?
+                    WHERE proj_ip = ? AND active = 1
+                """, (
+                    config.projector_name or "Projector",
+                    config.projector_port,
+                    config.projector_type,
+                    config.projector_username or "",
+                    encrypted_password,
+                    config.projector_location or "",
+                    config.projector_ip
+                ))
+                logger.info("Updated existing projector in projector_config table")
+            else:
+                db.execute("""
+                    INSERT INTO projector_config
+                    (proj_name, proj_ip, proj_port, proj_type, proj_user, proj_pass_encrypted, location, active)
+                    VALUES (?, ?, ?, ?, ?, ?, ?, 1)
+                """, (
+                    config.projector_name or "Projector",
+                    config.projector_ip,
+                    config.projector_port,
+                    config.projector_type,
+                    config.projector_username or "",
+                    encrypted_password,
+                    config.projector_location or "",
+                ))
+                logger.info("Inserted projector into projector_config table")
+        except Exception as e:
+            logger.warning("Failed to save projector to projector_config table: %s", e)
+
     logger.info("Configuration applied successfully to database")
 
 
@@ -493,7 +601,8 @@ def test_sql_connection(config: DeploymentConfig) -> Tuple[bool, str]:
         import pyodbc
 
         # Build connection string
-        # Security: Encrypt=yes with TrustServerCertificate=no validates SQL Server certificate
+        # Encrypt=yes with TrustServerCertificate=yes (matches sqlserver_manager.py)
+        # Note: TrustServerCertificate=yes is required when SQL Server uses a self-signed cert
         if config.sql_use_windows_auth:
             conn_str = (
                 f"DRIVER={{ODBC Driver 18 for SQL Server}};"
@@ -501,7 +610,7 @@ def test_sql_connection(config: DeploymentConfig) -> Tuple[bool, str]:
                 f"DATABASE={config.sql_database};"
                 f"Trusted_Connection=yes;"
                 f"Encrypt=yes;"
-                f"TrustServerCertificate=no;"  # Validate server certificate (prevents MITM)
+                f"TrustServerCertificate=yes;"
             )
         else:
             conn_str = (
@@ -511,7 +620,7 @@ def test_sql_connection(config: DeploymentConfig) -> Tuple[bool, str]:
                 f"UID={config.sql_username};"
                 f"PWD={config.sql_password};"
                 f"Encrypt=yes;"
-                f"TrustServerCertificate=no;"  # Validate server certificate (prevents MITM)
+                f"TrustServerCertificate=yes;"
             )
 
         # Attempt connection

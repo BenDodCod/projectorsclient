@@ -722,15 +722,23 @@ class MainWindow(QMainWindow):
              except Exception as e:
                  logger.warning(f"Failed to create temp controller for settings: {e}")
 
-        settings_dialog = SettingsDialog(self.db, parent=self, controller=controller)
-        settings_dialog.settings_applied.connect(self._on_settings_applied)
-        # Ensure settings dialog updates text when language changes
-        self.language_changed.connect(settings_dialog.retranslate)
-        settings_dialog.exec()
-        
-        # Cleanup controller
-        if controller:
-            controller.disconnect()
+        try:
+            settings_dialog = SettingsDialog(self.db, parent=self, controller=controller)
+            settings_dialog.settings_applied.connect(self._on_settings_applied)
+            # Ensure settings dialog updates text when language changes
+            self.language_changed.connect(settings_dialog.retranslate)
+            settings_dialog.exec()
+        except Exception as e:
+            logger.error(f"Settings dialog crashed: {e}", exc_info=True)
+            from PyQt6.QtWidgets import QMessageBox
+            QMessageBox.critical(
+                self, "Settings Error",
+                f"Failed to open settings dialog:\n\n{type(e).__name__}: {e}"
+            )
+        finally:
+            # Cleanup controller
+            if controller:
+                controller.disconnect()
 
     def _on_settings_applied(self, settings: dict) -> None:
         """

@@ -1201,6 +1201,26 @@ def main() -> int:
         return run_silent_installation(args.config_file)
 
     # Normal GUI mode continues below...
+    # Install global crash handler to capture unhandled exceptions
+    def _crash_handler(exc_type, exc_value, exc_tb):
+        import os, traceback
+        from datetime import datetime as dt
+        crash_msg = ''.join(traceback.format_exception(exc_type, exc_value, exc_tb))
+        # Write to crash file in AppData
+        try:
+            crash_dir = Path(os.getenv("APPDATA", "")) / "ProjectorControl"
+            crash_dir.mkdir(parents=True, exist_ok=True)
+            crash_file = crash_dir / "crash.log"
+            with open(crash_file, 'a', encoding='utf-8') as f:
+                f.write(f"\n{'='*60}\n")
+                f.write(f"CRASH at {dt.now().isoformat()}\n")
+                f.write(crash_msg)
+        except Exception:
+            pass
+        # Also print to stderr
+        sys.__excepthook__(exc_type, exc_value, exc_tb)
+    sys.excepthook = _crash_handler
+
     # Enable high DPI scaling
     QApplication.setHighDpiScaleFactorRoundingPolicy(
         Qt.HighDpiScaleFactorRoundingPolicy.PassThrough
