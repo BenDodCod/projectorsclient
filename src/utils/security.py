@@ -825,6 +825,123 @@ def decrypt_credential_with_fixed_entropy(
         ) from e
 
 
+# --- v2 deployment credential format (SEC-C1) ---
+# The web deployment tool now emits versioned credential blobs. A "v2:" prefix
+# selects a key derived from the provisioned CONFIG_SECRET instead of the legacy
+# hardcoded fixed-entropy string, closing the SEC-C1 obfuscation gap. NOTE: this
+# v1/v2 refers to the *crypto blob* version and is unrelated to the config.json
+# schema-layout version (DeploymentConfigLoader._detect_schema_version) or the
+# ".v1" suffix in the legacy PBKDF2 salt literal.
+DEPLOYMENT_V2_PREFIX = "v2:"
+_DEPLOYMENT_V2_SALT = b"ProjectorControl.CredentialEncryption.v2"
+
+
+def decrypt_credential_v2(ciphertext: str, config_secret: str) -> str:
+    """Decrypt a 'v2:'-prefixed deployment credential using CONFIG_SECRET.
+
+    Mirrors :func:`decrypt_credential_with_fixed_entropy` but derives the
+    AES-256-GCM key from the provisioned CONFIG_SECRET and the v2 salt. The
+    envelope (nonce || ciphertext || tag) and all GCM/PBKDF2 parameters are
+    identical to v1 - only the key derivation and the "v2:" prefix differ.
+
+    Args:
+        ciphertext: Credential blob, with or without the "v2:" prefix.
+        config_secret: The CONFIG_SECRET shared with the web system.
+
+    Returns:
+        Decrypted plaintext credential.
+
+    Raises:
+        DecryptionError: If config_secret is empty, or decryption/authentication
+            fails.
+    """
+    if not ciphertext:
+        return ""
+
+    if not config_secret:
+        raise DecryptionError(
+            "CONFIG_SECRET is required to decrypt a v2 deployment credential "
+            "but was not provided. Set the CONFIG_SECRET environment variable "
+            "to the value used by the web system."
+        )
+
+    try:
+        # Strip the version marker if present, then base64-decode the envelope.
+        payload = (
+            ciphertext[len(DEPLOYMENT_V2_PREFIX):]
+            if ciphertext.startswith(DEPLOYMENT_V2_PREFIX)
+            else ciphertext
+        )
+        encrypted = base64.b64decode(payload.encode('ascii'))
+
+        # Extract nonce (first 12 bytes) and ciphertext||tag (remaining bytes)
+        if len(encrypted) < 12:
+            raise ValueError("Encrypted data too short")
+
+        nonce = encrypted[:12]
+        ciphertext_with_tag = encrypted[12:]
+
+        # Derive the key from CONFIG_SECRET (same PBKDF2 params as v1, new salt)
+        from cryptography.hazmat.primitives.kdf.pbkdf2 import PBKDF2HMAC
+        from cryptography.hazmat.primitives import hashes
+        from cryptography.hazmat.primitives.ciphers.aead import AESGCM
+
+        kdf = PBKDF2HMAC(
+            algorithm=hashes.SHA256(),
+            length=32,  # 256 bits for AES-256
+            salt=_DEPLOYMENT_V2_SALT,
+            iterations=100000,
+        )
+        key = kdf.derive(config_secret.encode('utf-8'))
+
+        # Decrypt with AES-GCM (authentication happens automatically)
+        aesgcm = AESGCM(key)
+        plaintext = aesgcm.decrypt(
+            nonce,
+            ciphertext_with_tag,
+            None  # No additional authenticated data
+        )
+
+        return plaintext.decode('utf-8')
+
+    except DecryptionError:
+        raise
+    except Exception as e:
+        # Wrong CONFIG_SECRET, corrupted data, or failed authentication
+        logger.error("v2 credential decryption failed: %s", type(e).__name__)
+        raise DecryptionError(
+            "Failed to decrypt v2 deployment credential. "
+            "Verify CONFIG_SECRET matches the value used by the web system."
+        ) from e
+
+
+def decrypt_deployment_credential(
+    ciphertext: str,
+    fixed_entropy: str,
+    config_secret: str = ""
+) -> str:
+    """Decrypt a deployment credential, auto-selecting the blob version.
+
+    A "v2:" prefix routes to CONFIG_SECRET-based v2 decryption; an un-prefixed
+    blob uses the legacy v1 fixed-entropy path. This keeps already-deployed
+    (v1) configs working unchanged while supporting new v2 configs.
+
+    Args:
+        ciphertext: Credential blob (v1 un-prefixed, or "v2:"-prefixed).
+        fixed_entropy: Legacy fixed entropy string for the v1 path.
+        config_secret: CONFIG_SECRET for the v2 path (required only for v2 blobs).
+
+    Returns:
+        Decrypted plaintext credential.
+
+    Raises:
+        DecryptionError: On failure, including a v2 blob with no CONFIG_SECRET.
+    """
+    if ciphertext and ciphertext.startswith(DEPLOYMENT_V2_PREFIX):
+        return decrypt_credential_v2(ciphertext, config_secret)
+    return decrypt_credential_with_fixed_entropy(ciphertext, fixed_entropy)
+
+
 # Reset singleton instances (primarily for testing)
 def _reset_singletons() -> None:
     """Reset singleton instances. For testing only."""

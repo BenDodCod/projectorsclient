@@ -135,6 +135,18 @@
 - **Practice:** Use `cursor.execute(query, params)` not f-strings
 - **Rationale:** Prevents SQL injection, handles escaping automatically
 
+### #config-secret-v2 — Deployment credential blob versioning (SEC-C1)
+- **Date:** 2026-07-12
+- **Context:** `src/config/deployment_config.py`, `src/utils/security.py` — decrypting web-generated `config.json` credentials.
+- **Gotcha:** Deployment credentials now come in two crypto versions. `v2:`-prefixed blobs derive the AES-256-GCM key from the `CONFIG_SECRET` **environment variable** + salt `...CredentialEncryption.v2`; un-prefixed v1 blobs use the legacy fixed entropy. Route both through `decrypt_deployment_credential()`. This crypto "v1/v2" is unrelated to the config-JSON schema "v1/v2" in `_detect_schema_version` — do not conflate them.
+- **Practice:** A v2 blob with no `CONFIG_SECRET` must fail with an actionable error naming `CONFIG_SECRET` (silent install → exit 6). Provision `CONFIG_SECRET` to endpoints equal to the web system's value before pushing v2 configs (lockstep rollout).
+
+### #settings-set-secure-no-cred-manager — set_secure() silently stores plaintext without a cred manager
+- **Date:** 2026-07-12
+- **Context:** `apply_config_to_database` builds `SettingsManager(db)` **without** a credential manager.
+- **Gotcha:** With no cred manager, `set_secure()` stores the value **as-is** and logs "Storing sensitive setting … without encryption". Passing already-encrypted data to it looks like double-encryption but isn't; passing plaintext would store plaintext. Also `SettingsManager.set()` auto-encrypts sensitive-defined keys **only when a cred manager is present** — so wiring one in can double-encrypt values that were manually pre-encrypted (e.g. `sql.password`).
+- **Practice:** In the deployment-apply path (no cred manager), encrypt manually and store with `set()`, mirroring the `sql.password` handling. Don't add a cred manager to that `SettingsManager` without auditing every `set()`/`set_secure()` call.
+
 ---
 
 ## Quick Reference
@@ -156,6 +168,6 @@
 - **Database:** #sql-injection-prevention, #connection-pooling
 - **Testing:** #pytest-qt-fixture, #mock-pjlink
 - **UI/PyQt6:** #thread-safety, #signal-slot
-- **Security:** #dpapi-admin-rights, #aes-gcm-encryption, #password-hashing
+- **Security:** #dpapi-admin-rights, #aes-gcm-encryption, #password-hashing, #config-secret-v2, #settings-set-secure-no-cred-manager
 - **Performance:** #lazy-loading, #caching
 - **Hardware/Projectors:** #hitachi-pjlink-fallback, #native-protocol-timeouts
