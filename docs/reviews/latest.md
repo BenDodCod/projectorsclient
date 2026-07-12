@@ -1,62 +1,53 @@
-# Latest Session Context: 2026-02-17 (Phase 6 Complete)
+# Latest Session Context: 2026-07-12 (SEC-C1 v2 credential decryption)
 
 ## Quick Summary
-Completed Phase 6 - Production Build & Pilot Test. Built v2.1.0 EXE (44.93 MB, SHA-256: `5589AD98C1F8DDAEFAAA5D8FDBB976B1D55A4500AC5469CE30A2498E3188EA1A`), deployed to network share, created pilot test checklist, posted results to AGENT_DISCUSSION.md, and updated user guide (EN + HE) to v1.1 with new features documented.
+Implemented desktop-side decryption of the web system's new **v2** deployment credential
+blobs (SEC-C1). The web app now keys AES-256-GCM from a real `CONFIG_SECRET` instead of
+source-code literals; the desktop app auto-detects the `v2:` prefix and decrypts with
+`CONFIG_SECRET` (from an env var), while legacy un-prefixed v1 configs keep working. Rebuilt
+the EXE, verified silent-install exit codes end-to-end, updated the deployment package, and
+recorded the change in the cross-repo spec. Shipped on branch `sec-c1-v2-decrypt` → PR #1.
 
 ## What Works Now
-✅ Production EXE v2.1.0 built and smoke-tested (5/5 pass)
-✅ Deployment package at `\\fileserv\e$\Deployments\ProjectorControl\Latest\`
-✅ Versioned archive at `\\fileserv\e$\Deployments\ProjectorControl\Versions\v2.1.0\`
-✅ Silent install: --silent --config-file, exit codes 0-6
-✅ Dual schema loader (v1 Agent 1 internal / v2 web-push format)
-✅ Phase 5: 34/34 cross-validation tests passing (65 total)
-✅ Phase 6: PILOT_TEST_CHECKLIST.md (7 pass criteria, rollback procedure)
-✅ User guide v1.1 with IT-managed deployment + auto-updates sections
+✅ v2 (`v2:`) deployment credential decryption via `CONFIG_SECRET` env var
+✅ Legacy v1 (un-prefixed) configs still decrypt with no secret (backward compatible)
+✅ v2 blob with missing/wrong CONFIG_SECRET → exit 6 with actionable message naming CONFIG_SECRET
+✅ Rebuilt EXE verified: v2+secret→exit 2, v2+no-secret→exit 6, v1→exit 2
+✅ Deployment package staged: new EXE + install.bat/README with CONFIG_SECRET guidance
 
 ## Key Technical Details
-- **EXE path:** `\\fileserv\e$\Deployments\ProjectorControl\Latest\ProjectorControl.exe`
-- **SHA-256:** `5589AD98C1F8DDAEFAAA5D8FDBB976B1D55A4500AC5469CE30A2498E3188EA1A`
-- **install.bat:** `\\fileserv\e$\Deployments\ProjectorControl\Latest\install.bat`
-- **deployment_source = "web_push"** → locks Connection settings UI (read-only)
-- **Config schema v2** detected by `app_settings` key presence; v1 by `app` key
+- **New EXE SHA-256:** `646D847F4DEE2D1A2DD7BF8AFF4FF386AC9ECD1AA2DEE1A9D68A31117C82E111` (42.95 MB)
+- **CONFIG_SECRET:** provisioned as an environment variable; must equal the web system's value
+- **v2 params:** PBKDF2-HMAC-SHA256, 100k iters, salt `ProjectorControl.CredentialEncryption.v2`, password = CONFIG_SECRET; envelope/AES-GCM identical to v1
+- **Dispatcher:** `decrypt_deployment_credential()` in `src/utils/security.py` routes `v2:` → v2, else v1
+- **NOTE:** crypto-blob "v1/v2" ≠ config-JSON schema "v1/v2" (`_detect_schema_version`)
 
-## Files Modified (This Session)
-- `docs/PILOT_TEST_CHECKLIST.md` — created (pilot deployment procedure, 7 criteria)
-- `build_manifest.json` — updated v2.1.0 metadata
-- `smoke_test_report.txt` — updated v2.1.0 results
-- `docs/user-guide/USER_GUIDE.md` — v1.1 (IT-managed section, auto-updates, read-only note)
-- `docs/user-guide/USER_GUIDE.he.md` — Hebrew mirror of above
+## Files Modified (This Session — committed on PR #1)
+- `src/utils/security.py` — `decrypt_credential_v2()` + `decrypt_deployment_credential()` dispatcher
+- `src/config/deployment_config.py` — reads CONFIG_SECRET from env; routes all decrypt sites
+- `tests/test_credential_security.py` / `tests/test_deployment_config.py` — 14 new tests
+- `docs/DEPLOYMENT_TROUBLESHOOTING_DESKTOP.md` — v1/v2 table + CONFIG_SECRET + lockstep rollout
+- (gitignored) `dist/deployment_package/*` — new EXE, updated install.bat + README
+- (cross-repo) `\\fileserv\e$\Remote_Deployment\AGENT_DISCUSSION.md` — SEC-C1 v2 section appended
 
 ## Testing Status
-- **Total tests:** 65/65 passing (100%)
-- **Coverage:** 94%+
-- **Phase 5 cross-validation:** 34/34
-- **Smoke test (EXE):** 5/5
-
-## Phase 6 Deliverables Status
-✅ Production EXE built and SHA-256 verified
-✅ Smoke tests passing (5/5)
-✅ Deployment package on network share
-✅ PILOT_TEST_CHECKLIST.md created
-✅ Phase 6 results posted to AGENT_DISCUSSION.md
-✅ User guide updated (EN + HE)
-
-🎯 **Overall Phase 6:** 100% COMPLETE
+- **Credential + deployment + security suites:** 95 passed, 4 pre-existing skips
+- **Related settings/security suites:** 48 passed
+- **EXE black-box (silent install):** v2+secret→2, v2+no-secret→6, v1→2 (all as expected)
 
 ## Next Session Should
-1. **Run pilot** using `docs/PILOT_TEST_CHECKLIST.md` — all 7 criteria must pass
-2. **Review pilot results** and fix any failures
-3. **Coordinate with Agent 2** to confirm web system shows deployment as "completed"
-4. Post-pilot: plan formal UAT (3-5 external users) → v1.0 stable release
+1. Confirm PR #1 merged and `main` is green.
+2. Coordinate with web team: confirm v2 emission + provision matching `CONFIG_SECRET` to endpoints.
+3. If distributing: push the new EXE + package to `\\fileserv\e$\Deployments\ProjectorControl\Latest\`.
+4. Decide on the `DEPLOYMENT_CONFIG_SECRET` follow-up (dedicated secret vs reuse).
 
 ## Open Questions
-- Has Agent 2 confirmed web system is ready for pilot?
-- Which workstation is the pilot test target?
+- Does the web system currently emit v2 blobs, and is CONFIG_SECRET available to provision?
+- Is the `sql.password` (write) vs `sql.password_encrypted` (read) key naming a real runtime bug?
 
 ## Quick Reference
-- Full session details: `docs/REVIEWS/2026/2026-02-17-session.md`
-- Pilot checklist: `docs/PILOT_TEST_CHECKLIST.md`
-- Phase 6 results: `\\fileserv\e$\Remote_Deployment\AGENT_DISCUSSION.md` (last section)
-- Deployment package: `\\fileserv\e$\Deployments\ProjectorControl\Latest\`
-- Schema reference: `docs/SCHEMA_COMPATIBILITY_REPORT.md`
-- Troubleshooting: `docs/DEPLOYMENT_TROUBLESHOOTING_DESKTOP.md`
+- Full session details: `docs/REVIEWS/2026/2026-07-12-session.md`
+- PR: https://github.com/BenDodCod/projectorsclient/pull/1
+- Cross-repo spec: `\\fileserv\e$\Remote_Deployment\AGENT_DISCUSSION.md` (SEC-C1 v2 section)
+- Troubleshooting: `docs/DEPLOYMENT_TROUBLESHOOTING_DESKTOP.md` (§6)
+- Deployment package: `dist/deployment_package/`
