@@ -17,9 +17,35 @@ from unittest.mock import Mock, patch
 
 from src.utils.security import (
     decrypt_credential_with_fixed_entropy,
+    decrypt_credential_v2,
+    decrypt_deployment_credential,
     encrypt_credential,
     DecryptionError
 )
+
+
+def _encrypt_v2(plaintext: str, config_secret: str) -> str:
+    """Build a 'v2:'-prefixed AES-256-GCM blob the way the web app does.
+
+    Mirrors the parameters of decrypt_credential_v2 so tests can round-trip
+    without depending on the web repo.
+    """
+    import base64 as _b64
+    import secrets as _secrets
+    from cryptography.hazmat.primitives.ciphers.aead import AESGCM
+    from cryptography.hazmat.primitives import hashes
+    from cryptography.hazmat.primitives.kdf.pbkdf2 import PBKDF2HMAC
+
+    kdf = PBKDF2HMAC(
+        algorithm=hashes.SHA256(),
+        length=32,
+        salt=b"ProjectorControl.CredentialEncryption.v2",
+        iterations=100000,
+    )
+    key = kdf.derive(config_secret.encode('utf-8'))
+    nonce = _secrets.token_bytes(12)
+    ciphertext = AESGCM(key).encrypt(nonce, plaintext.encode('utf-8'), None)
+    return "v2:" + _b64.b64encode(nonce + ciphertext).decode('ascii')
 
 
 class TestFixedEntropyDecryption:
@@ -187,6 +213,68 @@ class TestSecurityRequirements:
 
         finally:
             logger.removeHandler(handler)
+
+
+class TestV2DeploymentDecryption:
+    """Test suite for SEC-C1 v2 (CONFIG_SECRET-based) credential decryption."""
+
+    CONFIG_SECRET = "shared-config-secret-with-web-app"
+    FIXED_ENTROPY = "ProjectorControlWebDeployment"
+
+    def test_v2_roundtrip(self):
+        """A v2 blob decrypts back to plaintext with the matching secret."""
+        blob = _encrypt_v2("TestPassword123", self.CONFIG_SECRET)
+        assert blob.startswith("v2:")
+        assert decrypt_credential_v2(blob, self.CONFIG_SECRET) == "TestPassword123"
+
+    def test_v2_wrong_secret_fails(self):
+        """A v2 blob with the wrong CONFIG_SECRET raises DecryptionError."""
+        blob = _encrypt_v2("TestPassword123", self.CONFIG_SECRET)
+        with pytest.raises(DecryptionError):
+            decrypt_credential_v2(blob, "wrong-secret")
+
+    def test_v2_empty_secret_fails(self):
+        """Decrypting a v2 blob without a CONFIG_SECRET is an actionable error."""
+        blob = _encrypt_v2("TestPassword123", self.CONFIG_SECRET)
+        with pytest.raises(DecryptionError) as exc_info:
+            decrypt_credential_v2(blob, "")
+        assert "CONFIG_SECRET" in str(exc_info.value)
+
+    def test_v2_empty_ciphertext_returns_empty(self):
+        """Empty ciphertext returns empty string (parity with v1)."""
+        assert decrypt_credential_v2("", self.CONFIG_SECRET) == ""
+
+    def test_dispatcher_routes_v2(self):
+        """decrypt_deployment_credential routes 'v2:' blobs to the v2 path."""
+        blob = _encrypt_v2("DispatchMe", self.CONFIG_SECRET)
+        result = decrypt_deployment_credential(
+            blob, self.FIXED_ENTROPY, self.CONFIG_SECRET
+        )
+        assert result == "DispatchMe"
+
+    def test_dispatcher_routes_v1_unprefixed(self):
+        """Un-prefixed (v1) blobs still decrypt via fixed entropy, no secret needed."""
+        from tools.encrypt_credential import encrypt_credential as encrypt_v1
+        blob = encrypt_v1("LegacyPass")
+        assert not blob.startswith("v2:")
+        result = decrypt_deployment_credential(blob, self.FIXED_ENTROPY, "")
+        assert result == "LegacyPass"
+
+    def test_dispatcher_missing_secret_on_v2_fails(self):
+        """A v2 blob with no CONFIG_SECRET fails clearly through the dispatcher."""
+        blob = _encrypt_v2("TestPassword123", self.CONFIG_SECRET)
+        with pytest.raises(DecryptionError) as exc_info:
+            decrypt_deployment_credential(blob, self.FIXED_ENTROPY, "")
+        assert "CONFIG_SECRET" in str(exc_info.value)
+
+    def test_v1_and_v2_ciphertexts_differ(self):
+        """Same plaintext yields distinct v1 vs v2 blobs (different key + prefix)."""
+        from tools.encrypt_credential import encrypt_credential as encrypt_v1
+        plaintext = "SamePlaintext"
+        v1 = encrypt_v1(plaintext)
+        v2 = _encrypt_v2(plaintext, self.CONFIG_SECRET)
+        assert v1 != v2
+        assert v2.startswith("v2:") and not v1.startswith("v2:")
 
 
 if __name__ == "__main__":

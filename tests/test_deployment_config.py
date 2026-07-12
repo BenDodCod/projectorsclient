@@ -267,6 +267,104 @@ class TestDeploymentConfigLoader:
             assert exc_info.value.exit_code == EXIT_DECRYPTION_ERROR
 
 
+def _make_v2_blob(plaintext: str, config_secret: str) -> str:
+    """Produce a 'v2:'-prefixed AES-256-GCM blob (mirrors the web app)."""
+    import base64
+    import secrets
+    from cryptography.hazmat.primitives.ciphers.aead import AESGCM
+    from cryptography.hazmat.primitives import hashes
+    from cryptography.hazmat.primitives.kdf.pbkdf2 import PBKDF2HMAC
+
+    kdf = PBKDF2HMAC(
+        algorithm=hashes.SHA256(),
+        length=32,
+        salt=b"ProjectorControl.CredentialEncryption.v2",
+        iterations=100000,
+    )
+    key = kdf.derive(config_secret.encode('utf-8'))
+    nonce = secrets.token_bytes(12)
+    ct = AESGCM(key).encrypt(nonce, plaintext.encode('utf-8'), None)
+    return "v2:" + base64.b64encode(nonce + ct).decode('ascii')
+
+
+class TestV2CredentialRouting:
+    """Test suite for SEC-C1 v1/v2 blob routing in the deployment loader."""
+
+    CONFIG_SECRET = "shared-config-secret-with-web-app"
+
+    def test_config_secret_read_from_env(self, monkeypatch):
+        """The loader captures CONFIG_SECRET from the environment at init."""
+        monkeypatch.setenv("CONFIG_SECRET", self.CONFIG_SECRET)
+        loader = DeploymentConfigLoader()
+        assert loader._config_secret == self.CONFIG_SECRET
+
+    def test_config_secret_absent_by_default(self, monkeypatch):
+        """CONFIG_SECRET defaults to empty when the env var is unset."""
+        monkeypatch.delenv("CONFIG_SECRET", raising=False)
+        loader = DeploymentConfigLoader()
+        assert loader._config_secret == ""
+
+    def test_decrypt_routes_v2_blob(self, monkeypatch):
+        """A 'v2:' blob decrypts via CONFIG_SECRET through _decrypt_credential."""
+        monkeypatch.delenv("CONFIG_SECRET", raising=False)
+        loader = DeploymentConfigLoader()
+        loader._config_secret = self.CONFIG_SECRET
+        blob = _make_v2_blob("SqlPass!2026", self.CONFIG_SECRET)
+        assert loader._decrypt_credential(blob) == "SqlPass!2026"
+
+    def test_decrypt_routes_v1_unprefixed(self, monkeypatch):
+        """An un-prefixed (v1) blob decrypts via fixed entropy with no secret."""
+        monkeypatch.delenv("CONFIG_SECRET", raising=False)
+        from tools.encrypt_credential import encrypt_credential as encrypt_v1
+        loader = DeploymentConfigLoader()
+        blob = encrypt_v1("LegacyPass")
+        assert loader._decrypt_credential(blob) == "LegacyPass"
+
+    def test_v2_blob_without_secret_raises(self, monkeypatch):
+        """A 'v2:' blob with no CONFIG_SECRET raises an actionable error."""
+        from src.utils.security import DecryptionError
+        monkeypatch.delenv("CONFIG_SECRET", raising=False)
+        loader = DeploymentConfigLoader()  # _config_secret == ""
+        blob = _make_v2_blob("SqlPass!2026", self.CONFIG_SECRET)
+        with pytest.raises(DecryptionError) as exc_info:
+            loader._decrypt_credential(blob)
+        assert "CONFIG_SECRET" in str(exc_info.value)
+
+    def test_load_config_with_v2_sql_password(self, monkeypatch):
+        """End-to-end: a config whose SQL password is a v2 blob loads correctly."""
+        monkeypatch.setenv("CONFIG_SECRET", self.CONFIG_SECRET)
+        config_data = {
+            "version": "1.0",
+            "app": {
+                "operation_mode": "sql_server",
+                "first_run_complete": True,
+                "language": "en",
+                "update_check_enabled": False,
+            },
+            "database": {
+                "type": "sql_server",
+                "host": "RTA-SCCM",
+                "port": 1433,
+                "database": "PrintersAndProjectorsDB",
+                "use_windows_auth": False,
+                "username": "app_unified_svc",
+                "password_encrypted": _make_v2_blob("V2SqlPass", self.CONFIG_SECRET),
+            },
+            "security": {
+                "admin_password_hash": "$2b$14$abcdefghijklmnopqrstuvwxyz1234567890ABCDEFGHIJKLMNOP"
+            },
+        }
+        with tempfile.NamedTemporaryFile(mode='w', suffix='.json', delete=False) as f:
+            json.dump(config_data, f)
+            temp_path = f.name
+        try:
+            loader = DeploymentConfigLoader()
+            config = loader.load_config(temp_path)
+            assert config.sql_password == "V2SqlPass"
+        finally:
+            Path(temp_path).unlink(missing_ok=True)
+
+
 class TestSQLConnectionTesting:
     """Test suite for SQL Server connection testing."""
 

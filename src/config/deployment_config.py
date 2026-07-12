@@ -18,6 +18,7 @@ Version: 1.0.0
 
 import json
 import logging
+import os
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Optional, Tuple
@@ -147,6 +148,10 @@ class DeploymentConfigLoader:
     def __init__(self):
         """Initialize the config loader."""
         self._credential_manager: Optional[CredentialManager] = None
+        # SEC-C1: CONFIG_SECRET is provisioned via the environment and used to
+        # decrypt v2 ("v2:"-prefixed) credential blobs. Empty when unset; a v2
+        # blob encountered without it fails with an actionable error.
+        self._config_secret: str = os.environ.get("CONFIG_SECRET", "")
 
     def load_config(self, config_path: str) -> DeploymentConfig:
         """Load and validate deployment configuration.
@@ -427,19 +432,25 @@ class DeploymentConfigLoader:
         )
 
     def _decrypt_credential(self, encrypted: str) -> str:
-        """Decrypt a credential using fixed deployment entropy.
+        """Decrypt a credential, auto-selecting the blob version.
+
+        Un-prefixed blobs use the legacy v1 fixed-entropy key; "v2:"-prefixed
+        blobs use the provisioned CONFIG_SECRET (SEC-C1).
 
         Args:
-            encrypted: Base64-encoded encrypted credential.
+            encrypted: Base64-encoded encrypted credential (v1 or "v2:"-prefixed).
 
         Returns:
             Decrypted plaintext credential.
 
         Raises:
-            DecryptionError: If decryption fails.
+            DecryptionError: If decryption fails, including a v2 blob when
+                CONFIG_SECRET is not provisioned.
         """
-        from src.utils.security import decrypt_credential_with_fixed_entropy
-        return decrypt_credential_with_fixed_entropy(encrypted, self.FIXED_DEPLOYMENT_ENTROPY)
+        from src.utils.security import decrypt_deployment_credential
+        return decrypt_deployment_credential(
+            encrypted, self.FIXED_DEPLOYMENT_ENTROPY, self._config_secret
+        )
 
 
 def apply_config_to_database(
@@ -510,17 +521,22 @@ def apply_config_to_database(
         settings.set("projector.username", config.projector_username or "")
         settings.set("projector.location", config.projector_location or "")
 
-        # Store projector password - decrypt from deployment entropy, re-encrypt with machine entropy
+        # Store projector password - decrypt from deployment entropy, re-encrypt with machine entropy.
+        # This SettingsManager has no credential_manager, so we encrypt manually and store the
+        # already-encrypted value with set() (mirrors the sql.password handling above). Using
+        # set_secure() here would be a semantic mismatch (it expects plaintext) and logs a
+        # misleading "without encryption" warning.
         if config.projector_password_encrypted:
-            from src.utils.security import decrypt_credential_with_fixed_entropy, encrypt_credential
+            from src.utils.security import decrypt_deployment_credential, encrypt_credential
             try:
-                plain_pass = decrypt_credential_with_fixed_entropy(
+                plain_pass = decrypt_deployment_credential(
                     config.projector_password_encrypted,
-                    DeploymentConfigLoader.FIXED_DEPLOYMENT_ENTROPY
+                    DeploymentConfigLoader.FIXED_DEPLOYMENT_ENTROPY,
+                    os.environ.get("CONFIG_SECRET", "")
                 )
                 app_data_dir = str(Path(db.db_path).parent)
                 machine_encrypted = encrypt_credential(plain_pass, app_data_dir)
-                settings.set_secure("projector.password_encrypted", machine_encrypted)
+                settings.set("projector.password_encrypted", machine_encrypted)
                 logger.info("Projector password re-encrypted with machine-specific entropy")
             except Exception as e:
                 logger.warning("Failed to re-encrypt projector password: %s", e)
@@ -534,10 +550,11 @@ def apply_config_to_database(
             encrypted_password = None
             if config.projector_password_encrypted:
                 try:
-                    from src.utils.security import decrypt_credential_with_fixed_entropy
-                    plain_pass = decrypt_credential_with_fixed_entropy(
+                    from src.utils.security import decrypt_deployment_credential
+                    plain_pass = decrypt_deployment_credential(
                         config.projector_password_encrypted,
-                        DeploymentConfigLoader.FIXED_DEPLOYMENT_ENTROPY
+                        DeploymentConfigLoader.FIXED_DEPLOYMENT_ENTROPY,
+                        os.environ.get("CONFIG_SECRET", "")
                     )
                     app_data_dir = str(Path(db.db_path).parent)
                     cred_manager = CredentialManager(app_data_dir)

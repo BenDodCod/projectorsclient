@@ -392,15 +392,47 @@ The following data is explicitly excluded from all log files:
 
 ### How credentials are protected
 
-1. **In config.json (at rest):** SQL password encrypted with AES-256-GCM + PBKDF2HMAC-SHA256 (100,000 iterations) using fixed deployment entropy `"ProjectorControlWebDeployment"`. This is intentional to allow the web system to generate the encrypted value.
+1. **In config.json (at rest):** Credential blobs (SQL password, projector password) are AES-256-GCM + PBKDF2HMAC-SHA256 (100,000 iterations, 12-byte nonce, 16-byte tag). Two versioned formats are supported — see **Deployment credential encryption (v1 vs v2)** below.
 
-2. **In application database (after install):** SQL password re-encrypted using machine-specific entropy (unique per workstation). The config.json value cannot be used on another machine.
+2. **In application database (after install):** SQL and projector passwords are re-encrypted using machine-specific entropy (unique per workstation). The config.json value cannot be used on another machine.
 
 3. **Admin password:** Never stored as plaintext. Only the bcrypt hash ($2b$12$) is stored. The hash cannot be reversed.
 
 4. **Config file deletion:** On successful deployment, config.json is **deleted** to prevent credential exposure. If deletion fails, an error is logged but the deployment is still considered successful.
 
 5. **SQL Server connection:** All connections use `Encrypt=yes;TrustServerCertificate=no` to prevent Man-in-the-Middle attacks. SQL Server must have a valid TLS certificate.
+
+### Deployment credential encryption (v1 vs v2)
+
+Credential blobs in config.json come in two versions. The desktop app detects the
+version automatically and decrypts both:
+
+| | v1 (legacy, decrypt-only) | v2 (current) |
+|---|---|---|
+| Blob format | `base64(nonce‖ciphertext‖tag)` (no prefix) | `"v2:" + base64(nonce‖ciphertext‖tag)` |
+| PBKDF2 password | fixed string `"ProjectorControlWebDeployment"` | **`CONFIG_SECRET`** (provisioned per environment) |
+| PBKDF2 salt | `ProjectorControl.CredentialEncryption.v1` | `ProjectorControl.CredentialEncryption.v2` |
+| Iterations / hash / key / cipher | 100,000 / SHA-256 / 32 bytes / AES-256-GCM | identical |
+
+**Why v2 exists (SEC-C1):** the v1 key was derived only from source-code string
+literals, so anyone with repository read access could reconstruct it and decrypt
+every deployment config. v2 mixes in the real `CONFIG_SECRET`, which lives only
+in the deployment environment.
+
+**`CONFIG_SECRET` provisioning (required for v2):** set the `CONFIG_SECRET`
+environment variable on the workstation (or in the deployment tooling context,
+e.g. SCCM/MSI) to the **same value** the web system uses, before running the
+silent install. Without it, a v2 config cannot be decrypted and the install
+fails with an error naming `CONFIG_SECRET`.
+
+**Backward compatibility:** un-prefixed v1 blobs still decrypt with the fixed
+entropy on both sides, so already-deployed workstations are unaffected until
+re-deployed. A v1 config needs no `CONFIG_SECRET`.
+
+> ⚠️ **Lockstep rollout:** Do **not** push web-generated **v2** configs to
+> production until the target endpoints run a v2-aware desktop build **and** have
+> `CONFIG_SECRET` provisioned. A v2 config on an endpoint without the secret will
+> fail to install.
 
 ### What admins should NOT do
 
