@@ -35,14 +35,36 @@ recorded the change in the cross-repo spec. Shipped on branch `sec-c1-v2-decrypt
 - **Related settings/security suites:** 48 passed
 - **EXE black-box (silent install):** v2+secret→2, v2+no-secret→6, v1→2 (all as expected)
 
+## SEC-C1 v2: CLOSED — verified end-to-end on 2026-08-05
+
+The lockstep with the web system is complete and proven against real artifacts, not a
+reimplementation. Answers to the questions this file left open:
+
+- **Does the web system emit v2 blobs?** Yes. Generated deployment configs carry `v2:`-prefixed
+  values in `database.password_encrypted` and `projector.auth_password_encrypted`.
+- **Is CONFIG_SECRET provisioned?** Yes — a 64-char hex value, present in the web `.env`, the `app`
+  and `worker` containers, and the deployment host. The host worker injects it into the installer's
+  environment transiently at Phase 2 (`cmd /c set`), so it is never written to the target's disk.
+- **Verification performed:** a real web-generated `config-81` was decrypted using *this repo's*
+  `decrypt_deployment_credential()` via the venv interpreter, with the shared `CONFIG_SECRET`. Both
+  credential fields decrypted cleanly.
+- **Live deployment:** deployment #82 to workstation `rea-f3-03` completed successfully in 9.4s
+  (exit code 0) — app installed, shortcuts created, ODBC Driver 18 installed, config distributed to
+  the SYSTEM profile plus 3 user profiles, exactly 1 active projector. A v2 decrypt failure would
+  have surfaced as exit 6, so this is positive confirmation of the v2 path in production.
+- **PR #1 is merged**; `main` carries the change (`a354f07`), and the shipped
+  `ProjectorControl.exe` on the deployment share is the 2026-07-12 build containing it.
+
+The root cause of the deployments that had been failing was unrelated to this work: a Group Policy
+conflict on the web side stripped the deployment service account out of local Administrators on the
+target machines. See the web repo's `docs/REVIEWS/2026/2026-08-05-session.md`.
+
 ## Next Session Should
-1. Confirm PR #1 merged and `main` is green.
-2. Coordinate with web team: confirm v2 emission + provision matching `CONFIG_SECRET` to endpoints.
-3. If distributing: push the new EXE + package to `\\fileserv\e$\Deployments\ProjectorControl\Latest\`.
-4. Decide on the `DEPLOYMENT_CONFIG_SECRET` follow-up (dedicated secret vs reuse).
+1. Decide on the `DEPLOYMENT_CONFIG_SECRET` follow-up (dedicated secret vs reusing `CONFIG_SECRET`).
+2. Resolve whether `sql.password` (write) vs `sql.password_encrypted` (read) key naming is a real
+   runtime bug — still unverified.
 
 ## Open Questions
-- Does the web system currently emit v2 blobs, and is CONFIG_SECRET available to provision?
 - Is the `sql.password` (write) vs `sql.password_encrypted` (read) key naming a real runtime bug?
 
 ## Quick Reference
